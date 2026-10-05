@@ -37,6 +37,10 @@ export default async function handler(req:any,res:any){
         if(stmts.length)await db.batch(stmts,'write');
       }
     }
+    if(type==='purchase-created'){
+      // Las compras se conservan como operación de sincronización hasta completar
+      // el esquema de CxP/proveedores; no se aplica aún para evitar doble entrada.
+    }
     if(type==='products-inventory-snapshot'){
       const products=Array.isArray(body.payload?.products)?body.payload.products:[];
       if(products.length){
