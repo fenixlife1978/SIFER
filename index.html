@@ -56,7 +56,6 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 <div id="viewport"><div id="stage"><div class="app">
 <div class="titlebar"><span class="dot"></span>SIFER360 — POS Automotriz — <span id="windowTitle">Inicio</span><div class="window-actions"><button id="btnFullscreen" class="fs-btn" title="Activar modo pantalla completa" onclick="toggleFullScreen()">⛶ Pantalla Completa</button><span class="win-icon" onclick="toast('Ventana minimizada')" title="Minimizar">—</span><span class="win-icon" onclick="toggleFullScreen()" title="Maximizar / Restaurar">□</span><span class="win-icon" onclick="toast('Ventana SIFER360')" title="Cerrar">×</span></div></div>
 <div class="menubar" id="menubar"></div>
-<div class="toolbar" id="toolbar"></div>
 <main class="main" id="main"></main>
 <div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · <span id="syncStatus">🟢 En línea</span> · Operación offline disponible</div>
 </div></div></div>
@@ -330,59 +329,13 @@ function renderShell(){
  const menus=[['Archivo',()=>menu('Sistema')],['Ventas',()=>menu('Ventas')],['Inventario',()=>go('productos')],['Compras',()=>menu('Compras')],['Cuentas',()=>menu('Cuentas')],['Contactos',()=>menu('Contactos')],['Reportes',()=>menu('Reportes')],['Sistema',()=>menu('Sistema')]];
  document.getElementById('menubar').innerHTML=menus.map(m=>`<button style="background:none;border:none;padding:3px 7px;font-size:11px" onclick="(${m[1]})()">${m[0]}</button>`).join('');
  const modules=navItems().concat([['pedidos','📝 Pedidos'],['usuarios','👥 Usuarios/Cajas']]);
- document.getElementById('toolbar').insertAdjacentHTML('beforebegin',
+ document.getElementById('menubar').insertAdjacentHTML('afterend',
    `<div class="modulebar">${modules.map(([k,l])=>{let parts=l.split(' ');let ico=parts.shift();return `<button class="module ${view===k?'active':''}" onclick="go('${k}')"><span class="mi">${ico}</span><span>${parts.join(' ')}</span></button>`}).join('')}</div>`
  );
  // Keep exactly one module bar after every rerender.
  const bars=document.querySelectorAll('.modulebar'); if(bars.length>1) bars[0].remove();
- const actionButtons=view==='pos'?[
-   ['👥','Cliente',()=>openClientSearch()],
-   ['➕','Aumentar',()=>changeSelectedQty(1)],
-   ['➖','Disminuir',()=>changeSelectedQty(-1)],
-   ['A','Factura / Venta',()=>checkout()],
-   ['C','Condición',()=>toggleSaleCondition()]
- ]:view==='master_catalog'?[
-   ['🔍','Buscar en Máster',()=>focusSearch()],
-   ['📦','Mi Inventario',()=>go('productos')],
-   ['🚗','Repuestos',()=>go('repuestos')]
- ]:view==='repuestos'?[
-   ['🚘','Fitment Auto',()=>toggleFitmentView()],
-   ['🔗','Ref. Cruzadas',()=>toggleCrossRefView()],
-   ['✨','Asignar SKUs',()=>openSKUGeneratorBatchModal()]
- ]:view==='productos'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nuevo Producto',()=>openCommercialProductFormWithMaster(null)],
-   ['🚗','Repuestos',()=>go('repuestos')]
- ]:view==='clientes'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nuevo Cliente',()=>openClient()]
- ]:view==='proveedores'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nuevo Proveedor',()=>openSupplier()]
- ]:view==='compras'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nueva Compra',()=>openPurchase()]
- ]:view==='presupuestos'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nuevo Presupuesto',()=>openQuote()]
- ]:view==='pedidos'?[
-   ['🔎','Buscar',()=>focusSearch()],
-   ['➕','Nuevo Pedido',()=>nuevoPedido()]
- ]:view==='usuarios'?[
-   ['👤','Nuevo Usuario',()=>nuevoUsuario()],
-   ['▣','Nueva Caja',()=>nuevaCaja()]
- ]:view==='caja'?[
-   ['📊','Corte X',()=>showCorteX()],
-   ['🔒','Corte Z',()=>showCorteZ()]
- ]:view==='config'?[
-   ['💾','Guardar',()=>saveConfig()],
-   ['🔄','Restaurar demo',()=>resetData()]
- ]:[
-   ['🔄','Actualizar',()=>refreshModuleData()],
-   ['🔎','Buscar',()=>focusSearch()]
- ];
- actionButtons.push(['▣','Tasa BCV',()=>openBCV()]);
- document.getElementById('toolbar').innerHTML=actionButtons.map((x,i)=>`<button class="tool ${i===0?'cream':''}" onclick="(${x[2]})"><span class="ico">${x[0]}</span>${x[1]}</button>`).join('');
+ // Se elimina la segunda toolbar de acciones duplicadas/inactivas.
+
  renderView()
 }
 function toggleSaleCondition(){saleType=saleType==='contado'?'credito':'contado';renderView();toast('Condición: '+(saleType==='credito'?'Crédito':'Contado'))}
