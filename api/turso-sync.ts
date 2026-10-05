@@ -12,6 +12,29 @@ export default async function handler(req:any,res:any){
   if(!operationId||!type) return res.status(400).json({ok:false,error:'operationId y type son obligatorios'});
   try{
     const db=createClient({url,authToken});
+    if(type==='products-inventory-snapshot'){
+      const products=Array.isArray(body.payload?.products)?body.payload.products:[];
+      if(products.length){
+        const now=new Date().toISOString();
+        const stmts:any[]=[];
+        for(const p of products){
+          if(!p?.id||!p?.nombre) continue;
+          stmts.push(
+            {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,updated_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?)
+              ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,
+              marca=excluded.marca,unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,
+              imagen=excluded.imagen,updated_at=excluded.updated_at`,
+             args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',now]},
+            {sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+              VALUES(?,?,?,?)
+              ON CONFLICT(product_id) DO UPDATE SET stock=excluded.stock,min_stock=excluded.min_stock,updated_at=excluded.updated_at`,
+             args:[String(p.id),Number(p.stock)||0,Number(p.min)||0,now]}
+          );
+        }
+        if(stmts.length) await db.batch(stmts,'write');
+      }
+    }
     await db.batch([
       {sql:`CREATE TABLE IF NOT EXISTS sifer_sync_operations (
         operation_id TEXT PRIMARY KEY,
