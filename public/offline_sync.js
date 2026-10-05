@@ -106,6 +106,10 @@
   async function persist(state,reason){
     await saveState(state);
     await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
+    if(reason==='inventory-adjustment' && state?.productos?.length){
+      const changes=Array.isArray(state.__inventoryChanges)?state.__inventoryChanges:[];
+      if(changes.length) await enqueue('inventory-adjustment',{changes:clone(changes),at:new Date().toISOString()});
+    }
     if(reason==='sale-created' && state?.ventas?.length){
       const sale=state.ventas[state.ventas.length-1];
       await enqueue('sale-created',{sale:clone(sale),at:new Date().toISOString()});
