@@ -530,7 +530,20 @@ function addToCart(pid, type='producto'){
   closeModal();renderView();toast('Artículo agregado a la venta');
 }
 function editCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');let l=cart[selected];openModal('Editar línea',`<div class="formgrid"><div class="field"><label>Cantidad</label><input id="eQty" type="number" min="0.01" step="0.01" value="${l.qty}"></div><div class="field"><label>Precio</label><input id="ePrice" type="number" min="0" step=".01" value="${l.price}"></div><div class="field"><label>Descuento</label><input id="eDisc" type="number" min="0" step=".01" value="${l.disc}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveCartLine()">Guardar</button>`)}
-function saveCartLine(){let l=cart[selected];l.qty=Number(document.getElementById('eQty').value)||0;l.price=Number(document.getElementById('ePrice').value)||0;l.disc=Number(document.getElementById('eDisc').value)||0;if(l.qty<=0)cart.splice(selected,1);closeModal();renderView()}
+function saveCartLine(){
+  if(selected==null||!cart[selected])return toast('Seleccione una línea');
+  const l=cart[selected],qty=Number(document.getElementById('eQty').value)||0,price=Number(document.getElementById('ePrice').value)||0,disc=Number(document.getElementById('eDisc').value)||0;
+  if(qty<=0||price<0||disc<0)return toast('Cantidad, precio o descuento inválido');
+  const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+  if(!p)return toast('Artículo no encontrado');
+  const isReturn=l.qty<0;
+  if(!isReturn&&qty>Number(p.stock||0))return toast('La cantidad supera la existencia disponible');
+  if(isReturn&&qty>Number(p.stock||0))return toast('La cantidad solicitada no puede superar la existencia actual');
+  if(disc>qty*price)return toast('El descuento no puede superar el importe de la línea');
+  l.qty=isReturn?-qty:qty;l.price=price;l.disc=disc;
+  if(!l.qty)cart.splice(selected,1);
+  selected=null;closeModal();renderView();toast('Línea actualizada');
+}
 function removeCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart.splice(selected,1);selected=null;renderView();toast('Línea eliminada')}
 function returnCart(){
   if(selected==null||!cart[selected]) return toast('Seleccione una línea');
@@ -915,7 +928,19 @@ function finishAccountPay(type,rid){if(!cajaActual().abierta)return toast('Abra 
 function presupuestosView(){return listPage('Presupuestos','Cotizaciones con conversión a venta',`<button class="btn primary" onclick="openQuote()">➕ Nuevo presupuesto</button>`,`<div class="panel"><div class="panelbody"><table><thead><tr><th>Número</th><th>Cliente</th><th>Fecha</th><th>Vigencia</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>${db.presupuestos.map(q=>`<tr><td>${q.numero}</td><td>${esc(q.cliente)}</td><td>${q.fecha}</td><td>${q.vigencia}</td><td>${money(q.total)}</td><td><span class="badge">${q.estado}</span></td><td><button class="btn primary" onclick="quoteToSale('${q.numero}')">Convertir a venta</button></td></tr>`).join('')||'<tr><td colspan="7">No hay presupuestos.</td></tr>'}</tbody></table></div></div>`)}
 function openQuote(){openModal('Nuevo presupuesto',`<div class="formgrid"><div class="field"><label>Cliente</label><select id="qClient">${db.clientes.map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div><div class="field"><label>Producto</label><select id="qProduct">${db.productos.map(p=>`<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}</select></div><div class="field"><label>Cantidad</label><input id="qQty" type="number" value="1" min="1"></div><div class="field"><label>Vigencia (días)</label><input id="qDays" type="number" value="15" min="1"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveQuote()">Guardar</button>`)}
 function saveQuote(){let c=db.clientes.find(x=>x.id===document.getElementById('qClient').value),p=db.productos.find(x=>x.id===document.getElementById('qProduct').value),q=Number(document.getElementById('qQty').value)||1,days=Number(document.getElementById('qDays').value)||15,sub=q*p.precio,tax=sub*db.config.impuesto/100,total=sub+tax;let d=new Date();d.setDate(d.getDate()+days);db.presupuestos.push({numero:id('PRE','presupuesto'),fecha:fmt(),vigencia:d.toLocaleDateString('es-ES'),cliente:c.nombre,clienteId:c.id,total,estado:'Pendiente',lineas:[{id:p.id,qty:q,price:p.precio}]});save();closeModal();renderView();toast('Presupuesto guardado')}
-function quoteToSale(num){let q=db.presupuestos.find(x=>x.numero===num);if(!q)return;saleCustomer=q.clienteId;cart=q.lineas.map(l=>({id:l.id,qty:l.qty,price:l.price,disc:0}));saleType='contado';go('pos');toast('Presupuesto cargado en el POS')}
+function quoteToSale(num){
+  const q=db.presupuestos.find(x=>x.numero===num);
+  if(!q)return toast('Presupuesto no encontrado');
+  if(q.estado==='Convertido')return toast('Este presupuesto ya fue convertido a venta');
+  const vig=new Date(q.vigencia);
+  if(!Number.isNaN(vig.getTime())&&vig.getTime()<Date.now()&&q.estado!=='Vencido'){q.estado='Vencido';save();return toast('El presupuesto está vencido');}
+  for(const l of q.lineas||[]){
+    const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+    if(!p)return toast('El artículo del presupuesto ya no existe');
+    if(Number(l.qty||0)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
+  }
+  saleCustomer=q.clienteId;cart=(q.lineas||[]).map(l=>({...l,disc:Number(l.disc||0)}));saleType='contado';q.estado='Convertido';q.convertidoAt=fmt();save('quote-converted');go('pos');toast('Presupuesto cargado en el POS');
+}
 function reportesView(){let ventas=db.ventas.reduce((s,x)=>s+x.total,0),compras=db.compras.reduce((s,x)=>s+x.total,0),util=ventas-compras;return listPage('Reportes','Indicadores y movimientos del sistema',null,`<div class="cards"><div class="card">Ventas<b>${money(ventas)}</b><span>total registrado</span></div><div class="card">Compras<b>${money(compras)}</b><span>total registrado</span></div><div class="card">Margen bruto<b>${money(util)}</b><span>estimado sobre movimientos</span></div><div class="card">Clientes<b>${db.clientes.length}</b><span>registrados</span></div><div class="card">Proveedores<b>${db.proveedores.length}</b><span>registrados</span></div></div><div class="grid2"><div class="panel"><div class="panelhead">Ventas por documento</div><div class="panelbody">${salesTable(db.ventas.slice().reverse())}</div></div><div class="panel"><div class="panelhead">Kardex / movimientos recientes</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice(-20).reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div></div>`)}
 function cajaPeriodoMovimientos(){
   const since=cajaActual().ultimoCorteAt?new Date(cajaActual().ultimoCorteAt).getTime():0;
@@ -989,7 +1014,7 @@ async function syncOrdersFromTurso(){
 }
 setInterval(syncOrdersFromTurso,7000);
 window.addEventListener('online',syncOrdersFromTurso);
-function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
+function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos</button></div></div>`)}
 function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
 function resetData(){
   const confirmation=prompt('Esta acción elimina los datos locales actuales y restaura datos de demostración. Escriba BORRAR SIFER para confirmar.');
