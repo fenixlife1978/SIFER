@@ -4,7 +4,7 @@ async function ensure(db:any){
   await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_customer_orders(
     id TEXT PRIMARY KEY,numero TEXT UNIQUE NOT NULL,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,
     operador_id TEXT,operador TEXT,estado TEXT NOT NULL,total REAL NOT NULL,payload_json TEXT NOT NULL,
-    caja_id TEXT,claimed_by TEXT,claimed_at TEXT,updated_at TEXT NOT NULL,created_at TEXT NOT NULL
+    caja_id TEXT,claimed_by TEXT,claimed_at TEXT,updated_at TEXT,created_at TEXT NOT NULL
   )`,args:[]});
   for(const sql of [
     'ALTER TABLE sifer_customer_orders ADD COLUMN claimed_by TEXT',
@@ -39,7 +39,11 @@ export default async function handler(req:any,res:any){
     }
     if(action==='finalize'){
       const saleNumber=String(b.saleNumber||'');
-      const r=await db.execute({sql:`UPDATE sifer_customer_orders SET estado='Facturado',payload_json=json_set(payload_json,'$.saleNumber',?),updated_at=? WHERE id=? AND estado='En caja' AND claimed_by=?`,args:[saleNumber,now,id,actor]});
+      const current=await db.execute({sql:'SELECT payload_json FROM sifer_customer_orders WHERE id=? AND estado=\'En caja\' AND claimed_by=? LIMIT 1',args:[id,actor]});
+      if(!current.rows.length)return res.status(409).json({ok:false,conflict:true,error:'El pedido no está reservado por este operador o ya fue facturado'});
+      let payload:any={}; try{payload=JSON.parse(String(current.rows[0].payload_json||'{}'))}catch(e){}
+      payload.saleNumber=saleNumber;
+      const r=await db.execute({sql:`UPDATE sifer_customer_orders SET estado='Facturado',payload_json=?,updated_at=? WHERE id=? AND estado='En caja' AND claimed_by=?`,args:[JSON.stringify(payload),now,id,actor]});
       if(!r.rowsAffected)return res.status(409).json({ok:false,conflict:true,error:'El pedido no está reservado por este operador o ya fue facturado'});
       return res.status(200).json({ok:true,state:'Facturado',id,saleNumber});
     }
