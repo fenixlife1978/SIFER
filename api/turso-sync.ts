@@ -90,12 +90,24 @@ export default async function handler(req:any,res:any){
           args:[operationId,String(sale.numero),String(l.id),Number(l.qty)||0,String(sale.total<0?'return':'sale'),now]
         }));
         if(stmts.length) await db.batch(stmts,'write');
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_order_reservations(
+          order_id TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,reserved_at TEXT NOT NULL,
+          PRIMARY KEY(order_id,product_id)
+        )`,args:[]});
         const applied=await db.execute({sql:'SELECT product_id,qty_delta FROM sifer_inventory_ledger WHERE operation_id=?',args:[operationId]});
         for(const row of applied.rows){
           const pid=String(row.product_id),delta=Number(row.qty_delta)||0;
-          await db.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
-            VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
-            args:[pid,delta,now]});
+          const reservation=await db.execute({sql:`SELECT r.order_id,r.qty FROM sifer_order_reservations r
+            JOIN sifer_customer_orders o ON o.id=r.order_id
+            WHERE r.product_id=? AND json_extract(o.payload_json,'$.saleNumber')=? LIMIT 1`,args:[pid,String(sale.numero)]});
+          if(!reservation.rows.length){
+            await db.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+              VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
+              args:[pid,delta,now]});
+          }
+        }
+        if(sale.documentoOrigen){
+          // Devoluciones de una venta reservada no son una liberación de reserva.
         }
       }
     }
