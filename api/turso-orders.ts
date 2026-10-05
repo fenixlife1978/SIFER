@@ -71,8 +71,18 @@ export default async function handler(req:any,res:any){
       if(!current.rows.length)return res.status(409).json({ok:false,conflict:true,error:'El pedido no está reservado por este operador o ya fue facturado'});
       let payload:any={}; try{payload=JSON.parse(String(current.rows[0].payload_json||'{}'))}catch(e){}
       payload.saleNumber=saleNumber;
-      const r=await db.execute({sql:`UPDATE sifer_customer_orders SET estado='Facturado',payload_json=?,updated_at=? WHERE id=? AND estado='En caja' AND claimed_by=?`,args:[JSON.stringify(payload),now,id,actor]});
-      if(!r.rowsAffected)return res.status(409).json({ok:false,conflict:true,error:'El pedido no está reservado por este operador o ya fue facturado'});
+      const tx=await db.transaction('write');
+      try{
+        const r=await tx.execute({sql:`UPDATE sifer_customer_orders SET estado='Facturado',payload_json=?,updated_at=? WHERE id=? AND estado='En caja' AND claimed_by=?`,args:[JSON.stringify(payload),now,id,actor]});
+        if(!r.rowsAffected){await tx.rollback();return res.status(409).json({ok:false,conflict:true,error:'El pedido no está reservado por este operador o ya fue facturado'});}
+        // La reserva ya descontó el inventario al tomar el pedido. Al facturarlo
+        // solo se elimina la reserva; nunca se repone stock aquí.
+        await tx.execute({sql:'DELETE FROM sifer_order_reservations WHERE order_id=?',args:[id]});
+        await tx.commit();
+      }catch(e){
+        await tx.rollback();
+        return res.status(503).json({ok:false,error:String((e as any)?.message||e)});
+      }finally{tx.close()}
       return res.status(200).json({ok:true,state:'Facturado',id,saleNumber});
     }
     return res.status(400).json({ok:false,error:'Acción no soportada'});
