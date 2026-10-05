@@ -106,6 +106,14 @@
   async function persist(state,reason){
     await saveState(state);
     await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
+    if(reason==='order-created' && state?.pedidos?.length){
+      const order=state.pedidos[state.pedidos.length-1];
+      if(order) await enqueue('order-created',{order:clone(order),at:new Date().toISOString()});
+    }
+    if(reason==='cash-register-upsert' && state?.cajas?.length){
+      const box=state.cajas.find(x=>x.id===state.terminalId)||state.cajas[0];
+      if(box) await enqueue('cash-register-upsert',{caja:clone(box),at:new Date().toISOString()});
+    }
     if(reason==='inventory-adjustment' && state?.productos?.length){
       const changes=Array.isArray(state.__inventoryChanges)?state.__inventoryChanges:[];
       if(changes.length) await enqueue('inventory-adjustment',{changes:clone(changes),at:new Date().toISOString()});
