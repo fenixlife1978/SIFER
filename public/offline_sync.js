@@ -51,6 +51,42 @@
     }
     updateStatus();
   }
+  async function pullProductsInventory(){
+    if(!navigator.onLine)return {ok:false,skipped:true};
+    const count=await getQueueCount();
+    if(count>0)return {ok:false,skipped:true,pending:count};
+    try{
+      const response=await fetch('/api/turso-products',{method:'GET',cache:'no-store'});
+      if(!response.ok)return {ok:false,status:response.status};
+      const data=await response.json();
+      if(!data.ok||!Array.isArray(data.products)||!data.products.length)return {ok:true,count:0};
+      const local=await loadStateValue();
+      if(!local||!Array.isArray(local.productos))return {ok:true,count:data.products.length};
+      const byId=new Map(data.products.map(p=>[String(p.id),p]));
+      let changed=false;
+      const merged=clone(local);
+      merged.productos=local.productos.map(p=>{
+        const remote=byId.get(String(p.id));
+        if(!remote)return p;
+        changed=true;
+        return {...p,...remote,stock:Number(remote.stock??p.stock??0),min:Number(remote.min??p.min??0)};
+      });
+      if(changed){
+        lastSnapshot=clone(merged);
+        await saveState(merged);
+        try{localStorage.setItem('sifer360_v1',JSON.stringify(merged));}catch(e){}
+        global.dispatchEvent(new CustomEvent('sifer:turso-hydrated',{detail:{count:data.products.length}}));
+      }
+      return {ok:true,count:data.products.length,changed};
+    }catch(e){return {ok:false,error:String(e?.message||e)}}
+  }
+  function loadStateValue(){
+    return tx(STATE_STORE,'readonly',s=>new Promise(resolve=>{
+      const r=s.get('current');
+      r.onsuccess=()=>resolve(r.result?.state||null);
+      r.onerror=()=>resolve(null);
+    }));
+  }
   async function getQueueCount(){
     const db=await open(); if(!db)return 0;
     return new Promise(resolve=>{const t=db.transaction(QUEUE_STORE,'readonly'),r=t.objectStore(QUEUE_STORE).count();r.onsuccess=()=>resolve(r.result||0);r.onerror=()=>resolve(0)});
@@ -66,13 +102,13 @@
     await saveState(state);
     await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
     updateStatus();
-    if(navigator.onLine) syncPending();
+    if(navigator.onLine) { await syncPending(); await pullProductsInventory(); }
   }
   global.SiferOffline={
-    open,persist,saveState,enqueue,loadState,syncPending,updateStatus,
+    open,persist,saveState,enqueue,loadState,syncPending,pullProductsInventory,updateStatus,
     isSupported:()=>('indexedDB' in global)
   };
-  global.addEventListener('online',()=>{updateStatus();syncPending()});
+  global.addEventListener('online',async()=>{updateStatus();await syncPending();await pullProductsInventory()});
   global.addEventListener('offline',updateStatus);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{updateStatus();syncPending()});else {updateStatus();syncPending();}
 })(window);
