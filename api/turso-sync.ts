@@ -36,6 +36,14 @@ export default async function handler(req:any,res:any){
       }
     }
     await db.batch([
+      {sql:`CREATE TABLE IF NOT EXISTS sifer_products (
+        id TEXT PRIMARY KEY,codigo TEXT,nombre TEXT NOT NULL,categoria TEXT,marca TEXT,unidad TEXT,
+        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL
+      )`,args:[]},
+      {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
+        product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
+        FOREIGN KEY(product_id) REFERENCES sifer_products(id)
+      )`,args:[]},
       {sql:`CREATE TABLE IF NOT EXISTS sifer_sync_operations (
         operation_id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
