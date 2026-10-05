@@ -865,7 +865,7 @@ function renderCrossReferenceTab(){
   </div>`;
 }
 
-// 4. Tab Sincronización B2B con Distribuidores Externos
+
 
 // Modales y Acciones del Módulo de Repuestos
 
