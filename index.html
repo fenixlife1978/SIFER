@@ -585,7 +585,7 @@ function finishSale(total){
     p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
   }
   const num=nextCajaNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
-  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x}))};
+  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
   if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else cajaActual().saldo+=paid;
   save('sale-created');cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
@@ -726,8 +726,8 @@ function guardarPedido(){
  if(!p||q<=0)return toast('Producto o cantidad inválida');
  if(q>Number(p.stock||0))return toast('Stock insuficiente');
  const subtotal=q*Number(p.precio||0),total=subtotal*(1+db.config.impuesto/100);
- db.pedidos.push({id:'PED-'+String(db.seq.pedido++).padStart(5,'0'),numero:'PED-'+String(db.seq.pedido-1).padStart(5,'0'),fecha:fmt(),clienteId:cid,cliente:cl?.nombre||'Cliente general',operadorId:usuarioActual().id,operador:usuarioActual().nombre,estado:'Pendiente',total,lineas:[{id:pid,qty:q,price:Number(p.precio||0),disc:0}]});
- save();closeModal();renderView();toast('Pedido enviado a caja');
+ db.pedidos.push({id:'PED-'+String(db.seq.pedido++).padStart(5,'0'),numero:'PED-'+String(db.seq.pedido-1).padStart(5,'0'),fecha:fmt(),clienteId:cid,cliente:cl?.nombre||'Cliente general',operadorId:usuarioActual().id,operador:usuarioActual().nombre,cajaId:cajaActual().id,estado:'Pendiente',total,lineas:[{id:pid,qty:q,price:Number(p.precio||0),disc:0}]});
+ save('order-created');closeModal();renderView();toast('Pedido enviado a caja');
 }
 function cobrarPedido(pid){
  const p=(db.pedidos||[]).find(x=>x.id===pid&&x.estado==='Pendiente');if(!p)return toast('Pedido no disponible');
