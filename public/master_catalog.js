@@ -769,25 +769,29 @@
 
   function selectMasterItemByIndex(masterId) {
     let foundItem = null;
-    for (let [k, v] of virtualCache.entries()) {
+
+    // Primero buscamos en caché. Esto cubre los resultados recién renderizados.
+    for (const v of virtualCache.values()) {
       if (v.masterId === masterId) {
         foundItem = v;
         break;
       }
     }
 
+    // El masterId contiene el índice original. Recuperarlo directamente evita
+    // volver a recorrer hasta 2.450.000 registros y congelar el hilo principal.
     if (!foundItem) {
-      for (let i = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT; i++) {
-        let it = getMasterItemByIndex(i);
-        if (it.masterId === masterId) {
-          foundItem = it;
-          break;
+      const match = /^MST-(?:LUB|AUT)-(\\d+)$/.exec(String(masterId || ''));
+      if (match) {
+        const index = Number(match[1]) - 1;
+        if (Number.isInteger(index) && index >= 0 && index < TOTAL_VIRTUAL_CATALOG_COUNT) {
+          foundItem = getMasterItemByIndex(index);
         }
       }
     }
 
     if (!foundItem) {
-      toast('Item no encontrado');
+      toast('Artículo del catálogo no encontrado');
       return;
     }
 
