@@ -336,8 +336,11 @@ function renderShell(){
  // Keep exactly one module bar after every rerender.
  const bars=document.querySelectorAll('.modulebar'); if(bars.length>1) bars[0].remove();
  const actionButtons=view==='pos'?[
-   ['👥','Cliente',()=>openClientSearch()],['➕','Aumentar',()=>changeSelectedQty(1)],['➖','Disminuir',()=>changeSelectedQty(-1)],
-   ['A','Factura / Venta',()=>checkout()],['C','Condición',()=>saleType=saleType==='contado'?'credito':'contado']
+   ['👥','Cliente',()=>openClientSearch()],
+   ['➕','Aumentar',()=>changeSelectedQty(1)],
+   ['➖','Disminuir',()=>changeSelectedQty(-1)],
+   ['A','Factura / Venta',()=>checkout()],
+   ['C','Condición',()=>toggleSaleCondition()]
  ]:view==='master_catalog'?[
    ['🔍','Buscar en Máster',()=>focusSearch()],
    ['📦','Mi Inventario',()=>go('productos')],
@@ -348,14 +351,108 @@ function renderShell(){
    ['✨','Asignar SKUs',()=>openSKUGeneratorBatchModal()]
  ]:view==='productos'?[
    ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nuevo Producto',()=>openCommercialProductFormWithMaster(null)],
    ['🚗','Repuestos',()=>go('repuestos')]
+ ]:view==='clientes'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nuevo Cliente',()=>openClient()]
+ ]:view==='proveedores'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nuevo Proveedor',()=>openSupplier()]
+ ]:view==='compras'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nueva Compra',()=>openPurchase()]
+ ]:view==='presupuestos'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nuevo Presupuesto',()=>openQuote()]
+ ]:view==='pedidos'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['➕','Nuevo Pedido',()=>nuevoPedido()]
+ ]:view==='usuarios'?[
+   ['👤','Nuevo Usuario',()=>nuevoUsuario()],
+   ['▣','Nueva Caja',()=>nuevaCaja()]
+ ]:view==='caja'?[
+   ['📊','Corte X',()=>showCorteX()],
+   ['🔒','Corte Z',()=>showCorteZ()]
+ ]:view==='config'?[
+   ['💾','Guardar',()=>saveConfig()],
+   ['🔄','Restaurar demo',()=>resetData()]
  ]:[
-   ['🔄','Actualizar',()=>{db=load();renderShell()}],
+   ['🔄','Actualizar',()=>refreshModuleData()],
    ['🔎','Buscar',()=>focusSearch()]
  ];
  actionButtons.push(['▣','Tasa BCV',()=>openBCV()]);
  document.getElementById('toolbar').innerHTML=actionButtons.map((x,i)=>`<button class="tool ${i===0?'cream':''}" onclick="(${x[2]})"><span class="ico">${x[0]}</span>${x[1]}</button>`).join('');
  renderView()
+}
+function toggleSaleCondition(){saleType=saleType==='contado'?'credito':'contado';renderView();toast('Condición: '+(saleType==='credito'?'Crédito':'Contado'))}
+async function refreshModuleData(){
+  try{
+    if(window.SiferOffline&&navigator.onLine){
+      await window.SiferOffline.syncPending();
+      await window.SiferOffline.pullProductsInventory();
+    }
+    await syncOrdersFromTurso();
+    db=load();
+    renderShell();
+    toast('Datos actualizados');
+  }catch(e){
+    db=load();renderShell();toast('Datos locales actualizados');
+  }
+}
+function saveSaleMeta(patch){
+  db.posMeta={...(db.posMeta||{}),...patch,updatedAt:new Date().toISOString()};
+  save('pos-meta');renderView();
+}
+function openDeliveryModal(){
+  const d=db.posMeta?.delivery||{};
+  openModal('Entrega de la venta',`<div class="formgrid">
+    <div class="field"><label>Fecha de entrega</label><input id="deliveryDate" type="date" value="${esc(d.fecha||new Date().toISOString().slice(0,10))}"></div>
+    <div class="field"><label>Estado</label><select id="deliveryStatus"><option ${d.estado==='Pendiente'?'selected':''}>Pendiente</option><option ${d.estado==='Programada'?'selected':''}>Programada</option><option ${d.estado==='Entregada'?'selected':''}>Entregada</option></select></div>
+    <div class="field full"><label>Dirección de entrega</label><textarea id="deliveryAddress">${esc(d.direccion||'')}</textarea></div>
+    <div class="field full"><label>Observación</label><textarea id="deliveryNote">${esc(d.observacion||'')}</textarea></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveDeliveryMeta()">Guardar entrega</button>`);
+}
+function saveDeliveryMeta(){
+  saveSaleMeta({delivery:{fecha:document.getElementById('deliveryDate').value,estado:document.getElementById('deliveryStatus').value,direccion:document.getElementById('deliveryAddress').value.trim(),observacion:document.getElementById('deliveryNote').value.trim()}});
+  closeModal();renderView();toast('Datos de entrega guardados');
+}
+function openShipToModal(){
+  const s=db.posMeta?.shipping||{};
+  openModal('Enviar a / destino',`<div class="formgrid">
+    <div class="field"><label>Destino / sucursal</label><input id="shipDestination" value="${esc(s.destino||'')}" placeholder="Ej. Taller, sucursal o almacén"></div>
+    <div class="field"><label>Transportista</label><input id="shipCarrier" value="${esc(s.transportista||'')}"></div>
+    <div class="field full"><label>Referencia / guía</label><input id="shipTracking" value="${esc(s.guia||'')}"></div>
+    <div class="field full"><label>Observación</label><textarea id="shipNote">${esc(s.observacion||'')}</textarea></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveShipToMeta()">Guardar destino</button>`);
+}
+function saveShipToMeta(){
+  saveSaleMeta({shipping:{destino:document.getElementById('shipDestination').value.trim(),transportista:document.getElementById('shipCarrier').value.trim(),guia:document.getElementById('shipTracking').value.trim(),observacion:document.getElementById('shipNote').value.trim()}});
+  closeModal();renderView();toast('Destino de envío guardado');
+}
+function openCustomerClassModal(){
+  const current=db.posMeta?.customerClass||'Detal';
+  openModal('Clase de cliente',`<div class="field"><label>Clasificación comercial</label><select id="customerClass">
+    <option ${current==='Detal'?'selected':''}>Detal</option><option ${current==='Taller'?'selected':''}>Taller</option><option ${current==='Mayor'?'selected':''}>Mayor</option><option ${current==='Flotilla'?'selected':''}>Flotilla</option>
+  </select></div><div style="font-size:11px;color:#666;margin-top:8px">La clase queda asociada a la venta actual y puede ser utilizada para aplicar la tarifa correspondiente al confirmar la operación.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveCustomerClass()">Aplicar clase</button>`);
+}
+function saveCustomerClass(){
+  saveSaleMeta({customerClass:document.getElementById('customerClass').value});
+  closeModal();renderView();toast('Clase de cliente aplicada');
+}
+function openGiftCardModal(){
+  const g=db.posMeta?.giftCard||{};
+  openModal('Tarjeta regalo',`<div class="formgrid">
+    <div class="field"><label>Código de tarjeta</label><input id="giftCode" value="${esc(g.codigo||'')}" placeholder="Código o referencia"></div>
+    <div class="field"><label>Monto autorizado USD</label><input id="giftAmount" type="number" min="0" step=".01" value="${Number(g.monto||0)}"></div>
+    <div class="field full"><label>Observación</label><textarea id="giftNote">${esc(g.observacion||'')}</textarea></div>
+  </div><div style="font-size:11px;color:#666;margin-top:8px">La tarjeta queda registrada como referencia de la venta; el cajero debe verificar el saldo de la tarjeta antes de cobrar.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveGiftCard()">Asociar tarjeta</button>`);
+}
+function saveGiftCard(){
+  const codigo=document.getElementById('giftCode').value.trim(),monto=Math.max(0,Number(document.getElementById('giftAmount').value)||0);
+  if(!codigo)return toast('Indique el código de la tarjeta');
+  saveSaleMeta({giftCard:{codigo,monto,observacion:document.getElementById('giftNote').value.trim()}});
+  closeModal();renderView();toast('Tarjeta regalo asociada a la venta');
 }
 function toggleFitmentView(){repuestoSubTab='buscador_vehiculo';renderView()}
 function toggleCrossRefView(){repuestoSubTab='referencias_cruzadas';renderView()}
@@ -392,7 +489,7 @@ function posView(){
    </div>
    <div class="possummary"><div>Impuesto 1<b>${money(tax1)}</b></div><div>Impuesto 2<b>${money(0)}</b></div><div>Total<b>${money(total)}</b></div><div>Pagado<b>${money(saleType==='contado'?0:0)}</b></div><div>Saldo<b>${money(total)}</b></div></div>
   </div>
-  <aside class="posside"><button onclick="openClientSearch()">CAMBIAR<br>CLIENTE</button><button onclick="toast('Entrega asociada')">ENTREGA</button><button onclick="toast('Envío asociado')">ENVIAR A</button><button onclick="changeSelectedQty(1)">+1</button><button onclick="changeSelectedQty(-1)">−1</button><button onclick="saleType='credito';toast('Venta a crédito')">A/R<br>FACTURA</button><button onclick="saleType='contado';toast('Venta de contado')">CAJA<br>FACTURA</button><button onclick="go('presupuestos')">PRESUPUESTO</button><button onclick="toast('Clases de cliente')">CLASES<br>DE CLIENTE</button><button onclick="openItemSearch()">RELLAMAR<br>INVENTARIO</button><button onclick="toast('Tarjeta regalo')">TARJETA<br>REGALO</button><button onclick="cancelSale()">SALIR<br>SIN REGISTRAR</button><button class="pay" onclick="checkout()">TOMAR<br>PAGO</button></aside>
+  <aside class="posside"><button onclick="openClientSearch()">CAMBIAR<br>CLIENTE</button><button onclick="openDeliveryModal()">ENTREGA</button><button onclick="openShipToModal()">ENVIAR A</button><button onclick="changeSelectedQty(1)">+1</button><button onclick="changeSelectedQty(-1)">−1</button><button onclick="saleType='credito';renderView();toast('Venta a crédito')">A/R<br>FACTURA</button><button onclick="saleType='contado';renderView();toast('Venta de contado')">CAJA<br>FACTURA</button><button onclick="go('presupuestos')">PRESUPUESTO</button><button onclick="openCustomerClassModal()">CLASES<br>DE CLIENTE</button><button onclick="openItemSearch()">RELLAMAR<br>INVENTARIO</button><button onclick="openGiftCardModal()">TARJETA<br>REGALO</button><button onclick="cancelSale()">SALIR<br>SIN REGISTRAR</button><button class="pay" onclick="checkout()">TOMAR<br>PAGO</button></aside>
  </div></div>`
 }
 function changeSelectedQty(delta){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart[selected].qty+=delta;if(cart[selected].qty<=0)cart.splice(selected,1);renderView()}
@@ -441,7 +538,7 @@ function returnCart(){
   cart[selected].qty=-Math.abs(cart[selected].qty);cart[selected].devolucion=true;
   renderView();toast('Artículo marcado para devolución. Se solicitará la venta original al cobrar.');
 }
-function cancelSale(){if(cart.length&&confirm('¿Desea cancelar la venta actual?')){cart=[];selected=null;renderView()}}
+function cancelSale(){if(cart.length&&confirm('¿Desea cancelar la venta actual?')){cart=[];selected=null;db.posMeta=null;save();renderView();toast('Venta cancelada sin registrar')}}
 async function releaseActiveOrder(){
   if(!activeOrderId)return closeModal();
   if(navigator.onLine){
@@ -607,7 +704,7 @@ async function finishSale(total){
     p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
   }
   const num=await reserveDocumentNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
-  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id};
+  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id,entrega:db.posMeta?.delivery||null,destinoEnvio:db.posMeta?.shipping||null,claseCliente:db.posMeta?.customerClass||null,tarjetaRegalo:db.posMeta?.giftCard||null};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
   if(activeOrderId && !isReturn && navigator.onLine){
     try{
@@ -617,7 +714,7 @@ async function finishSale(total){
       const op=db.pedidos.find(x=>x.id===activeOrderId);if(op){op.estado='Facturado';op.saleNumber=num;}
     }catch(e){db.ventas.pop();db.movimientos.pop();return toast('No se pudo confirmar el pedido en Turso');}
   }  if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else cajaActual().saldo+=paid;
-  save('sale-created');activeOrderId=null;cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
+  save('sale-created');activeOrderId=null;cart=[];selected=null;db.posMeta=null;save('sale-created');closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
 }function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
 function productosView(){
   const productos = Array.isArray(db.productos)?db.productos:[];
