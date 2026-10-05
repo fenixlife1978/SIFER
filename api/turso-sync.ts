@@ -12,6 +12,8 @@ export default async function handler(req:any,res:any){
   if(!operationId||!type) return res.status(400).json({ok:false,error:'operationId y type son obligatorios'});
   try{
     const db=createClient({url,authToken});
+    const existing=await db.execute({sql:'SELECT operation_id FROM sifer_sync_operations WHERE operation_id=? LIMIT 1',args:[operationId]});
+    if(existing.rows.length) return res.status(200).json({ok:true,duplicate:true,operationId});
     if(type==='sale-created'){
       const sale=body.payload?.sale;
       if(sale?.numero){
