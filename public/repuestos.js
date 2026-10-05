@@ -898,6 +898,11 @@ function openPhotoPickerModal(id){
         <label>O Seleccionar Archivo Local (PNG, JPG, SVG)</label>
         <input type="file" id="fileImgInput" accept="image/*" onchange="handleImageFileUpload(this)">
       </div>
+      <div class="field full">
+        <label>Tomar Foto con la Cámara</label>
+        <input type="file" id="cameraImgInput" accept="image/*" capture="environment" onchange="handleImageFileUpload(this)">
+        <div style="font-size:10px;color:#666;margin-top:4px">En teléfonos y tabletas abrirá la cámara del dispositivo para tomar la foto directamente.</div>
+      </div>
       <div class="field full" style="text-align:center;padding:10px;background:#fafafa;border:1px solid #ddd">
         <div style="font-size:10px;color:#666;margin-bottom:5px">Vista previa:</div>
         <img id="previewPickImg" src="${r.imagen || '/icon.svg'}" style="max-height:120px;max-width:100%;object-fit:contain" onerror="this.src='/icon.svg'">
