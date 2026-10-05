@@ -12,8 +12,20 @@ export default async function handler(req:any,res:any){
   if(!operationId||!type) return res.status(400).json({ok:false,error:'operationId y type son obligatorios'});
   try{
     const db=createClient({url,authToken});
-    const existing=await db.execute({sql:'SELECT operation_id FROM sifer_sync_operations WHERE operation_id=? LIMIT 1',args:[operationId]});
-    if(existing.rows.length) return res.status(200).json({ok:true,duplicate:true,operationId});
+    await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sync_operations (
+      operation_id TEXT PRIMARY KEY,type TEXT NOT NULL,payload_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,received_at TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'processing'
+    )`,args:[]});
+    try{await db.execute({sql:"ALTER TABLE sifer_sync_operations ADD COLUMN status TEXT NOT NULL DEFAULT 'processing'",args:[]})}catch(e){}
+    const claim=await db.execute({sql:`INSERT OR IGNORE INTO sifer_sync_operations(operation_id,type,payload_json,created_at,received_at,status)
+      VALUES(?,?,?,?,?,'processing')`,args:[operationId,type,JSON.stringify(body.payload??null),String(body.createdAt||new Date().toISOString()),new Date().toISOString()]});
+    if(!claim.rowsAffected){
+      const existing=await db.execute({sql:'SELECT status FROM sifer_sync_operations WHERE operation_id=? LIMIT 1',args:[operationId]});
+      const status=String(existing.rows?.[0]?.status||'processing');
+      if(status==='applied')return res.status(200).json({ok:true,duplicate:true,operationId});
+      if(status==='processing')return res.status(409).json({ok:false,duplicate:true,inProgress:true,error:'La operación ya está siendo procesada',operationId});
+      await db.execute({sql:"UPDATE sifer_sync_operations SET status='processing',received_at=? WHERE operation_id=?",args:[new Date().toISOString(),operationId]});
+    }
     if(type==='sale-created'){
       const sale=body.payload?.sale;
       if(sale?.numero){
@@ -142,19 +154,15 @@ export default async function handler(req:any,res:any){
       {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
         product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
         FOREIGN KEY(product_id) REFERENCES sifer_products(id)
-      )`,args:[]},
-      {sql:`CREATE TABLE IF NOT EXISTS sifer_sync_operations (
-        operation_id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        received_at TEXT NOT NULL
-      )`,args:[]},
-      {sql:`INSERT OR IGNORE INTO sifer_sync_operations(operation_id,type,payload_json,created_at,received_at)
-        VALUES(?,?,?,?,?)`,args:[operationId,type,JSON.stringify(body.payload??null),String(body.createdAt||new Date().toISOString()),new Date().toISOString()]}
+      )`,args:[]}
     ],'write');
+    await db.execute({sql:"UPDATE sifer_sync_operations SET status='applied',received_at=? WHERE operation_id=?",args:[new Date().toISOString(),operationId]});
     return res.status(200).json({ok:true,operationId});
   }catch(error:any){
-    return res.status(503).json({ok:false,configured:true,error:String(error?.message||error)});
+    try{
+      const db=createClient({url,authToken});
+      await db.execute({sql:"UPDATE sifer_sync_operations SET status='failed',received_at=? WHERE operation_id=?",args:[new Date().toISOString(),operationId]});
+    }catch(e){}
+    return res.status(503).json({ok:false,configured:true,error:String(error?.message||error),operationId});
   }
 }
