@@ -12,6 +12,31 @@ export default async function handler(req:any,res:any){
   if(!operationId||!type) return res.status(400).json({ok:false,error:'operationId y type son obligatorios'});
   try{
     const db=createClient({url,authToken});
+    if(type==='sale-created'){
+      const sale=body.payload?.sale;
+      if(sale?.numero){
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sales (
+          numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,total REAL NOT NULL,
+          subtotal REAL NOT NULL DEFAULT 0,impuesto REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,
+          saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,created_at TEXT NOT NULL
+        )`,args:[]});
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sale_lines (
+          sale_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,price REAL NOT NULL,discount REAL NOT NULL DEFAULT 0,
+          PRIMARY KEY(sale_number,product_id),FOREIGN KEY(sale_number) REFERENCES sifer_sales(numero)
+        )`,args:[]});
+        await db.execute({sql:`INSERT OR IGNORE INTO sifer_sales(numero,fecha,cliente_id,cliente,total,subtotal,impuesto,pagado,saldo,tipo,documento_origen,created_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,args:[
+            String(sale.numero),String(sale.fecha||''),sale.clienteId??null,sale.cliente??'Cliente general',
+            Number(sale.total)||0,Number(sale.subtotal)||0,Number(sale.impuesto)||0,Number(sale.pagado)||0,
+            Number(sale.saldo)||0,sale.tipo??'',sale.documentoOrigen??null,new Date().toISOString()
+        ]});
+        const lines=Array.isArray(sale.lineas)?sale.lineas:[];
+        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({sql:`INSERT OR IGNORE INTO sifer_sale_lines(sale_number,product_id,qty,price,discount) VALUES(?,?,?,?,?)`,args:[
+          String(sale.numero),String(l.id),Number(l.qty)||0,Number(l.price)||0,Number(l.disc)||0
+        ]}));
+        if(stmts.length)await db.batch(stmts,'write');
+      }
+    }
     if(type==='products-inventory-snapshot'){
       const products=Array.isArray(body.payload?.products)?body.payload.products:[];
       if(products.length){
