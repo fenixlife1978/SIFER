@@ -79,7 +79,7 @@ clientes:[{id:'CL-001',nombre:'Constructora Central',documento:'J-00000001',tele
 proveedores:[{id:'PV-001',nombre:'Distribuidora Ferretera Nacional',documento:'J-10000001',telefono:'555-0202',email:'ventas@distribuidora.local',direccion:'Zona Industrial',saldo:0}],
 ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7}
 };
-let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false;
+let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
@@ -226,7 +226,10 @@ async function updateBCVRate(silent=false){
     let sourceUsed = bcvSource();
 
     try {
-      const r = await fetch(bcvSource(), { cache: 'no-store' });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const r = await fetch(bcvSource(), { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeout);
       if(r.ok) {
         const data = await r.json();
         rate = Number(data.USD);
@@ -236,7 +239,10 @@ async function updateBCVRate(silent=false){
     } catch(errPrimary) {
       // Intentar fallback si falla el principal
       try {
-        const r2 = await fetch(bcvFallbackSource(), { cache: 'no-store' });
+        const controller2 = new AbortController();
+        const timeout2 = setTimeout(() => controller2.abort(), 8000);
+        const r2 = await fetch(bcvFallbackSource(), { cache: 'no-store', signal: controller2.signal });
+        clearTimeout(timeout2);
         if(r2.ok) {
           const data2 = await r2.json();
           rate = Number(data2?.monitors?.usd?.price || data2?.bcv?.price || 0);
@@ -287,6 +293,7 @@ async function updateBCVRate(silent=false){
 }
 
 function maybeRefreshBCV(){
+  if(bcvRefreshInFlight) return;
   const b=bcvData();
   const todayStr = new Date().toLocaleDateString('en-CA');
   const h = bcvHistory();
@@ -295,7 +302,8 @@ function maybeRefreshBCV(){
 
   // Auto-guardar si no existe la tasa de hoy o si han pasado más de 30 minutos
   if(!b.rate || !hasToday || age > 30 * 60 * 1000) {
-    updateBCVRate(true);
+    bcvRefreshInFlight = true;
+    updateBCVRate(true).finally(() => { bcvRefreshInFlight = false; });
   }
 }
 function navItems(){return [['inicio','🏠 Inicio'],['pos','🛒 Punto de Venta'],['master_catalog','📖 Catálogo Automotriz'],['repuestos','🚗 Repuestos'],['productos','📦 Inventario'],['compras','🛍️ Compras'],['clientes','👤 Clientes'],['proveedores','🏭 Proveedores'],['cxc','💰 CxC'],['cxp','💳 CxP'],['presupuestos','📋 Presupuestos'],['reportes','📊 Reportes'],['caja','🏦 Caja'],['config','⚙️ Configuración']]}
