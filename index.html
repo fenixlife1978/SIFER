@@ -81,7 +81,7 @@ clientes:[{id:'CL-001',nombre:'Constructora Central',documento:'J-00000001',tele
 proveedores:[{id:'PV-001',nombre:'Distribuidora Ferretera Nacional',documento:'J-10000001',telefono:'555-0202',email:'ventas@distribuidora.local',direccion:'Zona Industrial',saldo:0}],
 ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],pedidos:[],usuarios:[{id:'USR-001',nombre:'Administrador',rol:'Administrador',activo:true}],cajas:[{id:'CAJA-01',nombre:'Caja 1',abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1}],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},terminalId:'CAJA-01',usuarioActualId:'USR-001',seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7,pedido:1,usuario:2,caja:2}
 };
-let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false;
+let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false; let activeOrderId=null;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);d.cajas=Array.isArray(d.cajas)&&d.cajas.length?d.cajas:[structuredClone(seed.cajas[0])];d.terminalId=d.terminalId||'CAJA-01';d.usuarioActualId=d.usuarioActualId||'USR-001';d.usuarios=Array.isArray(d.usuarios)&&d.usuarios.length?d.usuarios:structuredClone(seed.usuarios);d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
 function save(reason='db-save'){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,reason).catch(()=>{});}
 window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
@@ -563,8 +563,19 @@ function showTicketModal(v){
  `);
 }
 
-function finishSale(total){
+async function finishSale(total){
   const isReturn=cart.some(l=>l.qty<0),isSale=cart.some(l=>l.qty>0),amount=Math.abs(total);
+  if(activeOrderId && !isReturn && navigator.onLine){
+    try{
+      const check=await fetch('/api/turso-orders',{method:'GET',cache:'no-store'});
+      if(check.ok){
+        const data=await check.json(),remote=(data.orders||[]).find(x=>String(x.id)===String(activeOrderId));
+        if(!remote || String(remote.estado)!=='En caja' || String(remote.claimed_by||'')!==String(usuarioActual().id)){
+          return toast('Este pedido ya no está reservado por este operador.');
+        }
+      }
+    }catch(e){return toast('No se pudo validar el pedido antes de facturar');}
+  }
   if(isReturn&&isSale)return toast('Operación inválida');
   const a1=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),a2=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),applied=a1+a2;
   if(!isReturn&&saleType==='credito'&&applied>0)return toast('Una venta a crédito no puede registrar pago inicial aquí');
@@ -587,8 +598,15 @@ function finishSale(total){
   const num=nextCajaNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
   const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
-  if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else cajaActual().saldo+=paid;
-  save('sale-created');cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
+  if(activeOrderId && !isReturn && navigator.onLine){
+    try{
+      const rr=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'finalize',id:activeOrderId,actorId:usuarioActual().id,cajaId:cajaActual().id,saleNumber:num})});
+      const rd=await rr.json();
+      if(!rr.ok||!rd.ok){db.ventas.pop();db.movimientos.pop();return toast(rd.error||'No se pudo finalizar el pedido en Turso');}
+      const op=db.pedidos.find(x=>x.id===activeOrderId);if(op){op.estado='Facturado';op.saleNumber=num;}
+    }catch(e){db.ventas.pop();db.movimientos.pop();return toast('No se pudo confirmar el pedido en Turso');}
+  }  if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else cajaActual().saldo+=paid;
+  save('sale-created');activeOrderId=null;cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
 }function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
 function productosView(){
   return listPage(
@@ -729,9 +747,16 @@ function guardarPedido(){
  db.pedidos.push({id:'PED-'+String(db.seq.pedido++).padStart(5,'0'),numero:'PED-'+String(db.seq.pedido-1).padStart(5,'0'),fecha:fmt(),clienteId:cid,cliente:cl?.nombre||'Cliente general',operadorId:usuarioActual().id,operador:usuarioActual().nombre,cajaId:cajaActual().id,estado:'Pendiente',total,lineas:[{id:pid,qty:q,price:Number(p.precio||0),disc:0}]});
  save('order-created');closeModal();renderView();toast('Pedido enviado a caja');
 }
-function cobrarPedido(pid){
+async function cobrarPedido(pid){
  const p=(db.pedidos||[]).find(x=>x.id===pid&&x.estado==='Pendiente');if(!p)return toast('Pedido no disponible');
- cart=p.lineas.map(x=>({...x}));saleCustomer=p.clienteId||saleCustomer;saleType='contado';p.estado='En caja';p.cajaId=cajaActual().id;p.enviadoCajaAt=fmt();save();go('pos');setTimeout(()=>checkout(),0);
+ if(navigator.onLine){
+   try{
+     const r=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'claim',id:p.id,actorId:usuarioActual().id,cajaId:cajaActual().id})});
+     const data=await r.json();
+     if(!r.ok||!data.ok)return toast(data.error||'No se pudo tomar el pedido');
+   }catch(e){return toast('No se pudo verificar el pedido en Turso');}
+ }
+ activeOrderId=p.id; cart=p.lineas.map(x=>({...x}));saleCustomer=p.clienteId||saleCustomer;saleType='contado';p.estado='En caja';p.cajaId=cajaActual().id;p.claimedBy=usuarioActual().id;p.claimedAt=new Date().toISOString();p.enviadoCajaAt=fmt();save();go('pos');setTimeout(()=>checkout(),0);
 }
 function usuariosCajasView(){
  return listPage('Usuarios y Cajas','Operadores, cajeros, terminales y numeración independiente.',
@@ -824,6 +849,28 @@ function cajaView(){
     <div class="panel"><div class="panelhead">Movimientos de caja</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice().reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div>`);
 }
 function toggleCaja(){if(cajaActual().abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}cajaActual().abierta=true;cajaActual().apertura=fmt();save('cash-register-upsert');renderView();toast('Caja abierta')}
+async function syncOrdersFromTurso(){
+ if(!navigator.onLine)return;
+ try{
+   const r=await fetch('/api/turso-orders',{cache:'no-store'});
+   if(!r.ok)return;
+   const data=await r.json(); if(!data.ok||!Array.isArray(data.orders))return;
+   let changed=false;
+   const remoteMap=new Map(data.orders.map(x=>[String(x.id),x]));
+   db.pedidos=(db.pedidos||[]).map(local=>{
+     const x=remoteMap.get(String(local.id)); if(!x)return local;
+     let payload={}; try{payload=JSON.parse(x.payload_json||'{}')}catch(e){}
+     const next={...local,...payload,estado:x.estado,cajaId:x.caja_id||local.cajaId,claimedBy:x.claimed_by||null,claimedAt:x.claimed_at||null,updatedAt:x.updated_at||local.updatedAt,saleNumber:payload.saleNumber||local.saleNumber};
+     if(JSON.stringify(next)!==JSON.stringify(local)){changed=true;return next} return local;
+   });
+   if(changed){
+     localStorage.setItem(KEY,JSON.stringify(db));
+     if(view==='pedidos')renderView();
+   }
+ }catch(e){}
+}
+setInterval(syncOrdersFromTurso,7000);
+window.addEventListener('online',syncOrdersFromTurso);
 function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
 function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
 function resetData(){
