@@ -5,6 +5,8 @@ export default async function handler(req:any,res:any){
   const url=process.env.TURSO_DATABASE_URL, authToken=process.env.TURSO_AUTH_TOKEN;
   if(!url||!authToken) return res.status(503).json({ok:false,configured:false,error:'Turso no configurado'});
   const body=req.body||{};
+  // La primera etapa solo registra operaciones de forma idempotente. La aplicación de
+  // cada dominio (ventas, inventario, caja) se habilitará después de definir su esquema. 
   const operationId=String(body.operationId||'');
   const type=String(body.type||'');
   if(!operationId||!type) return res.status(400).json({ok:false,error:'operationId y type son obligatorios'});
