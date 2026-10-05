@@ -781,7 +781,7 @@
     // El masterId contiene el índice original. Recuperarlo directamente evita
     // volver a recorrer hasta 2.450.000 registros y congelar el hilo principal.
     if (!foundItem) {
-      const match = /^MST-(?:LUB|AUT)-(\\d+)$/.exec(String(masterId || ''));
+      const match = /^MST-(?:LUB|AUT)-(\d+)$/.exec(String(masterId || ''));
       if (match) {
         const index = Number(match[1]) - 1;
         if (Number.isInteger(index) && index >= 0 && index < TOTAL_VIRTUAL_CATALOG_COUNT) {
