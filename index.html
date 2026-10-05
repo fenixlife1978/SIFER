@@ -455,6 +455,19 @@ function returnCart(){
   renderView();toast('Artículo marcado para devolución. Se solicitará la venta original al cobrar.');
 }
 function cancelSale(){if(cart.length&&confirm('¿Desea cancelar la venta actual?')){cart=[];selected=null;renderView()}}
+async function releaseActiveOrder(){
+  if(!activeOrderId)return closeModal();
+  if(navigator.onLine){
+    try{
+      const r=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'release',id:activeOrderId,actorId:usuarioActual().id,cajaId:cajaActual().id})});
+      const data=await r.json();
+      if(!r.ok||!data.ok)return toast(data.error||'No se pudo liberar la reserva');
+    }catch(e){return toast('No se pudo liberar la reserva en Turso');}
+  }
+  const p=(db.pedidos||[]).find(x=>x.id===activeOrderId);
+  if(p){p.estado='Pendiente';p.claimedBy=null;p.claimedAt=null;save('order-released');}
+  activeOrderId=null;cart=[];closeModal();renderView();toast('Pedido liberado y stock reservado restaurado');
+}
 function checkout(){
   if(!cart.length)return toast('No hay artículos');
   if(!cajaActual().abierta)return toast('Abra la caja antes de cobrar');
@@ -474,7 +487,7 @@ function checkout(){
     <div class="field"><label>Monto 2 USD</label><input id="payAmount2" type="number" min="0" step=".01" value="0" oninput="updatePaymentTotals(${amount})"></div>
     <div class="field"><label>Total aplicado</label><input id="payApplied" readonly value="${money(defaultPay)}"></div>
     <div class="field"><label>Faltante / Cambio</label><input id="payChange" readonly value="${money(Math.max(0,amount-defaultPay))}"></div>
-  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
+  </div>`,`<button class="btn" onclick="activeOrderId?releaseActiveOrder():closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
 }
 function updatePaymentTotals(total){
   const a=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),b=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),sum=a+b;
