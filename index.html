@@ -84,6 +84,7 @@ ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:
 let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
 function save(){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,'db-save').catch(()=>{});}
+window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
 function id(prefix,key){let n=db.seq[key]++;return prefix+'-'+String(n).padStart(5,'0')}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),1900)}
