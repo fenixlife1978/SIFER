@@ -570,14 +570,14 @@ function repuestosView(){
   </div>
 
   <div class="cards">
-    <div class="card">Repuestos en Catálogo<b>${repuestos.length}</b><span>SKUs únicos locales</span></div>
+    <div class="card">Repuestos registrados<b>${repuestos.length}</b><span>existencias gestionadas aquí</span></div>
     <div class="card">Stock Físico Local<b>${totalStock}</b><span>unidades en almacén</span></div>
     <div class="card">Referencias Cruzadas<b>${totalRefCruzadas}</b><span>códigos y marcas cruzadas</span></div>
     <div class="card">Fitments Vehiculares<b>${totalFitments}</b><span>modelos de autos mapeados</span></div>
   </div>
 
   <div style="display:flex;gap:4px;border-bottom:1px solid #aaa;margin-bottom:10px;background:#ededed;padding:4px 6px">
-    <button class="btn ${repuestoSubTab==='catalogo'?'primary':''}" onclick="repuestoSubTab='catalogo';renderView()">📦 Catálogo e Inventario</button>
+    <button class="btn ${repuestoSubTab==='catalogo'?'primary':''}" onclick="repuestoSubTab='catalogo';renderView()">📦 Repuestos registrados</button>
     <button class="btn ${repuestoSubTab==='buscador_vehiculo'?'primary':''}" onclick="repuestoSubTab='buscador_vehiculo';renderView()">🚘 Buscador por Vehículo (Fitment)</button>
     <button class="btn ${repuestoSubTab==='referencias_cruzadas'?'primary':''}" onclick="repuestoSubTab='referencias_cruzadas';renderView()">🔗 Matriz de Referencias Cruzadas</button>
   </div>
@@ -618,7 +618,7 @@ function renderCatalogTab(){
 
   <div class="panel">
     <div class="panelhead" style="display:flex;justify-content:space-between;align-items:center">
-      <span>Listado Técnico de Repuestos Automotrices (Búsqueda por palabras claves en nombre, SKU, OEM, marcas y vehículos)</span>
+      <span>Listado de Repuestos Registrados (Búsqueda por palabras claves en nombre, SKU, OEM, marcas y vehículos)</span>
       <span style="font-size:11px;color:#555">Tasa BCV de cálculo: <b>${fmtRate(rate)} Bs/USD</b></span>
     </div>
     <div class="panelbody" style="padding:0;overflow:auto">
