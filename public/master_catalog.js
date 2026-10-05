@@ -366,6 +366,112 @@
     { nameTpl: 'Manilla Exterior de Puerta Delantera / Trasera en ABS Negro / Cromado', cat: 'Carrocería y Mandos', cost: 6.80, margen: 45, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '69210', u: 'Unidad' },
     { nameTpl: 'Juego de Escobillas Limpiaparabrisas de Silicona Aerodinámicas Universales (Par)', cat: 'Carrocería y Mandos', cost: 5.50, margen: 50, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'WIPER-PAIR', u: 'Par (2 escobillas)' },
 
+    // 20. NUEVA COBERTURA: ENCENDIDO, SENSORES, DISTRIBUCIÓN, MOTOR INTERNO Y ELÉCTRICO
+    { nameTpl: 'Juego de Cables de Bujías de Alta Tensión Premium — 4 / 6 / 8 cilindros', cat: 'Cables de Bujías', cost: 18.00, margen: 40, img: '/images/rep_bujia_iridio_1791152658933.jpg', oemPref: 'WIRE-SET', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Cables de Bujías Silicona Alta Temperatura con Terminales', cat: 'Cables de Bujías', cost: 14.50, margen: 45, img: '/images/rep_bujia_iridio_1791152658933.jpg', oemPref: 'WIRE-SIL', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Cables de Bujías para Motores 4 Cilindros', cat: 'Cables de Bujías', cost: 12.50, margen: 45, img: '/images/rep_bujia_iridio_1791152658933.jpg', oemPref: 'WIRE-4CYL', u: 'Juego (4 cables)' },
+
+    // Sensores: cobertura amplia por aplicación vehicular
+    { nameTpl: 'Sensor CKP de Posición de Cigüeñal', cat: 'Sensores', cost: 9.50, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-CKP', u: 'Unidad' },
+    { nameTpl: 'Sensor CMP de Posición de Árbol de Levas', cat: 'Sensores', cost: 11.00, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-CMP', u: 'Unidad' },
+    { nameTpl: 'Sensor de Oxígeno O2 / Sonda Lambda 1, 2, 3 y 4 Cables', cat: 'Sensores', cost: 18.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-O2', u: 'Unidad' },
+    { nameTpl: 'Sensor MAP de Presión Absoluta del Múltiple', cat: 'Sensores', cost: 13.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-MAP', u: 'Unidad' },
+    { nameTpl: 'Sensor MAF de Flujo de Aire / Caudalímetro', cat: 'Sensores', cost: 28.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-MAF', u: 'Unidad' },
+    { nameTpl: 'Sensor TPS de Posición de Mariposa / Acelerador', cat: 'Sensores', cost: 12.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-TPS', u: 'Unidad' },
+    { nameTpl: 'Sensor ECT de Temperatura de Refrigerante', cat: 'Sensores', cost: 5.50, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-ECT', u: 'Unidad' },
+    { nameTpl: 'Sensor de Presión de Aceite / Bulbo de Aceite', cat: 'Sensores', cost: 5.00, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-OIL', u: 'Unidad' },
+    { nameTpl: 'Sensor de Detonación / Knock Sensor', cat: 'Sensores', cost: 14.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-KNOCK', u: 'Unidad' },
+    { nameTpl: 'Sensor de Velocidad VSS de Transmisión', cat: 'Sensores', cost: 10.50, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-VSS', u: 'Unidad' },
+    { nameTpl: 'Sensor ABS de Velocidad de Rueda Delantero / Trasero', cat: 'Sensores', cost: 12.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-ABS', u: 'Unidad' },
+    { nameTpl: 'Sensor de Presión de Riel / Combustible', cat: 'Sensores', cost: 25.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-FUEL', u: 'Unidad' },
+    { nameTpl: 'Sensor de Temperatura de Aire de Admisión IAT', cat: 'Sensores', cost: 7.50, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-IAT', u: 'Unidad' },
+    { nameTpl: 'Sensor de Presión de Aire de Turbo / Boost', cat: 'Sensores', cost: 22.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-BOOST', u: 'Unidad' },
+    { nameTpl: 'Sensor de Posición de Pedal / APP y Acelerador Electrónico', cat: 'Sensores', cost: 24.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-APP', u: 'Unidad' },
+    { nameTpl: 'Sensor de Presión de Refrigerante A/C', cat: 'Sensores', cost: 13.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-AC', u: 'Unidad' },
+    { nameTpl: 'Sensor de Nivel de Refrigerante / Depósito', cat: 'Sensores', cost: 10.00, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SEN-LEVEL', u: 'Unidad' },
+
+    // Empacaduras y sellos de motor
+    { nameTpl: 'Juego de Empacaduras Completo de Motor / Overhaul', cat: 'Empacaduras de Motor', cost: 28.00, margen: 35, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-OVER', u: 'Juego Completo' },
+    { nameTpl: 'Empacadura de Culata / Cámara de Combustión', cat: 'Empacaduras de Motor', cost: 12.00, margen: 40, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-HEAD', u: 'Unidad' },
+    { nameTpl: 'Juego de Empacaduras de Tapa de Válvulas', cat: 'Empacaduras de Motor', cost: 7.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-COVER', u: 'Juego' },
+    { nameTpl: 'Juego de Retenes de Válvulas y Sellos de Motor', cat: 'Empacaduras de Motor', cost: 6.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-SEAL', u: 'Juego' },
+    { nameTpl: 'Empacadura de Múltiple de Admisión / Escape', cat: 'Empacaduras de Motor', cost: 5.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-MAN', u: 'Unidad' },
+    { nameTpl: 'Empacadura de Bomba de Agua / Termostato / Carcasa', cat: 'Empacaduras de Motor', cost: 3.50, margen: 50, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'GSK-WP', u: 'Unidad' },
+
+    // Bombas de agua
+    { nameTpl: 'Bomba de Agua de Motor con Turbina Metálica y Empacadura', cat: 'Bombas de Agua', cost: 19.50, margen: 35, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'WAT-PUMP', u: 'Unidad' },
+    { nameTpl: 'Bomba de Agua Reforzada de Alta Durabilidad con Rodamiento', cat: 'Bombas de Agua', cost: 24.00, margen: 35, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'WAT-HD', u: 'Unidad' },
+    { nameTpl: 'Kit Bomba de Agua + Correa / Cadena de Tiempo + Tensor', cat: 'Bombas de Agua', cost: 58.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'WAT-KIT', u: 'Kit Completo' },
+
+    // Motor interno con medidas
+    { nameTpl: 'Juego de Anillos de Motor — Medida STD', cat: 'Anillos de Motor', cost: 18.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'RING-STD', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Anillos de Motor — Medida 0.25 mm', cat: 'Anillos de Motor', cost: 18.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'RING-025', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Anillos de Motor — Medida 0.50 mm', cat: 'Anillos de Motor', cost: 19.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'RING-050', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Anillos de Motor — Medida 0.75 mm', cat: 'Anillos de Motor', cost: 19.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'RING-075', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Anillos de Motor — Medida 1.00 mm', cat: 'Anillos de Motor', cost: 20.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'RING-100', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Conchas de Biela — STD', cat: 'Conchas de Biela y Bancada', cost: 14.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'ROD-STD', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Biela — 0.25 mm', cat: 'Conchas de Biela y Bancada', cost: 14.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'ROD-025', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Biela — 0.50 mm', cat: 'Conchas de Biela y Bancada', cost: 15.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'ROD-050', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Biela — 0.75 mm', cat: 'Conchas de Biela y Bancada', cost: 15.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'ROD-075', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Biela — 1.00 mm', cat: 'Conchas de Biela y Bancada', cost: 16.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'ROD-100', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Bancada — STD', cat: 'Conchas de Biela y Bancada', cost: 16.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MAIN-STD', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Bancada — 0.25 mm', cat: 'Conchas de Biela y Bancada', cost: 17.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MAIN-025', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Bancada — 0.50 mm', cat: 'Conchas de Biela y Bancada', cost: 17.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MAIN-050', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Bancada — 0.75 mm', cat: 'Conchas de Biela y Bancada', cost: 18.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MAIN-075', u: 'Juego' },
+    { nameTpl: 'Juego de Conchas de Bancada — 1.00 mm', cat: 'Conchas de Biela y Bancada', cost: 18.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MAIN-100', u: 'Juego' },
+
+    // Cerraduras y mandos
+    { nameTpl: 'Cilindro / Cerradura de Puerta Delantera Izquierda', cat: 'Cerraduras y Mandos', cost: 12.00, margen: 45, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'LOCK-FL', u: 'Unidad' },
+    { nameTpl: 'Cilindro / Cerradura de Puerta Delantera Derecha', cat: 'Cerraduras y Mandos', cost: 12.00, margen: 45, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'LOCK-FR', u: 'Unidad' },
+    { nameTpl: 'Cerradura / Actuador de Puerta Eléctrico', cat: 'Cerraduras y Mandos', cost: 18.00, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'LOCK-ACT', u: 'Unidad' },
+    { nameTpl: 'Cerradura de Maleta / Portón Trasero con Actuador', cat: 'Cerraduras y Mandos', cost: 16.00, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'LOCK-GATE', u: 'Unidad' },
+    { nameTpl: 'Kit de Cerraduras de Puertas + Maleta + Switchera con Llaves', cat: 'Cerraduras y Mandos', cost: 32.00, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'LOCK-KIT', u: 'Kit' },
+
+    // Solenoides
+    { nameTpl: 'Solenoide VVT / Válvula de Control de Aceite del Árbol de Levas', cat: 'Solenoides', cost: 18.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SOL-VVT', u: 'Unidad' },
+    { nameTpl: 'Solenoide de Arranque / Automático de Motor de Arranque', cat: 'Solenoides', cost: 16.00, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'SOL-START', u: 'Unidad' },
+    { nameTpl: 'Solenoide de Purga EVAP / Canister', cat: 'Solenoides', cost: 11.00, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SOL-EVAP', u: 'Unidad' },
+    { nameTpl: 'Solenoide de Transmisión Automática / Shift', cat: 'Solenoides', cost: 24.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'SOL-TRANS', u: 'Unidad' },
+    { nameTpl: 'Solenoide de Cierre Centralizado / Seguro de Puerta', cat: 'Solenoides', cost: 14.00, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'SOL-LOCK', u: 'Unidad' },
+
+    // Conectores, terminales y reparación de cableado
+    { nameTpl: 'Kit de Conectores Automotrices 1 a 6 Pines con Terminales', cat: 'Conectores y Terminales', cost: 8.00, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'CON-SET', u: 'Kit' },
+    { nameTpl: 'Conector de Sensor Automotriz con Terminales y Traba', cat: 'Conectores y Terminales', cost: 2.50, margen: 55, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'CON-SEN', u: 'Unidad' },
+    { nameTpl: 'Conector de Inyector / Bobina / Solenoide con Terminales', cat: 'Conectores y Terminales', cost: 2.80, margen: 55, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'CON-INJ', u: 'Unidad' },
+    { nameTpl: 'Conector de Faro / Bombillo H4 H7 H11 9005 9006', cat: 'Conectores y Terminales', cost: 2.20, margen: 55, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'CON-LAMP', u: 'Unidad' },
+    { nameTpl: 'Terminales Eléctricos Automotrices, Pigtails y Reparación de Arnés', cat: 'Conectores y Terminales', cost: 6.50, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'CON-PIG', u: 'Kit' },
+
+    // Distribución: cadenas, tensores y kits
+    { nameTpl: 'Cadena de Tiempo / Distribución Simple o Doble', cat: 'Distribución', cost: 28.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'TIM-CHAIN', u: 'Unidad' },
+    { nameTpl: 'Tensor de Cadena de Tiempo Hidráulico / Mecánico', cat: 'Distribución', cost: 18.00, margen: 40, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'TIM-TENS', u: 'Unidad' },
+    { nameTpl: 'Patines / Guías de Cadena de Tiempo', cat: 'Distribución', cost: 14.00, margen: 40, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'TIM-GUIDE', u: 'Juego' },
+    { nameTpl: 'Kit de Tiempo con Cadena + Tensores + Guías + Engranajes', cat: 'Distribución', cost: 68.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'TIM-KIT-CHAIN', u: 'Kit Completo' },
+    { nameTpl: 'Kit de Tiempo con Correa + Tensor + Rodamiento Guía', cat: 'Distribución', cost: 32.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'TIM-KIT-BELT', u: 'Kit Completo' },
+
+    // Frenos y desgaste
+    { nameTpl: 'Juego de Pastillas de Freno Delanteras Cerámicas / Semimetálicas', cat: 'Frenos y Fricción', cost: 14.50, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRK-PAD-F', u: 'Juego' },
+    { nameTpl: 'Juego de Pastillas de Freno Traseras Cerámicas / Semimetálicas', cat: 'Frenos y Fricción', cost: 12.50, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRK-PAD-R', u: 'Juego' },
+    { nameTpl: 'Disco de Freno Delantero / Trasero', cat: 'Frenos y Fricción', cost: 22.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRK-DISC', u: 'Unidad' },
+    { nameTpl: 'Tambor de Freno Trasero', cat: 'Frenos y Fricción', cost: 19.00, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRK-DRUM', u: 'Unidad' },
+    { nameTpl: 'Kit de Reparación de Caliper / Mordaza con Pistón y Sellos', cat: 'Frenos y Fricción', cost: 9.50, margen: 45, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRK-CAL-KIT', u: 'Kit' },
+
+    // Tripoides y juntas homocinéticas
+    { nameTpl: 'Punta de Tripoide / Junta Homocinética Lado Rueda', cat: 'Tripoides y Homocinéticas', cost: 17.50, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-JOINT', u: 'Unidad' },
+    { nameTpl: 'Tripoide Interno / Copa Lado Caja', cat: 'Tripoides y Homocinéticas', cost: 22.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-INNER', u: 'Unidad' },
+    { nameTpl: 'Triceta / Trípode Interior con Rodillos', cat: 'Tripoides y Homocinéticas', cost: 16.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-TRI', u: 'Unidad' },
+    { nameTpl: 'Goma Guardapolvo de Punta de Tripoide con Abrazaderas y Grasa', cat: 'Tripoides y Homocinéticas', cost: 5.20, margen: 45, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-BOOT', u: 'Kit' },
+    { nameTpl: 'Copa de Tripoide / Junta Interna para Caja de Velocidades', cat: 'Tripoides y Homocinéticas', cost: 20.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-CUP', u: 'Unidad' },
+
+    // Aditivos y químicos de mantenimiento
+    { nameTpl: 'Aditivo Limpia Inyectores para Gasolina', cat: 'Aditivos y Químicos', cost: 4.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-INJ', u: 'Frasco' },
+    { nameTpl: 'Aditivo Limpia Inyectores para Diesel', cat: 'Aditivos y Químicos', cost: 5.00, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-DIESEL', u: 'Frasco' },
+    { nameTpl: 'Aditivo Elevador de Octanaje / Combustible', cat: 'Aditivos y Químicos', cost: 5.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-OCT', u: 'Frasco' },
+    { nameTpl: 'Aditivo Antihumo / Restaurador de Compresión', cat: 'Aditivos y Químicos', cost: 6.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-SMOKE', u: 'Frasco' },
+    { nameTpl: 'Aditivo Limpia Radiador / Sistema de Refrigeración', cat: 'Aditivos y Químicos', cost: 5.00, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-RAD', u: 'Frasco' },
+    { nameTpl: 'Aditivo para Transmisión Automática / Tratamiento ATF', cat: 'Aditivos y Químicos', cost: 7.50, margen: 40, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-ATF', u: 'Frasco' },
+    { nameTpl: 'Aditivo Antifricción / Tratamiento de Aceite de Motor', cat: 'Aditivos y Químicos', cost: 7.50, margen: 40, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-OIL', u: 'Frasco' },
+    { nameTpl: 'Sellador de Fugas de Radiador / Refrigerante', cat: 'Aditivos y Químicos', cost: 4.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'ADD-STOP', u: 'Frasco' },
+
     // 19. FILTROS DE MANTENIMIENTO
     { nameTpl: 'Filtro de Aceite de Motor Blindado con Válvula Antidrenaje de Silicona', cat: 'Filtros y Mantenimiento', cost: 3.20, margen: 45, img: '/images/rep_filtro_aceite_1791152641120.jpg', oemPref: '90915', u: 'Unidad' },
     { nameTpl: 'Filtro de Aire Motor Tipo Panel de Microfibras de Celulosa', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '17801', u: 'Unidad' },
@@ -537,6 +643,30 @@
           matchesCat = item.categoria === 'Relex y Relés' || item.nombre.toLowerCase().includes('relex') || item.nombre.toLowerCase().includes('rele') || item.nombre.toLowerCase().includes('relay');
         } else if (category === 'Mangueras') {
           matchesCat = item.categoria === 'Mangueras' || item.nombre.toLowerCase().includes('manguera');
+        } else if (category === 'Cables de Bujías') {
+          matchesCat = item.categoria === 'Cables de Bujías' || item.nombre.toLowerCase().includes('cables de buj');
+        } else if (category === 'Sensores') {
+          matchesCat = item.categoria === 'Sensores' || item.nombre.toLowerCase().includes('sensor');
+        } else if (category === 'Empacaduras de Motor') {
+          matchesCat = item.categoria === 'Empacaduras de Motor' || item.nombre.toLowerCase().includes('empacadura');
+        } else if (category === 'Bombas de Agua') {
+          matchesCat = item.categoria === 'Bombas de Agua' || item.nombre.toLowerCase().includes('bomba de agua');
+        } else if (category === 'Anillos de Motor') {
+          matchesCat = item.categoria === 'Anillos de Motor' || item.nombre.toLowerCase().includes('anillos');
+        } else if (category === 'Conchas de Biela y Bancada') {
+          matchesCat = item.categoria === 'Conchas de Biela y Bancada' || item.nombre.toLowerCase().includes('conchas de');
+        } else if (category === 'Cerraduras y Mandos') {
+          matchesCat = item.categoria === 'Cerraduras y Mandos' || item.nombre.toLowerCase().includes('cerradura');
+        } else if (category === 'Solenoides') {
+          matchesCat = item.categoria === 'Solenoides' || item.nombre.toLowerCase().includes('solenoide');
+        } else if (category === 'Conectores y Terminales') {
+          matchesCat = item.categoria === 'Conectores y Terminales' || item.nombre.toLowerCase().includes('conector');
+        } else if (category === 'Distribución') {
+          matchesCat = item.categoria === 'Distribución' || item.nombre.toLowerCase().includes('cadena de tiempo') || item.nombre.toLowerCase().includes('kit de tiempo') || item.nombre.toLowerCase().includes('tensor');
+        } else if (category === 'Tripoides y Homocinéticas') {
+          matchesCat = item.categoria === 'Tripoides y Homocinéticas' || item.nombre.toLowerCase().includes('tripoide') || item.nombre.toLowerCase().includes('homocin');
+        } else if (category === 'Aditivos y Químicos') {
+          matchesCat = item.categoria === 'Aditivos y Químicos' || item.nombre.toLowerCase().includes('aditivo');
         } else {
           matchesCat = item.categoria.toLowerCase().includes(catLow) || item.subcategoria.toLowerCase().includes(catLow);
         }
@@ -615,6 +745,18 @@
   const MASTER_CATEGORY_TABS = [
     'Todos',
     'Bujes y Gomas',
+    'Cables de Bujías',
+    'Sensores',
+    'Empacaduras de Motor',
+    'Bombas de Agua',
+    'Anillos de Motor',
+    'Conchas de Biela y Bancada',
+    'Cerraduras y Mandos',
+    'Solenoides',
+    'Conectores y Terminales',
+    'Distribución',
+    'Tripoides y Homocinéticas',
+    'Aditivos y Químicos',
     'Lápiz y Bieletas',
     'Rodamientos',
     'Baterías',
