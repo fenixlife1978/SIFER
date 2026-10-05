@@ -87,7 +87,7 @@ export default async function handler(req:any,res:any){
         const now=new Date().toISOString();
         const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({
           sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at) VALUES(?,?,?,?,?,?)`,
-          args:[operationId,String(sale.numero),String(l.id),Number(l.qty)||0,String(sale.total<0?'return':'sale'),now]
+          args:[operationId,String(sale.numero),String(l.id),-(Number(l.qty)||0),String(sale.total<0?'return':'sale'),now]
         }));
         if(stmts.length) await db.batch(stmts,'write');
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_order_reservations(
