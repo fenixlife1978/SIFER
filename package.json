@@ -21,7 +21,8 @@
     "express": "^4.21.2",
     "dotenv": "^17.2.3",
     "motion": "^12.23.24",
-    "@libsql/client": "^0.15.15"
+    "@libsql/client": "^0.15.15",
+    "ai": "^6.0.34"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
