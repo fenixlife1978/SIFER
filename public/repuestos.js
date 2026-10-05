@@ -572,9 +572,9 @@ const DISTRIBUIDORES_SEED = [
     id: 'DST-001',
     nombre: 'AutoDist B2B Network',
     endpoint: 'https://api.autodist-network.com/v2/catalog/sync',
-    apiKey: 'ak_live_89437bcv99',
+    apiKey: '',
     frecuencia: 'En tiempo real (Webhook + Polling)',
-    estado: 'Conectado',
+    estado: 'No configurado',
     ultimoSync: 'Hace 5 minutos',
     latencia: '42 ms',
     itemsDisponibles: 18450
@@ -583,7 +583,7 @@ const DISTRIBUIDORES_SEED = [
     id: 'DST-002',
     nombre: 'Global Parts Cloud',
     endpoint: 'https://cloudparts.global/api/v1/stock-feed',
-    apiKey: 'gpc_sec_7721831a',
+    apiKey: '',
     frecuencia: 'Cada 30 minutos',
     estado: 'Conectado',
     ultimoSync: 'Hace 20 minutos',
@@ -594,7 +594,7 @@ const DISTRIBUIDORES_SEED = [
     id: 'DST-003',
     nombre: 'TecDoc Exchange Feed',
     endpoint: 'https://tecdoc.sync-services.io/feed',
-    apiKey: 'tec_b2b_90114f',
+    apiKey: '',
     frecuencia: 'Diaria / Manual',
     estado: 'Conectado',
     ultimoSync: 'Hoy 08:30 AM',
@@ -1304,55 +1304,19 @@ function saveRepuesto(id){
 
 // Sincronización en Vivo B2B con Distribuidores
 function syncDistribuidoresModal(){
-  openModal('Sincronización en Tiempo Real B2B', `
-    <div style="padding:10px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <div style="font-size:24px">⚡</div>
-        <div>
-          <b>Sincronizador B2B de Autopartes en Tiempo Real</b>
-          <div style="font-size:11px;color:#555">Consultando catálogos remotos, stock de almacenes externos y referencias cruzadas.</div>
-        </div>
-      </div>
-      
-      <div id="syncProgressArea" style="background:#f4f4f4;border:1px solid #ccc;padding:10px;height:160px;overflow:auto;font-family:monospace;font-size:11px;line-height:1.5">
-        <div style="color:#0b4f85">▶ Conectando con AutoDist B2B Network API... OK (42ms)</div>
-        <div style="color:#0b4f85">▶ Conectando con Global Parts Cloud Network... OK (68ms)</div>
-        <div style="color:#0b4f85">▶ Verificando catálogo maestro TecDoc (+900.000 SKUs)... OK</div>
-        <div>✔ Comparando repuestos locales con catálogo nacional e importado...</div>
-        <div>✔ Ajustando stock externo en tiempo real (+860 unidades disponibles para despacho inmediato).</div>
-        <div style="color:#0a6839;font-weight:bold">✔ ¡Sincronización completada con éxito!</div>
-      </div>
+  const distribs=getDistribuidores();
+  openModal('Integraciones B2B de Repuestos',`<div style="padding:10px">
+    <div style="padding:10px;background:#fff8e6;border:1px solid #e6c36a;margin-bottom:10px;font-size:11px">
+      <b>Integraciones no conectadas.</b> Este POS no marcará un distribuidor como sincronizado hasta recibir una respuesta real de su API/FEED. Las conexiones mostradas son configuraciones pendientes.
     </div>
-  `, `
-    <button class="btn primary" onclick="finishSyncB2B()">Aceptar y Actualizar</button>
-  `);
+    <table><thead><tr><th>Distribuidor</th><th>Endpoint</th><th>Estado</th></tr></thead><tbody>
+    ${distribs.map(d=>`<tr><td>${esc(d.nombre)}</td><td style="font-size:9px;word-break:break-all">${esc(d.endpoint)}</td><td><span class="badge warn">No configurado</span></td></tr>`).join('')}
+    </tbody></table>
+  </div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);
 }
-
-function finishSyncB2B(){
-  const distribs = getDistribuidores();
-  distribs.forEach(d => {
-    d.ultimoSync = 'Justo ahora (' + fmt() + ')';
-    d.estado = 'Conectado';
-  });
-  save();
-  closeModal();
-  renderView();
-  toast('Bases de datos de distribuidores sincronizadas en tiempo real');
-}
-
-function testDistributorPing(id){
-  toast('Ping exitoso con servidor del distribuidor: 38ms');
-}
-
-function syncSingleDistributor(id){
-  const d = getDistribuidores().find(x => x.id === id);
-  if (d) {
-    d.ultimoSync = 'Justo ahora';
-    save();
-    renderView();
-    toast('Distribuidor ' + d.nombre + ' sincronizado');
-  }
-}
+function finishSyncB2B(){toast('No hay APIs B2B configuradas; no se simuló ninguna sincronización');}
+function testDistributorPing(id){toast('Ping no ejecutado: API del distribuidor no configurada');}
+function syncSingleDistributor(id){toast('Sincronización no ejecutada: API del distribuidor no configurada');}
 
 // Cargar y vender repuesto en POS
 function venderRepuestoEnPOS(id){
