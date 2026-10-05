@@ -814,7 +814,7 @@ function executeCorteZ(){
   const r=cajaResumen(),now=new Date(),numero=nextZNumber();
   cajaActual().cortes=cajaActual().cortes||[];
   cajaActual().cortes.push({numero,fecha:fmt(),saldoFinal:cajaActual().saldo,ventasContado:r.contado,cobros:r.cobros,devoluciones:r.devol,ventasCredito:r.credito});
-  cajaActual().ultimoCorteAt=now.toISOString();cajaActual().abierta=false;cajaActual().apertura=null;save();closeModal();renderView();toast(numero+' ejecutado. Caja cerrada.');
+  cajaActual().ultimoCorteAt=now.toISOString();cajaActual().abierta=false;cajaActual().apertura=null;save('cash-register-upsert');closeModal();renderView();toast(numero+' ejecutado. Caja cerrada.');
 }
 function cajaView(){
   return listPage('Caja y Finanzas','Apertura, movimientos y cortes X/Z',
@@ -823,7 +823,7 @@ function cajaView(){
     <div class="panel"><div class="panelhead">Historial de Cortes Z</div><div class="panelbody"><table><thead><tr><th>Corte</th><th>Fecha</th><th>Ventas contado</th><th>Cobros</th><th>Devoluciones</th><th>Saldo final</th></tr></thead><tbody>${(cajaActual().cortes||[]).slice().reverse().map(z=>`<tr><td><b>${z.numero}</b></td><td>${z.fecha}</td><td>${money(z.ventasContado)}</td><td>${money(z.cobros)}</td><td>${money(z.devoluciones)}</td><td>${money(z.saldoFinal)}</td></tr>`).join('')||'<tr><td colspan="6">No hay cortes Z.</td></tr>'}</tbody></table></div></div>
     <div class="panel"><div class="panelhead">Movimientos de caja</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice().reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div>`);
 }
-function toggleCaja(){if(cajaActual().abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}cajaActual().abierta=true;cajaActual().apertura=fmt();save();renderView();toast('Caja abierta')}
+function toggleCaja(){if(cajaActual().abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}cajaActual().abierta=true;cajaActual().apertura=fmt();save('cash-register-upsert');renderView();toast('Caja abierta')}
 function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
 function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
 function resetData(){
