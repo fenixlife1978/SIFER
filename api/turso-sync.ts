@@ -43,6 +43,22 @@ export default async function handler(req:any,res:any){
       // Las compras se conservan como operación de sincronización hasta completar
       // el esquema de CxP/proveedores; no se aplica aún para evitar doble entrada.
     }
+    if(type==='sale-created'){
+      const sale=body.payload?.sale;
+      const lines=Array.isArray(sale?.lineas)?sale.lineas:[];
+      if(sale?.numero){
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory_ledger (
+          operation_id TEXT NOT NULL,documento TEXT NOT NULL,product_id TEXT NOT NULL,qty_delta REAL NOT NULL,
+          reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id)
+        )`,args:[]});
+        const now=new Date().toISOString();
+        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({
+          sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at) VALUES(?,?,?,?,?,?)`,
+          args:[operationId,String(sale.numero),String(l.id),Number(l.qty)||0,String(sale.total<0?'return':'sale'),now]
+        }));
+        if(stmts.length) await db.batch(stmts,'write');
+      }
+    }
     if(type==='products-inventory-snapshot'){
       const products=Array.isArray(body.payload?.products)?body.payload.products:[];
       if(products.length){
