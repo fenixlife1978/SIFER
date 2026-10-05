@@ -472,7 +472,7 @@ function updatePaymentTotals(total){
    <div><b>Ticket N°:</b> ${esc(v.numero)}</div>
    <div><b>Fecha:</b> ${esc(v.fecha)}</div>
    <div><b>Cliente:</b> ${esc(v.cliente||'Cliente general')}</div>
-   <div><b>Condición:</b> ${esc(v.tipo==='credito'?'Crédito':'Contado')} · <b>Pago:</b> ${esc(v.metodo||'Efectivo')}</div>
+   <div><b>Condición:</b> ${esc(v.tipo==='credito'?'Crédito':v.tipo==='devolucion'?'Devolución':'Contado')} · <b>Pago:</b> ${esc(v.metodo||'Efectivo')}</div>${(v.pagos||[]).map(p=>`<div style="display:flex;justify-content:space-between"><span>${esc(p.metodo)}:</span><span>${money(p.monto)}</span></div>`).join('')}
  </div>
  <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">
    <thead>
