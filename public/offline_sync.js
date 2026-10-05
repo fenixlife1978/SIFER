@@ -31,7 +31,12 @@
     return tx(STATE_STORE,'readwrite',s=>s.put({savedAt:new Date().toISOString(),state:lastSnapshot},'current'));
   }
   function loadState(){
-    return tx(STATE_STORE,'readonly',s=>{const r=s.get('current');r.onsuccess=()=>{};return r;}).then(()=>null);
+    return open().then(db=>new Promise(resolve=>{
+      if(!db){resolve(null);return}
+      const t=db.transaction(STATE_STORE,'readonly'),r=t.objectStore(STATE_STORE).get('current');
+      r.onsuccess=()=>resolve(r.result?.state?clone(r.result.state):null);
+      r.onerror=()=>resolve(null);
+    }));
   }
   function enqueue(type,payload){
     const operationId=(global.crypto&&crypto.randomUUID)?crypto.randomUUID():('op-'+Date.now()+'-'+Math.random().toString(36).slice(2));
