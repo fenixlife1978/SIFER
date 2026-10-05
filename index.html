@@ -87,8 +87,19 @@ function save(reason='db-save'){localStorage.setItem(KEY,JSON.stringify(db)); if
 window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
 function cajaActual(){if(!Array.isArray(db.cajas)||!db.cajas.length)db.cajas=structuredClone(seed.cajas);let c=db.cajas.find(x=>x.id===db.terminalId);if(!c){c=structuredClone(db.cajas[0]);db.terminalId=c.id}return c}
 function usuarioActual(){return (db.usuarios||[]).find(x=>x.id===db.usuarioActualId)||db.usuarios?.[0]||{nombre:'Administrador',rol:'Administrador'}}
-function nextCajaNumber(kind){const c=cajaActual();if(kind==='DEV')return 'DEV-'+String(c.seqDevolucion++).padStart(5,'0');return 'VTA-'+String(c.seqVenta++).padStart(5,'0')}
-function nextZNumber(){const c=cajaActual();return 'Z-'+String(c.seqZ++).padStart(5,'0')}
+async function reserveDocumentNumber(kind){
+  const c=cajaActual(),fallback=()=>kind==='DEV'?'DEV-'+String(c.seqDevolucion++).padStart(5,'0'):kind==='Z'?'Z-'+String(c.seqZ++).padStart(5,'0'):'VTA-'+String(c.seqVenta++).padStart(5,'0');
+  if(!navigator.onLine)return fallback();
+  try{
+    const r=await fetch('/api/turso-sequence',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cajaId:c.id,tipo:kind})});
+    const data=await r.json();
+    if(!r.ok||!data.ok)throw new Error(data.error||'No se pudo reservar numeración');
+    return data.documento;
+  }catch(e){
+    toast('Turso no disponible: se usará numeración local para esta operación');
+    return fallback();
+  }
+}
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
 function id(prefix,key){let n=db.seq[key]++;return prefix+'-'+String(n).padStart(5,'0')}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),1900)}
@@ -595,7 +606,7 @@ async function finishSale(total){
     if(!isReturn&&Number(l.qty)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
     p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
   }
-  const num=nextCajaNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
+  const num=await reserveDocumentNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
   const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
   if(activeOrderId && !isReturn && navigator.onLine){
@@ -834,9 +845,9 @@ function showCorteZ(){
     <div class="card">Saldo caja<b>${money(cajaActual().saldo)}</b></div>
   </div><div style="padding:9px;background:#fff8e6;border:1px solid #e6c36a;font-size:11px">El Corte Z guarda un snapshot del período y cierra la caja. Esta operación no borra ventas, inventario ni movimientos.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executeCorteZ()">Ejecutar Corte Z</button>`);
 }
-function executeCorteZ(){
+async function executeCorteZ(){
   if(!cajaActual().abierta)return toast('La caja ya está cerrada');
-  const r=cajaResumen(),now=new Date(),numero=nextZNumber();
+  const r=cajaResumen(),now=new Date(),numero=await reserveDocumentNumber('Z');
   cajaActual().cortes=cajaActual().cortes||[];
   cajaActual().cortes.push({numero,fecha:fmt(),saldoFinal:cajaActual().saldo,ventasContado:r.contado,cobros:r.cobros,devoluciones:r.devol,ventasCredito:r.credito});
   cajaActual().ultimoCorteAt=now.toISOString();cajaActual().abierta=false;cajaActual().apertura=null;save('cash-register-upsert');closeModal();renderView();toast(numero+' ejecutado. Caja cerrada.');
