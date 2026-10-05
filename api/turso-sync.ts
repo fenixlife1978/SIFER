@@ -20,23 +20,56 @@ export default async function handler(req:any,res:any){
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sales (
           numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,total REAL NOT NULL,
           subtotal REAL NOT NULL DEFAULT 0,impuesto REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,
-          saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,created_at TEXT NOT NULL
+          saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,caja_id TEXT,operador_id TEXT,created_at TEXT NOT NULL
         )`,args:[]});
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sale_lines (
           sale_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,price REAL NOT NULL,discount REAL NOT NULL DEFAULT 0,
           PRIMARY KEY(sale_number,product_id),FOREIGN KEY(sale_number) REFERENCES sifer_sales(numero)
         )`,args:[]});
-        await db.execute({sql:`INSERT OR IGNORE INTO sifer_sales(numero,fecha,cliente_id,cliente,total,subtotal,impuesto,pagado,saldo,tipo,documento_origen,created_at)
-          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,args:[
+        await db.execute({sql:`INSERT OR IGNORE INTO sifer_sales(numero,fecha,cliente_id,cliente,total,subtotal,impuesto,pagado,saldo,tipo,documento_origen,caja_id,operador_id,created_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,args:[
             String(sale.numero),String(sale.fecha||''),sale.clienteId??null,sale.cliente??'Cliente general',
             Number(sale.total)||0,Number(sale.subtotal)||0,Number(sale.impuesto)||0,Number(sale.pagado)||0,
-            Number(sale.saldo)||0,sale.tipo??'',sale.documentoOrigen??null,new Date().toISOString()
+            Number(sale.saldo)||0,sale.tipo??'',sale.documentoOrigen??null,sale.cajaId??null,sale.operadorId??null,new Date().toISOString()
         ]});
         const lines=Array.isArray(sale.lineas)?sale.lineas:[];
         const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({sql:`INSERT OR IGNORE INTO sifer_sale_lines(sale_number,product_id,qty,price,discount) VALUES(?,?,?,?,?)`,args:[
           String(sale.numero),String(l.id),Number(l.qty)||0,Number(l.price)||0,Number(l.disc)||0
         ]}));
         if(stmts.length)await db.batch(stmts,'write');
+      }
+    }
+    if(type==='order-created'){
+      const order=body.payload?.order;
+      if(order?.id){
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_customer_orders(
+          id TEXT PRIMARY KEY,numero TEXT UNIQUE NOT NULL,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,
+          operador_id TEXT,operador TEXT,estado TEXT NOT NULL,total REAL NOT NULL,payload_json TEXT NOT NULL,
+          caja_id TEXT,created_at TEXT NOT NULL
+        )`,args:[]});
+        await db.execute({sql:`INSERT OR IGNORE INTO sifer_customer_orders
+          (id,numero,fecha,cliente_id,cliente,operador_id,operador,estado,total,payload_json,caja_id,created_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,args:[
+          String(order.id),String(order.numero),String(order.fecha||''),order.clienteId??null,order.cliente??'Cliente general',
+          order.operadorId??null,order.operador??'',order.estado??'Pendiente',Number(order.total)||0,
+          JSON.stringify(order),order.cajaId??null,new Date().toISOString()
+        ]});
+      }
+    }
+    if(type==='cash-register-upsert'){
+      const box=body.payload?.caja;
+      if(box?.id){
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
+          id TEXT PRIMARY KEY,nombre TEXT NOT NULL,abierta INTEGER NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,
+          apertura TEXT,ultimo_corte_at TEXT,seq_venta INTEGER NOT NULL DEFAULT 1,seq_devolucion INTEGER NOT NULL DEFAULT 1,
+          seq_z INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
+        )`,args:[]});
+        await db.execute({sql:`INSERT INTO sifer_cash_registers(id,nombre,abierta,saldo,apertura,ultimo_corte_at,seq_venta,seq_devolucion,seq_z,updated_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET nombre=excluded.nombre,abierta=excluded.abierta,
+          saldo=excluded.saldo,apertura=excluded.apertura,ultimo_corte_at=excluded.ultimo_corte_at,
+          seq_venta=excluded.seq_venta,seq_devolucion=excluded.seq_devolucion,seq_z=excluded.seq_z,updated_at=excluded.updated_at`,
+          args:[String(box.id),String(box.nombre||box.id),box.abierta?1:0,Number(box.saldo)||0,box.apertura??null,box.ultimoCorteAt??null,
+          Number(box.seqVenta)||1,Number(box.seqDevolucion)||1,Number(box.seqZ)||1,new Date().toISOString()]});
       }
     }
     if(type==='purchase-created'){
