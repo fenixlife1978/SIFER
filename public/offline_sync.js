@@ -51,17 +51,22 @@
     }
     updateStatus();
   }
+  async function getQueueCount(){
+    const db=await open(); if(!db)return 0;
+    return new Promise(resolve=>{const t=db.transaction(QUEUE_STORE,'readonly'),r=t.objectStore(QUEUE_STORE).count();r.onsuccess=()=>resolve(r.result||0);r.onerror=()=>resolve(0)});
+  }
   function updateStatus(){
     const el=document.getElementById('syncStatus');
     if(!el)return;
     const online=navigator.onLine;
-    el.textContent=online?'🟢 En línea':'🔴 Sin Internet';
+    getQueueCount().then(n=>{el.textContent=online?(n?'🟡 En línea · '+n+' pendientes':'🟢 En línea'):'🔴 Sin Internet'+(n?' · '+n+' pendientes':'');});
     el.title=online?'Conexión disponible. Pendientes de sincronización se procesarán cuando el adaptador Turso esté configurado.':'El POS continúa operando con almacenamiento local durable.';
   }
   async function persist(state,reason){
     await saveState(state);
     await enqueue('state-change',{reason,at:new Date().toISOString()});
     updateStatus();
+    if(navigator.onLine) syncPending();
   }
   global.SiferOffline={
     open,persist,saveState,enqueue,loadState,syncPending,updateStatus,
