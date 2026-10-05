@@ -66,7 +66,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 <script>
 const KEY='sifer360_v1';
 const seed={
-config:{empresa:'FERRETERÍA SIFER 360',moneda:'USD',impuesto:7,bcv:{rate:814.6908,effectiveDate:'2026-09-08',updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json',status:'demo'},bcvHistory:[{effectiveDate:'2026-09-08',rate:814.6908,updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json'},{effectiveDate:'2026-09-07',rate:813.7361,updatedAt:'2026-09-07T19:33:57-04:00',source:'https://bcv.today/api/v1/rate.json'}]},
+config:{empresa:'SIFER 360',moneda:'USD',impuesto:7,bcv:{rate:814.6908,effectiveDate:'2026-09-08',updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json',status:'demo'},bcvHistory:[{effectiveDate:'2026-09-08',rate:814.6908,updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json'},{effectiveDate:'2026-09-07',rate:813.7361,updatedAt:'2026-09-07T19:33:57-04:00',source:'https://bcv.today/api/v1/rate.json'}]},
 productos:[
 {id:'PR-001',codigo:'750001',nombre:'Taladro inalámbrico 20V',categoria:'Herramientas',marca:'ProTool',unidad:'Unidad',costo:75,precio:129.99,stock:18,min:5,imagen:'/images/prod_taladro_inalambrico_1791152564948.jpg'},
 {id:'PR-002',codigo:'750002',nombre:'Guantes de seguridad reforzados',categoria:'Seguridad',marca:'SafePro',unidad:'Par',costo:8,precio:14.99,stock:45,min:10,imagen:'/images/prod_guantes_seguridad_1791152574833.jpg'},
@@ -447,7 +447,7 @@ function checkout(){
  const saldoVES = (v.saldo || 0) * rate;
  return `
  <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px">
-   <div style="font-size:14px;font-weight:bold">${esc(db.config.empresa||'FERRETERÍA SIFER 360')}</div>
+   <div style="font-size:14px;font-weight:bold">${esc(db.config.empresa||'SIFER 360')}</div>
    <div style="font-size:10px">RIF: J-50000000-1 · TICKET DE CAJA</div>
    <div style="font-size:10px">PUNTO DE VENTA / FERRETERÍA</div>
    <div style="font-size:10px;margin-top:2px">Tasa BCV consultada: <b>${fmtRate(rate)} Bs/USD</b></div>
@@ -753,8 +753,12 @@ function cajaView(){
 }
 function toggleCaja(){if(db.caja.abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}db.caja.abierta=true;db.caja.apertura=fmt();save();renderView();toast('Caja abierta')}
 function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
-function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'FERRETERÍA SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
-function resetData(){if(confirm('Se eliminarán los datos actuales y se restaurarán los datos de demostración.')){db=structuredClone(seed);cart=[];save();renderShell();toast('Datos restaurados')}}
+function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
+function resetData(){
+  const confirmation=prompt('Esta acción elimina los datos locales actuales y restaura datos de demostración. Escriba BORRAR SIFER para confirmar.');
+  if(confirmation!=='BORRAR SIFER')return toast('Restablecimiento cancelado');
+  db=structuredClone(seed);cart=[];selected=null;save();renderShell();toast('Datos de demostración restaurados');
+}
 function normalizeSearchText(s){return s?String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''):''}
 function matchKeywords(text,query){if(!query||!query.trim())return true;if(!text)return false;const normText=normalizeSearchText(text),tokens=normalizeSearchText(query).trim().split(/\s+/).filter(Boolean);return tokens.every(t=>normText.includes(t))}
 function filterTable(inp,id){let q=inp.value;document.querySelectorAll('#'+id+' tbody tr').forEach(r=>r.style.display=matchKeywords(r.textContent,q)?'':'none')}
