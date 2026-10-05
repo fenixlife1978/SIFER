@@ -496,18 +496,18 @@
     const results = [];
     const maxScanLimit = 4500;
 
-    let step = 1;
-    if (rawQ) {
-      step = 1;
-    } else if (category === 'Todos') {
-      step = Math.max(1, Math.floor(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
+    // Nunca recorrer millones de registros virtuales en el hilo principal.
+    // Esto evita congelar el POS mientras el usuario escribe o cambia de página.
+    let step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
+    if (rawQ && (category !== 'Todos')) {
+      step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
     }
 
     let matchCount = 0;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
 
-    for (let i = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1200; i += step) {
+    for (let i = 0, scanned = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1200 && scanned < maxScanLimit; i += step, scanned++) {
       const item = getMasterItemByIndex(i);
 
       let matchesCat = true;
