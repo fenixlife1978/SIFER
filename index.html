@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIFER360 — Sistema Integral de Ferretería</title>
+<title>SIFER360 — POS Automotriz</title>
 <link rel="icon" type="image/svg+xml" href="/icon.svg" />
 <style>
 :root{--blue:#0b63ce;--line:#c9c9c9;--soft:#f4f4f4;--cream:#f7f0dc;--green:#13b67a;--red:#ef6b70;--text:#222;--nav:#063b70}
@@ -52,11 +52,11 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 </head>
 <body>
 <div id="viewport"><div id="stage"><div class="app">
-<div class="titlebar"><span class="dot"></span>SIFER360 — Sistema Integral de Ferretería — <span id="windowTitle">Inicio</span><div class="window-actions"><button id="btnFullscreen" class="fs-btn" title="Activar modo pantalla completa" onclick="toggleFullScreen()">⛶ Pantalla Completa</button><span class="win-icon" onclick="toast('Ventana minimizada')" title="Minimizar">—</span><span class="win-icon" onclick="toggleFullScreen()" title="Maximizar / Restaurar">□</span><span class="win-icon" onclick="toast('Ventana SIFER360')" title="Cerrar">×</span></div></div>
+<div class="titlebar"><span class="dot"></span>SIFER360 — POS Automotriz — <span id="windowTitle">Inicio</span><div class="window-actions"><button id="btnFullscreen" class="fs-btn" title="Activar modo pantalla completa" onclick="toggleFullScreen()">⛶ Pantalla Completa</button><span class="win-icon" onclick="toast('Ventana minimizada')" title="Minimizar">—</span><span class="win-icon" onclick="toggleFullScreen()" title="Maximizar / Restaurar">□</span><span class="win-icon" onclick="toast('Ventana SIFER360')" title="Cerrar">×</span></div></div>
 <div class="menubar" id="menubar"></div>
 <div class="toolbar" id="toolbar"></div>
 <main class="main" id="main"></main>
-<div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · Datos almacenados localmente</div>
+<div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · Datos locales · Operación intermitente disponible</div>
 </div></div></div>
 <div class="modal-backdrop" id="modal"><div class="modal"><div class="modalhead"><span id="modalTitle"></span><button onclick="closeModal()">×</button></div><div class="modalbody" id="modalBody"></div><div class="modalfoot" id="modalFoot"></div></div></div>
 <div class="toast" id="toast"></div>
@@ -298,7 +298,7 @@ function maybeRefreshBCV(){
     updateBCVRate(true);
   }
 }
-function navItems(){return [['inicio','🏠 Inicio'],['pos','🛒 Punto de Venta'],['master_catalog','📖 Catálogo Máster'],['repuestos','🚗 Repuestos'],['productos','📦 Inventario'],['compras','🛍️ Compras'],['clientes','👤 Clientes'],['proveedores','🏭 Proveedores'],['cxc','💰 CxC'],['cxp','💳 CxP'],['presupuestos','📋 Presupuestos'],['reportes','📊 Reportes'],['caja','🏦 Caja'],['config','⚙️ Configuración']]}
+function navItems(){return [['inicio','🏠 Inicio'],['pos','🛒 Punto de Venta'],['master_catalog','📖 Catálogo Automotriz'],['repuestos','🚗 Repuestos'],['productos','📦 Inventario'],['compras','🛍️ Compras'],['clientes','👤 Clientes'],['proveedores','🏭 Proveedores'],['cxc','💰 CxC'],['cxp','💳 CxP'],['presupuestos','📋 Presupuestos'],['reportes','📊 Reportes'],['caja','🏦 Caja'],['config','⚙️ Configuración']]}
 function renderShell(){
  document.getElementById('windowTitle').textContent=title(view);
  const menus=[['Archivo',()=>menu('Sistema')],['Ventas',()=>menu('Ventas')],['Inventario',()=>menu('Inventario')],['Compras',()=>menu('Compras')],['Cuentas',()=>menu('Cuentas')],['Contactos',()=>menu('Contactos')],['Reportes',()=>menu('Reportes')],['Sistema',()=>menu('Sistema')]];
@@ -346,7 +346,7 @@ function renderShell(){
 }
 function toggleFitmentView(){repuestoSubTab='buscador_vehiculo';renderView()}
 function toggleCrossRefView(){repuestoSubTab='referencias_cruzadas';renderView()}
-function title(v){return ({inicio:'Inicio',pos:'Punto de Venta',master_catalog:'Catálogo Máster de Proveedores',repuestos:'Repuestos Automotrices',productos:'Inventario y Productos',compras:'Compras',clientes:'Clientes',proveedores:'Proveedores',cxc:'Cuentas por Cobrar',cxp:'Cuentas por Pagar',presupuestos:'Presupuestos',reportes:'Reportes',caja:'Caja y Finanzas',config:'Configuración'})[v]||v}
+function title(v){return ({inicio:'Inicio',pos:'Punto de Venta',master_catalog:'Catálogo Automotriz',repuestos:'Repuestos Automotrices',productos:'Inventario y Productos',compras:'Compras',clientes:'Clientes',proveedores:'Proveedores',cxc:'Cuentas por Cobrar',cxp:'Cuentas por Pagar',presupuestos:'Presupuestos',reportes:'Reportes',caja:'Caja y Finanzas',config:'Configuración'})[v]||v}
 function go(v){view=v;selected=null;renderShell()}
 function renderView(){const m=document.getElementById('main');m.innerHTML=views[view]();bindView();document.getElementById('statusbar').textContent=`Usuario: Administrador · Módulo: ${title(view)} · Tasa BCV: ${fmtRate(bcvData().rate)} Bs/USD · ${fmt()}`}
 function menu(x){if(x==='Ventas')go('pos');else if(x==='Compras')go('compras');else if(x==='Inventario')go('productos');else if(x==='Cuentas')go('cxc');else if(x==='Contactos')go('clientes');else if(x==='Reportes')go('reportes');else if(x==='Sistema')go('inicio');else toast('Use el menú lateral para acceder a todas las funciones')}
@@ -373,7 +373,7 @@ function posView(){
    <div class="postable"><table><thead><tr><th>Artículo</th><th>Descripción</th><th>Qty</th><th>Precio</th><th>Desc.</th><th>Imp. 1</th><th>Imp. 2</th><th>Importe</th></tr></thead>
    <tbody>${cart.map((l,i)=>{let p=db.productos.find(x=>x.id===l.id),base=l.qty*l.price-l.disc,t1=base*db.config.impuesto/100,t2=0;return `<tr class="${selected===i?'selected':''}" onclick="selected=${i};renderView()"><td>${p?.codigo||l.id}</td><td>${esc(p?.nombre||l.id)}</td><td class="num">${l.qty.toFixed(2)}</td><td class="num">${money(l.price)}</td><td class="num">${money(l.disc)}</td><td class="num">${money(t1)}</td><td class="num">${money(t2)}</td><td class="num">${money(base+t1+t2)}</td></tr>`}).join('')||'<tr><td colspan="8" class="emptypos">No hay artículos en la venta. Pulse «Agregar artículo».</td></tr>'}</tbody></table></div>
    <div class="posbottom">
-    <div class="stockbox"><table><thead><tr><th></th><th>Tienda</th><th>Total</th><th>Almacén</th></tr></thead><tbody><tr><td>Stock</td><td>11.00</td><td>11.00</td><td>11.00</td></tr><tr><td>Reservado</td><td>0.00</td><td>0.00</td><td>0.00</td></tr><tr><td>Disponible</td><td>11.00</td><td>11.00</td><td>11.00</td></tr></tbody></table></div>
+    <div class="stockbox"><table><thead><tr><th></th><th>Local</th><th>Total</th><th>Disponible</th></tr></thead><tbody>${(()=>{const l=selected!=null?cart[selected]:null;const p=l?(db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null)):null;const s=Number(p?.stock||0);return '<tr><td>Stock</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td></tr><tr><td>Reservado</td><td>0.00</td><td>0.00</td><td>0.00</td></tr><tr><td>Disponible</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td></tr>';})()}</tbody></table></div>
     <div class="posactions"><button onclick="addItem()">Agregar artículo</button><button onclick="addItem()">Buscar artículo</button><button onclick="editCart()">Detalles</button><button class="danger" onclick="removeCart()">✖ Eliminar línea</button><button onclick="returnCart()">↩ Retorno artículo</button></div>
     <div class="postotal">${money(total)}</div>
    </div>
@@ -409,24 +409,37 @@ function renderItemChoices(){
 }
 function addItem(){openItemSearch()}
 function addToCart(pid, type='producto'){
-  let p = db.productos.find(x=>x.id===pid) || (typeof getRepuestos==='function' ? getRepuestos().find(x=>x.id===pid) : null);
-  if(!p) return;
-  if(p.stock<=0 && type==='producto') return toast('Producto sin existencia');
-  let l=cart.find(x=>x.id===pid);
-  if(l) l.qty++;
-  else cart.push({id:pid,qty:1,price:p.precio,disc:0});
-  closeModal();
-  renderView();
-  toast('Artículo agregado a la venta');
+  const isRep=type==='repuesto';
+  const p=isRep?(typeof getRepuestos==='function'?getRepuestos().find(x=>x.id===pid):null):db.productos.find(x=>x.id===pid);
+  if(!p) return toast('Artículo no encontrado');
+  const l=cart.find(x=>x.id===pid);
+  const nextQty=(l?.qty||0)+1;
+  if(nextQty>Number(p.stock||0)) return toast('Existencia insuficiente');
+  if(l) l.qty=nextQty;
+  else cart.push({id:pid,tipo:isRep?'repuesto':'producto',nombre:p.nombre,sku:p.sku||p.codigo,qty:1,price:Number(p.precio)||0,disc:0});
+  closeModal();renderView();toast('Artículo agregado a la venta');
 }
 function editCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');let l=cart[selected];openModal('Editar línea',`<div class="formgrid"><div class="field"><label>Cantidad</label><input id="eQty" type="number" min="0.01" step="0.01" value="${l.qty}"></div><div class="field"><label>Precio</label><input id="ePrice" type="number" min="0" step=".01" value="${l.price}"></div><div class="field"><label>Descuento</label><input id="eDisc" type="number" min="0" step=".01" value="${l.disc}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveCartLine()">Guardar</button>`)}
 function saveCartLine(){let l=cart[selected];l.qty=Number(document.getElementById('eQty').value)||0;l.price=Number(document.getElementById('ePrice').value)||0;l.disc=Number(document.getElementById('eDisc').value)||0;if(l.qty<=0)cart.splice(selected,1);closeModal();renderView()}
 function removeCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart.splice(selected,1);selected=null;renderView();toast('Línea eliminada')}
-function returnCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart[selected].qty=-Math.abs(cart[selected].qty);renderView();toast('Artículo marcado como devolución')}
+function returnCart(){
+  if(selected==null||!cart[selected]) return toast('Seleccione una línea');
+  if(cart.some(l=>l.qty<0)) return toast('La devolución ya tiene una línea seleccionada');
+  cart[selected].qty=-Math.abs(cart[selected].qty);cart[selected].devolucion=true;
+  renderView();toast('Artículo marcado para devolución. Se solicitará la venta original al cobrar.');
+}
 function cancelSale(){if(cart.length&&confirm('¿Desea cancelar la venta actual?')){cart=[];selected=null;renderView()}}
-function checkout(){if(!cart.length)return toast('No hay artículos');if(!db.caja.abierta)return toast('Abra la caja antes de cobrar');saleCustomer=document.getElementById('saleCustomer')?.value||saleCustomer;saleType=document.getElementById('saleType')?.value||saleType;let c=db.clientes.find(x=>x.id===saleCustomer),sub=cart.reduce((s,l)=>s+l.qty*l.price-l.disc,0),tax=sub*db.config.impuesto/100,total=sub+tax;openModal('Cobrar venta',`<div class="formgrid"><div class="field"><label>Cliente</label><input readonly value="${esc(c?.nombre)}"></div><div class="field"><label>Total</label><input readonly value="${money(total)}"></div><div class="field"><label>Método de pago</label><select id="payMethod"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option>Cheque</option></select></div><div class="field"><label>Monto recibido</label><input id="payAmount" type="number" step=".01" value="${saleType==='credito'?0:total}" oninput="updateChange(${total})"></div><div class="field"><label>Cambio</label><input id="payChange" readonly value="${money(0)}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">Registrar venta</button>`)}
-function updateChange(total){let v=Number(document.getElementById('payAmount').value)||0;document.getElementById('payChange').value=money(Math.max(0,v-total))}
-function getReceiptHTML(v, rate){
+function checkout(){
+  if(!cart.length)return toast('No hay artículos');
+  if(!db.caja.abierta)return toast('Abra la caja antes de cobrar');
+  const hasReturn=cart.some(l=>l.qty<0),hasSale=cart.some(l=>l.qty>0);
+  if(hasReturn&&hasSale)return toast('No se pueden mezclar ventas y devoluciones');
+  saleCustomer=document.getElementById('saleCustomer')?.value||saleCustomer;
+  saleType=document.getElementById('saleType')?.value||saleType;
+  const c=db.clientes.find(x=>x.id===saleCustomer),sub=cart.reduce((s,l)=>s+l.qty*l.price-(l.disc||0),0),tax=sub*db.config.impuesto/100,total=sub+tax,amount=Math.abs(total);
+  const returnField=hasReturn?'<div class="field full"><label>Factura / Venta original</label><input id="returnOrigin" placeholder="Ej: VTA-00001" required></div>':'';
+  openModal(hasReturn?'Procesar devolución':'Cobrar venta',`<div class="formgrid"><div class="field"><label>Cliente</label><input readonly value="${esc(c?.nombre||'Cliente general')}"></div><div class="field"><label>${hasReturn?'Monto a devolver':'Total'} USD</label><input readonly value="${money(amount)}"></div>${returnField}<div class="field"><label>Método de pago</label><select id="payMethod"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div><div class="field"><label>${hasReturn?'Monto devuelto':'Monto recibido'}</label><input id="payAmount" type="number" min="0" step=".01" value="${amount}" oninput="updateChange(${amount})"></div><div class="field"><label>${hasReturn?'Diferencia':'Cambio'}</label><input id="payChange" readonly value="${money(0)}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
+}function getReceiptHTML(v, rate){
  const subVES = (v.subtotal || (v.total / (1 + db.config.impuesto / 100))) * rate;
  const taxVES = (v.impuesto || (v.total - (v.total / (1 + db.config.impuesto / 100)))) * rate;
  const totVES = v.total * rate;
@@ -519,8 +532,28 @@ function showTicketModal(v){
  `);
 }
 
-function finishSale(total){let received=Number(document.getElementById('payAmount').value)||0;if(saleType==='contado'&&received<total)return toast('El pago es insuficiente');let paid=saleType==='credito'?0:Math.min(received,total),saldo=total-paid,num=id('VTA','venta'),c=db.clientes.find(x=>x.id===saleCustomer);cart.forEach(l=>{let p=db.productos.find(x=>x.id===l.id);if(p)p.stock=Math.max(0,p.stock-l.qty)});let v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:saleType,metodo:document.getElementById('payMethod').value,lineas:cart.map(x=>({...x}))};db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:'Venta',documento:num,detalle:v.cliente,monto:total});if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total,saldo,estado:'Pendiente'}) ;c.saldo=(c.saldo||0)+saldo}else db.caja.saldo+=paid;save();cart=[];selected=null;closeModal();renderView();toast(num+' registrada correctamente');showTicketModal(v);}
-function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
+function finishSale(total){
+  const isReturn=cart.some(l=>l.qty<0),isSale=cart.some(l=>l.qty>0),received=Math.max(0,Number(document.getElementById('payAmount').value)||0),amount=Math.abs(total);
+  if(isReturn&&isSale)return toast('Operación inválida');
+  if(!isReturn&&saleType==='contado'&&received<amount)return toast('El pago es insuficiente');
+  if(isReturn){
+    const origin=(document.getElementById('returnOrigin')?.value||'').trim(),original=db.ventas.find(v=>v.numero===origin);
+    if(!original)return toast('Debe indicar una venta original válida');
+    for(const l of cart){const sold=(original.lineas||[]).find(x=>x.id===l.id);if(!sold||Math.abs(l.qty)>Number(sold.qty||0))return toast('La cantidad devuelta supera la cantidad facturada');}
+    if(received<amount)return toast('El monto devuelto es insuficiente');
+  }
+  for(const l of cart){
+    const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+    if(!p)return toast('Artículo no encontrado: '+l.id);
+    if(!isReturn&&Number(l.qty)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
+    p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
+  }
+  const num=isReturn?id('DEV','venta'):id('VTA','venta'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-received:(saleType==='credito'?0:Math.min(received,amount)),saldo=isReturn?0:amount-paid;
+  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:document.getElementById('payMethod').value,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x}))};
+  db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
+  if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else db.caja.saldo+=paid;
+  save();cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
+}function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
 function productosView(){
   return listPage(
     'Inventario y Productos',
