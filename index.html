@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SIFER360 — POS Automotriz</title>
 <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<script src="/offline_sync.js"></script>
 <style>
 :root{--blue:#0b63ce;--line:#c9c9c9;--soft:#f4f4f4;--cream:#f7f0dc;--green:#13b67a;--red:#ef6b70;--text:#222;--nav:#063b70}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#d1d1d1}
@@ -56,7 +58,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 <div class="menubar" id="menubar"></div>
 <div class="toolbar" id="toolbar"></div>
 <main class="main" id="main"></main>
-<div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · Datos locales · Operación intermitente disponible</div>
+<div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · <span id="syncStatus">🟢 En línea</span> · Operación offline disponible</div>
 </div></div></div>
 <div class="modal-backdrop" id="modal"><div class="modal"><div class="modalhead"><span id="modalTitle"></span><button onclick="closeModal()">×</button></div><div class="modalbody" id="modalBody"></div><div class="modalfoot" id="modalFoot"></div></div></div>
 <div class="toast" id="toast"></div>
@@ -81,7 +83,7 @@ ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:
 };
 let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function save(){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,'db-save').catch(()=>{});}
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
 function id(prefix,key){let n=db.seq[key]++;return prefix+'-'+String(n).padStart(5,'0')}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),1900)}
@@ -807,5 +809,6 @@ document.addEventListener('fullscreenchange',()=>{
 });
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 </body>
 </html>
