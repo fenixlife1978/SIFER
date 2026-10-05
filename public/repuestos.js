@@ -1,5 +1,5 @@
 // SIFER360 - Módulo Especializado de Repuestos Automotrices
-// Sincronización B2B, Referencias Cruzadas, Compatibilidad Vehicular, Búsqueda Inteligente por Palabras Claves y SKUs Únicos
+// Catálogo técnico, referencias cruzadas, compatibilidad vehicular, búsqueda inteligente y SKUs únicos
 
 const REPUESTOS_SEED = [
   // 1. Bujes y Gomas
@@ -28,10 +28,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo B1 - Estante 2',
     garantia: '12 meses / 20.000 km',
     especificaciones: 'Caucho natural vulcanizado de alta resiliencia. Casquillo de acero zincado antioxidante.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 120, precioMayor: 4.60, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_amortiguador_1791152649395.jpg'
   },
   {
     id: 'AUT-00002',
@@ -57,10 +54,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo B1 - Estante 3',
     garantia: '6 meses',
     especificaciones: 'Par de gomas abrazadera de 19mm en elastómero de alta fricción antiruido.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 200, precioMayor: 2.30, despacho: '12 hrs' }
-    ]
+    imagen: '/images/rep_amortiguador_1791152649395.jpg'
   },
 
   // 2. Lápiz y Bieletas
@@ -89,10 +83,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo S2 - Estante 1',
     garantia: '12 meses / 30.000 km',
     especificaciones: 'Rótula sellada con grasa sintética de larga duración y tuercas de seguridad autofrenantes.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 65, precioMayor: 7.40, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_amortiguador_1791152649395.jpg'
   },
   {
     id: 'AUT-00004',
@@ -118,10 +109,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo S2 - Estante 2',
     garantia: '12 meses',
     especificaciones: 'Vástago de acero forjado de 10mm con rótulas de polímero autolubricado.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'TecDoc Exchange Feed', stock: 45, precioMayor: 6.90, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_amortiguador_1791152649395.jpg'
   },
 
   // 3. Rodamientos y Baleros
@@ -150,10 +138,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo R2 - Estante 1',
     garantia: '12 meses / 40.000 km',
     especificaciones: 'Medidas: 38mm x 72mm x 37mm. Doble hilera angular con sellos de goma 2RS.',
-    imagen: '/images/rep_kit_embrague_1791152677700.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 80, precioMayor: 11.90, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_kit_embrague_1791152677700.jpg'
   },
 
   // 4. Baterías Automotrices
@@ -183,10 +168,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Área Baterías - Almacén Central',
     garantia: '12 meses con certificado de garantía nacional',
     especificaciones: 'Capacidad 800 AMP arranque en frío (CCA 600A). Terminales cónicos estándar SAE, polaridad derecha (+) R.',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 25, precioMayor: 68.00, despacho: '12 hrs' }
-    ]
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
   },
 
   // 5. Luces de Faros y Stop
@@ -216,10 +198,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Vitrina Iluminación V1',
     garantia: '6 meses',
     especificaciones: 'Base P43t. Flujo luminoso 1650/1000 lúmenes. Cristal de cuarzo UV bloqueador.',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 350, precioMayor: 1.95, despacho: '12 hrs' }
-    ]
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
   },
   {
     id: 'AUT-00008',
@@ -243,10 +222,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Vitrina Iluminación V2',
     garantia: '3 meses',
     especificaciones: 'Casquillo metálico BAY15D con dos filamentos (21W para freno y 5W para luz de noche).',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 600, precioMayor: 0.55, despacho: '12 hrs' }
-    ]
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
   },
 
   // 6. Cilindros de Ignición y Switcheras
@@ -272,10 +248,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo E2 - Estante 1',
     garantia: '12 meses',
     especificaciones: 'Cuerpo de zamak de precisión con 6 pines de combinación y par de llaves con logo.',
-    imagen: '/images/prod_bobina_encendido_1791155210560.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 28, precioMayor: 9.80, despacho: '24 hrs' }
-    ]
+    imagen: '/images/prod_bobina_encendido_1791155210560.jpg'
   },
 
   // 7. Relex y Relés Automotrices
@@ -302,10 +275,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Vitrina Eléctricos E1',
     garantia: '12 meses',
     especificaciones: 'Contactos de plata-óxido de estaño (AgSnO2) resistentes a la soldadura y chisporroteo eléctrico. Soporta 40 Amperios continuos.',
-    imagen: '/images/prod_sensor_ckp_1791152221865.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 350, precioMayor: 1.90, despacho: '12 hrs' }
-    ]
+    imagen: '/images/prod_sensor_ckp_1791152221865.jpg'
   },
 
   // 8. Mangueras Automotrices
@@ -332,10 +302,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo M1 - Estante 3',
     garantia: '12 meses',
     especificaciones: 'Construcción EPDM sintético resistente a la degradación electroquímica (ECR) y temperaturas de -40°C a 135°C.',
-    imagen: '/images/rep_bomba_agua_1791152689068.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'TecDoc Exchange Feed', stock: 40, precioMayor: 5.60, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_bomba_agua_1791152689068.jpg'
   },
 
   // 9. Frenos y Fricción
@@ -365,11 +332,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo F1 - Estante 2',
     garantia: '12 meses / 20.000 km',
     especificaciones: 'Compuesto cerámico bajo en polvo. Incluye láminas antiruido y clips de sujeción. Espesor: 17.5mm.',
-    imagen: '/images/rep_pastillas_freno_1791152631245.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 45, precioMayor: 23.80, despacho: '24 hrs' },
-      { distribuidor: 'Global Parts Cloud', stock: 120, precioMayor: 22.90, despacho: '48 hrs' }
-    ]
+    imagen: '/images/rep_pastillas_freno_1791152631245.jpg'
   },
 
   // 10. Filtración
@@ -399,10 +362,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo F2 - Estante 1',
     garantia: '10.000 km o 6 meses',
     especificaciones: 'Válvula anti-drenaje de silicona. Eficiencia de filtrado del 99% a 20 micras. Rosca 3/4-16 UNF.',
-    imagen: '/images/rep_filtro_aceite_1791152641120.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 240, precioMayor: 3.60, despacho: '12 hrs' }
-    ]
+    imagen: '/images/rep_filtro_aceite_1791152641120.jpg'
   },
 
   // 11. Suspensión y Dirección
@@ -430,10 +390,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo S1 - Estante 4',
     garantia: '24 meses / 40.000 km',
     especificaciones: 'Vástago cromado templado por inducción. Fluido hidráulico para todo clima (-40°C a 120°C).',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 35, precioMayor: 31.00, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_amortiguador_1791152649395.jpg'
   },
 
   // 12. Encendido y Eléctrico
@@ -463,10 +420,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo E1 - Estante 3',
     garantia: '80.000 km vida útil garantizada',
     especificaciones: 'Punta ultrafina de 0.6mm de iridio soldado por láser. Mayor inflamabilidad y respuesta de aceleración.',
-    imagen: '/images/rep_bujia_iridio_1791152658933.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 180, precioMayor: 5.90, despacho: '12 hrs' }
-    ]
+    imagen: '/images/rep_bujia_iridio_1791152658933.jpg'
   },
 
   // 13. Motor y Distribución
@@ -495,10 +449,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo M2 - Estante 2',
     garantia: '60.000 km / 2 años',
     especificaciones: 'Compuesto HNBR resistente a altas temperaturas y aceite. Tensor automático de rodamiento reforzado.',
-    imagen: '/images/rep_correa_distribucion_1791152666979.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'TecDoc Exchange Feed', stock: 18, precioMayor: 34.50, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_correa_distribucion_1791152666979.jpg'
   },
 
   // 14. Embrague y Transmisión
@@ -528,10 +479,7 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo T1 - Estante 1',
     garantia: '12 meses sin límite de kilometraje',
     especificaciones: 'Diámetro: 215mm, 20 estrías. Resortes helicoidales progresivos para absorción de vibraciones.',
-    imagen: '/images/rep_kit_embrague_1791152677700.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'AutoDist B2B Network', stock: 12, precioMayor: 72.00, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_kit_embrague_1791152677700.jpg'
   },
 
   // 15. Refrigeración
@@ -560,48 +508,10 @@ const REPUESTOS_SEED = [
     ubicacion: 'Pasillo R1 - Estante 3',
     garantia: '12 meses / 25.000 km',
     especificaciones: 'Rotor de aleación fundida de alta eficiencia de caudal. Sello mecánico cerámico de carbón.',
-    imagen: '/images/rep_bomba_agua_1791152689068.jpg',
-    distribuidoresStock: [
-      { distribuidor: 'Global Parts Cloud', stock: 40, precioMayor: 17.80, despacho: '24 hrs' }
-    ]
+    imagen: '/images/rep_bomba_agua_1791152689068.jpg'
   }
 ];
 
-const DISTRIBUIDORES_SEED = [
-  {
-    id: 'DST-001',
-    nombre: 'AutoDist B2B Network',
-    endpoint: 'https://api.autodist-network.com/v2/catalog/sync',
-    apiKey: '',
-    frecuencia: 'En tiempo real (Webhook + Polling)',
-    estado: 'No configurado',
-    ultimoSync: 'Hace 5 minutos',
-    latencia: '42 ms',
-    itemsDisponibles: 18450
-  },
-  {
-    id: 'DST-002',
-    nombre: 'Global Parts Cloud',
-    endpoint: 'https://cloudparts.global/api/v1/stock-feed',
-    apiKey: '',
-    frecuencia: 'Cada 30 minutos',
-    estado: 'Conectado',
-    ultimoSync: 'Hace 20 minutos',
-    latencia: '68 ms',
-    itemsDisponibles: 94200
-  },
-  {
-    id: 'DST-003',
-    nombre: 'TecDoc Exchange Feed',
-    endpoint: 'https://tecdoc.sync-services.io/feed',
-    apiKey: '',
-    frecuencia: 'Diaria / Manual',
-    estado: 'Conectado',
-    ultimoSync: 'Hoy 08:30 AM',
-    latencia: '110 ms',
-    itemsDisponibles: 320000
-  }
-];
 
 let repuestoSubTab = 'catalogo';
 let fitmentFilter = { marca: '', modelo: '', anio: '', motor: '' };
@@ -623,12 +533,6 @@ function getRepuestos(){
   return db.repuestos;
 }
 
-function getDistribuidores(){
-  if (!Array.isArray(db.distribuidoresAutopartes)) {
-    db.distribuidoresAutopartes = structuredClone(DISTRIBUIDORES_SEED);
-  }
-  return db.distribuidoresAutopartes;
-}
 
 function generateUniqueSKU(categoria = 'GEN', marca = 'REP', codigoOEM = ''){
   const catCode = categoria.substring(0, 3).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -649,29 +553,25 @@ function generateUniqueSKU(categoria = 'GEN', marca = 'REP', codigoOEM = ''){
 // Interfaz Principal del Módulo de Repuestos
 function repuestosView(){
   const repuestos = getRepuestos();
-  const distribs = getDistribuidores();
   const totalStock = repuestos.reduce((s, r) => s + (r.stock || 0), 0);
   const totalRefCruzadas = repuestos.reduce((s, r) => s + (r.referenciasCruzadas?.length || 0), 0);
   const totalFitments = repuestos.reduce((s, r) => s + (r.compatibilidad?.length || 0), 0);
-  const totalExtStock = repuestos.reduce((s, r) => s + (r.distribuidoresStock?.reduce((es, e) => es + e.stock, 0) || 0), 0);
 
   return `
   <div class="pagehead">
     <div>
       <h2>🚗 Gestión Integral de Repuestos Automotrices</h2>
-      <div class="sub">Catálogo técnico multicriterio · Búsqueda por palabras claves · Referencias cruzadas · Compatibilidad vehicular · Sincronización B2B</div>
+      <div class="sub">Catálogo técnico multicriterio · Búsqueda por palabras claves · Referencias cruzadas · Compatibilidad vehicular</div>
     </div>
     <div class="actions" style="margin:0">
       <button class="btn" onclick="openMasterCatalogSelectorModal('repuesto')">📖 Buscar en Catálogo Máster (+2.000.000)</button>
       <button class="btn primary" onclick="openRepuestoModal()">➕ Nuevo Repuesto</button>
-      <button class="btn green" onclick="syncDistribuidoresModal()">⚡ Sincronizar Distribuidores</button>
     </div>
   </div>
 
   <div class="cards">
     <div class="card">Repuestos en Catálogo<b>${repuestos.length}</b><span>SKUs únicos locales</span></div>
     <div class="card">Stock Físico Local<b>${totalStock}</b><span>unidades en almacén</span></div>
-    <div class="card">Red Distribuidores<b>+${totalExtStock}</b><span>disponibles en tiempo real</span></div>
     <div class="card">Referencias Cruzadas<b>${totalRefCruzadas}</b><span>códigos y marcas cruzadas</span></div>
     <div class="card">Fitments Vehiculares<b>${totalFitments}</b><span>modelos de autos mapeados</span></div>
   </div>
@@ -680,7 +580,6 @@ function repuestosView(){
     <button class="btn ${repuestoSubTab==='catalogo'?'primary':''}" onclick="repuestoSubTab='catalogo';renderView()">📦 Catálogo e Inventario</button>
     <button class="btn ${repuestoSubTab==='buscador_vehiculo'?'primary':''}" onclick="repuestoSubTab='buscador_vehiculo';renderView()">🚘 Buscador por Vehículo (Fitment)</button>
     <button class="btn ${repuestoSubTab==='referencias_cruzadas'?'primary':''}" onclick="repuestoSubTab='referencias_cruzadas';renderView()">🔗 Matriz de Referencias Cruzadas</button>
-    <button class="btn ${repuestoSubTab==='distribuidores'?'primary':''}" onclick="repuestoSubTab='distribuidores';renderView()">🌐 Sincronización B2B (${distribs.length} Conectados)</button>
   </div>
 
   ${renderRepuestoSubTabContent()}
@@ -690,7 +589,6 @@ function repuestosView(){
 function renderRepuestoSubTabContent(){
   if (repuestoSubTab === 'buscador_vehiculo') return renderFitmentSearchTab();
   if (repuestoSubTab === 'referencias_cruzadas') return renderCrossReferenceTab();
-  if (repuestoSubTab === 'distribuidores') return renderDistributorSyncTab();
   return renderCatalogTab();
 }
 
@@ -740,8 +638,7 @@ function renderCatalogTab(){
         </thead>
         <tbody>
           ${repuestos.map(r => {
-            const extStock = r.distribuidoresStock?.reduce((s, x) => s + x.stock, 0) || 0;
-            const priceBs = (r.precio * rate);
+                    const priceBs = (r.precio * rate);
             const refPreview = (r.referenciasCruzadas || []).map(x => `<b>${esc(x.marca)}:</b> ${esc(x.codigo)}`).slice(0, 3).join(' · ');
             const fitPreview = (r.compatibilidad || []).map(x => `${esc(x.marca)} ${esc(x.modelo)} (${x.anios})`).slice(0, 2).join(', ');
             
@@ -771,7 +668,6 @@ function renderCatalogTab(){
               </td>
               <td style="text-align:center">
                 <span class="badge ${r.stock <= r.min ? 'bad' : 'ok'}"><b>${r.stock}</b> local</span>
-                ${extStock > 0 ? `<div style="font-size:9px;color:#0b4f85;margin-top:2px" title="Stock en tiempo real en distribuidores">+${extStock} ext.</div>` : ''}
               </td>
               <td style="text-align:right">
                 <div style="font-weight:bold">${money(r.precio)}</div>
@@ -970,44 +866,6 @@ function renderCrossReferenceTab(){
 }
 
 // 4. Tab Sincronización B2B con Distribuidores Externos
-function renderDistributorSyncTab(){
-  const distribs = getDistribuidores();
-  return `
-  <div class="panel">
-    <div class="panelhead" style="display:flex;justify-content:space-between;align-items:center">
-      <span>Conexión de APIs y Feeds en Tiempo Real con Distribuidores</span>
-      <button class="btn green" onclick="syncDistribuidoresModal()">⚡ Ejecutar Sincronización Global Ahora</button>
-    </div>
-    <div class="panelbody">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px">
-        ${distribs.map(d => `
-          <div style="border:1px solid #ccc;padding:10px;background:#fafafa;border-radius:4px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-              <b>${esc(d.nombre)}</b>
-              <span class="badge ok">● ${esc(d.estado)}</span>
-            </div>
-            <div style="font-size:10px;font-family:monospace;color:#555;margin-bottom:6px;word-break:break-all">${esc(d.endpoint)}</div>
-            <div style="font-size:11px;color:#444">Frecuencia: <b>${esc(d.frecuencia)}</b></div>
-            <div style="font-size:11px;color:#444">Latencia: <b style="color:#087c58">${esc(d.latencia)}</b></div>
-            <div style="font-size:11px;color:#444">Ítems disponibles: <b>${d.itemsDisponibles?.toLocaleString()}</b></div>
-            <div style="font-size:10px;color:#777;margin-top:4px">Última sinc: ${esc(d.ultimoSync)}</div>
-            <div style="margin-top:8px;border-top:1px solid #eee;padding-top:6px;display:flex;justify-content:space-between">
-              <button class="btn" style="font-size:10px;padding:3px 7px" onclick="testDistributorPing('${d.id}')">Probar Ping</button>
-              <button class="btn primary" style="font-size:10px;padding:3px 7px" onclick="syncSingleDistributor('${d.id}')">Sincronizar</button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="panelhead" style="border:1px solid #ccc;border-bottom:none">Historial de Sincronización en Tiempo Real</div>
-      <div style="border:1px solid #ccc;padding:8px;background:#fff;max-height:180px;overflow:auto;font-family:monospace;font-size:11px;color:#333;line-height:1.4">
-        <div>[${fmt()}] Conexión establecida con AutoDist B2B Network (42ms) — 18,450 ítems verificados.</div>
-        <div>[${fmt()}] Catálogo TecDoc sincronizado con éxito. 14 nuevas referencias cruzadas agregadas al índice local.</div>
-        <div>[${fmt()}] Monitoreo de fluctuación de costos activo en paralelo con tasa BCV vigente.</div>
-      </div>
-    </div>
-  </div>`;
-}
 
 // Modales y Acciones del Módulo de Repuestos
 
@@ -1302,22 +1160,6 @@ function saveRepuesto(id){
   toast('Repuesto automotriz guardado con éxito');
 }
 
-// Sincronización en Vivo B2B con Distribuidores
-function syncDistribuidoresModal(){
-  const distribs=getDistribuidores();
-  openModal('Integraciones B2B de Repuestos',`<div style="padding:10px">
-    <div style="padding:10px;background:#fff8e6;border:1px solid #e6c36a;margin-bottom:10px;font-size:11px">
-      <b>Integraciones no conectadas.</b> Este POS no marcará un distribuidor como sincronizado hasta recibir una respuesta real de su API/FEED. Las conexiones mostradas son configuraciones pendientes.
-    </div>
-    <table><thead><tr><th>Distribuidor</th><th>Endpoint</th><th>Estado</th></tr></thead><tbody>
-    ${distribs.map(d=>`<tr><td>${esc(d.nombre)}</td><td style="font-size:9px;word-break:break-all">${esc(d.endpoint)}</td><td><span class="badge warn">No configurado</span></td></tr>`).join('')}
-    </tbody></table>
-  </div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);
-}
-function finishSyncB2B(){toast('No hay APIs B2B configuradas; no se simuló ninguna sincronización');}
-function testDistributorPing(id){toast('Ping no ejecutado: API del distribuidor no configurada');}
-function syncSingleDistributor(id){toast('Sincronización no ejecutada: API del distribuidor no configurada');}
-
 // Cargar y vender repuesto en POS
 function venderRepuestoEnPOS(id){
   const r = getRepuestos().find(x => x.id === id);
@@ -1392,9 +1234,7 @@ function applyBatchSKUs(){
 }
 
 // Exponer funciones globales
-window.getRepuestos = getRepuestos;
-window.getDistribuidores = getDistribuidores;
-window.generateUniqueSKU = generateUniqueSKU;
+window.getRepuestos = getRepuestos;window.generateUniqueSKU = generateUniqueSKU;
 window.repuestosView = repuestosView;
 window.filterRepuestosTable = filterRepuestosTable;
 window.viewPhotoZoom = viewPhotoZoom;
@@ -1403,10 +1243,6 @@ window.saveRepuestoPhoto = saveRepuestoPhoto;
 window.openRepuestoDetail = openRepuestoDetail;
 window.openRepuestoModal = openRepuestoModal;
 window.saveRepuesto = saveRepuesto;
-window.syncDistribuidoresModal = syncDistribuidoresModal;
-window.finishSyncB2B = finishSyncB2B;
-window.testDistributorPing = testDistributorPing;
-window.syncSingleDistributor = syncSingleDistributor;
 window.venderRepuestoEnPOS = venderRepuestoEnPOS;
 window.openSKUGeneratorBatchModal = openSKUGeneratorBatchModal;
 window.applyBatchSKUs = applyBatchSKUs;
