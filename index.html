@@ -83,7 +83,7 @@ ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:
 };
 let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,'db-save').catch(()=>{});}
+function save(reason='db-save'){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,reason).catch(()=>{});}
 window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
 function id(prefix,key){let n=db.seq[key]++;return prefix+'-'+String(n).padStart(5,'0')}
@@ -584,7 +584,7 @@ function finishSale(total){
   const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x}))};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
   if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else db.caja.saldo+=paid;
-  save();cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
+  save('sale-created');cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
 }function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
 function productosView(){
   return listPage(
@@ -717,7 +717,7 @@ function savePurchase(){
   db.compras.push(x);
   if(saldo){db.cxp.push({id:id('CXP','cxp'),fecha:fmt(),documento:num,proveedorId:sid,proveedor:s.nombre,total,saldo,estado:'Pendiente'});s.saldo=(s.saldo||0)+saldo}else db.caja.saldo-=paid;
   db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:num,detalle:s.nombre,monto:paid? -paid:0});
-  save();closeModal();renderView();toast(num+' registrada');
+  save('purchase-created');closeModal();renderView();toast(num+' registrada');
 }
 function clientesView(){return listPage('Clientes','Maestro de clientes, crédito y estados de cuenta',`<button class="btn primary" onclick="openClient()">➕ Nuevo cliente</button>`,`<div class="searchbar"><input placeholder="Buscar cliente o documento" oninput="filterTable(this,'clientsTable')"></div><div class="panel"><div class="panelbody"><table id="clientsTable"><thead><tr><th>Cliente</th><th>Documento</th><th>Teléfono</th><th>Límite</th><th>Saldo CxC</th><th></th></tr></thead><tbody>${db.clientes.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${esc(c.telefono)}</td><td>${money(c.limite)}</td><td>${money(c.saldo||0)}</td><td><button class="btn" onclick="openClient('${c.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`)}
 function openClient(cid){let c=cid?db.clientes.find(x=>x.id===cid):{id:'',nombre:'',documento:'',telefono:'',email:'',direccion:'',limite:0,saldo:0};openModal(cid?'Editar cliente':'Nuevo cliente',`<div class="formgrid"><div class="field"><label>Nombre / Razón social</label><input id="cNombre" value="${esc(c.nombre)}"></div><div class="field"><label>Documento</label><input id="cDoc" value="${esc(c.documento)}"></div><div class="field"><label>Teléfono</label><input id="cTel" value="${esc(c.telefono)}"></div><div class="field"><label>Correo</label><input id="cEmail" value="${esc(c.email)}"></div><div class="field"><label>Límite de crédito</label><input id="cLim" type="number" step=".01" value="${c.limite}"></div><div class="field full"><label>Dirección</label><textarea id="cDir">${esc(c.direccion)}</textarea></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveClient('${cid||''}')">Guardar</button>`)}
