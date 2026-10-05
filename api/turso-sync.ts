@@ -57,6 +57,13 @@ export default async function handler(req:any,res:any){
           args:[operationId,String(sale.numero),String(l.id),Number(l.qty)||0,String(sale.total<0?'return':'sale'),now]
         }));
         if(stmts.length) await db.batch(stmts,'write');
+        const applied=await db.execute({sql:'SELECT product_id,qty_delta FROM sifer_inventory_ledger WHERE operation_id=?',args:[operationId]});
+        for(const row of applied.rows){
+          const pid=String(row.product_id),delta=Number(row.qty_delta)||0;
+          await db.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+            VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
+            args:[pid,delta,now]});
+        }
       }
     }
     if(type==='products-inventory-snapshot'){
