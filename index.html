@@ -436,9 +436,25 @@ function checkout(){
   if(hasReturn&&hasSale)return toast('No se pueden mezclar ventas y devoluciones');
   saleCustomer=document.getElementById('saleCustomer')?.value||saleCustomer;
   saleType=document.getElementById('saleType')?.value||saleType;
-  const c=db.clientes.find(x=>x.id===saleCustomer),sub=cart.reduce((s,l)=>s+l.qty*l.price-(l.disc||0),0),tax=sub*db.config.impuesto/100,total=sub+tax,amount=Math.abs(total);
+  const c=db.clientes.find(x=>x.id===saleCustomer),sub=cart.reduce((s,l)=>s+l.qty*l.price-(l.disc||0),0),tax=sub*db.config.impuesto/100,total=sub+tax,amount=Math.abs(total),defaultPay=saleType==='credito'?0:amount;
   const returnField=hasReturn?'<div class="field full"><label>Factura / Venta original</label><input id="returnOrigin" placeholder="Ej: VTA-00001" required></div>':'';
-  openModal(hasReturn?'Procesar devolución':'Cobrar venta',`<div class="formgrid"><div class="field"><label>Cliente</label><input readonly value="${esc(c?.nombre||'Cliente general')}"></div><div class="field"><label>${hasReturn?'Monto a devolver':'Total'} USD</label><input readonly value="${money(amount)}"></div>${returnField}<div class="field"><label>Método de pago</label><select id="payMethod"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div><div class="field"><label>${hasReturn?'Monto devuelto':'Monto recibido'}</label><input id="payAmount" type="number" min="0" step=".01" value="${amount}" oninput="updateChange(${amount})"></div><div class="field"><label>${hasReturn?'Diferencia':'Cambio'}</label><input id="payChange" readonly value="${money(0)}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
+  openModal(hasReturn?'Procesar devolución':'Cobrar venta',`<div class="formgrid">
+    <div class="field"><label>Cliente</label><input readonly value="${esc(c?.nombre||'Cliente general')}"></div>
+    <div class="field"><label>${hasReturn?'Monto a devolver':'Total'} USD</label><input readonly value="${money(amount)}"></div>
+    ${returnField}
+    <div class="field"><label>Método 1</label><select id="payMethod1"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div>
+    <div class="field"><label>Monto 1 USD</label><input id="payAmount1" type="number" min="0" step=".01" value="${defaultPay}" oninput="updatePaymentTotals(${amount})"></div>
+    <div class="field"><label>Método 2 (opcional)</label><select id="payMethod2"><option>Ninguno</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div>
+    <div class="field"><label>Monto 2 USD</label><input id="payAmount2" type="number" min="0" step=".01" value="0" oninput="updatePaymentTotals(${amount})"></div>
+    <div class="field"><label>Total aplicado</label><input id="payApplied" readonly value="${money(defaultPay)}"></div>
+    <div class="field"><label>Faltante / Cambio</label><input id="payChange" readonly value="${money(Math.max(0,amount-defaultPay))}"></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
+}
+function updatePaymentTotals(total){
+  const a=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),b=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),sum=a+b;
+  const applied=document.getElementById('payApplied'),change=document.getElementById('payChange');
+  if(applied)applied.value=money(sum);
+  if(change)change.value=money(Math.max(0,total-sum));
 }function getReceiptHTML(v, rate){
  const subVES = (v.subtotal || (v.total / (1 + db.config.impuesto / 100))) * rate;
  const taxVES = (v.impuesto || (v.total - (v.total / (1 + db.config.impuesto / 100)))) * rate;
@@ -533,23 +549,28 @@ function showTicketModal(v){
 }
 
 function finishSale(total){
-  const isReturn=cart.some(l=>l.qty<0),isSale=cart.some(l=>l.qty>0),received=Math.max(0,Number(document.getElementById('payAmount').value)||0),amount=Math.abs(total);
+  const isReturn=cart.some(l=>l.qty<0),isSale=cart.some(l=>l.qty>0),amount=Math.abs(total);
   if(isReturn&&isSale)return toast('Operación inválida');
-  if(!isReturn&&saleType==='contado'&&received<amount)return toast('El pago es insuficiente');
+  const a1=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),a2=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),applied=a1+a2;
+  if(!isReturn&&saleType==='credito'&&applied>0)return toast('Una venta a crédito no puede registrar pago inicial aquí');
+  if(!isReturn&&saleType!=='credito'&&applied<amount)return toast('El pago total es insuficiente');
   if(isReturn){
     const origin=(document.getElementById('returnOrigin')?.value||'').trim(),original=db.ventas.find(v=>v.numero===origin);
     if(!original)return toast('Debe indicar una venta original válida');
     for(const l of cart){const sold=(original.lineas||[]).find(x=>x.id===l.id);if(!sold||Math.abs(l.qty)>Number(sold.qty||0))return toast('La cantidad devuelta supera la cantidad facturada');}
-    if(received<amount)return toast('El monto devuelto es insuficiente');
+    if(applied<amount)return toast('El monto devuelto es insuficiente');
   }
+  const pagos=[];
+  if(a1>0)pagos.push({metodo:document.getElementById('payMethod1')?.value||'Efectivo',monto:a1});
+  if(a2>0){const m2=document.getElementById('payMethod2')?.value||'Ninguno';if(m2==='Ninguno')return toast('Seleccione el método del segundo pago');pagos.push({metodo:m2,monto:a2});}
   for(const l of cart){
     const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
     if(!p)return toast('Artículo no encontrado: '+l.id);
     if(!isReturn&&Number(l.qty)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
     p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
   }
-  const num=isReturn?id('DEV','venta'):id('VTA','venta'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-received:(saleType==='credito'?0:Math.min(received,amount)),saldo=isReturn?0:amount-paid;
-  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:document.getElementById('payMethod').value,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x}))};
+  const num=isReturn?id('DEV','venta'):id('VTA','venta'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
+  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x}))};
   db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
   if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else db.caja.saldo+=paid;
   save();cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
