@@ -38,8 +38,18 @@
     const item={operationId,type,payload:clone(payload),createdAt:new Date().toISOString(),attempts:0,status:'pending'};
     return tx(QUEUE_STORE,'readwrite',s=>s.put(item)).then(()=>item);
   }
-  function countQueue(){
-    return tx(QUEUE_STORE,'readonly',s=>{const r=s.count();r._siferResolve=true;return r;});
+  async function syncPending(){
+    if(!navigator.onLine)return;
+    const db=await open(); if(!db)return;
+    const items=await new Promise(resolve=>{const t=db.transaction(QUEUE_STORE,'readonly'),s=t.objectStore(QUEUE_STORE),a=[];const r=s.openCursor();r.onsuccess=()=>{const cur=r.result;if(cur){a.push(cur.value);cur.continue()}else resolve(a)};r.onerror=()=>resolve(a)});
+    for(const item of items){
+      try{
+        const response=await fetch('/api/turso-sync',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(item)});
+        if(!response.ok) throw new Error('HTTP '+response.status);
+        await tx(QUEUE_STORE,'readwrite',s=>s.delete(item.operationId));
+      }catch(e){break}
+    }
+    updateStatus();
   }
   function updateStatus(){
     const el=document.getElementById('syncStatus');
@@ -54,10 +64,10 @@
     updateStatus();
   }
   global.SiferOffline={
-    open,persist,saveState,enqueue,loadState,updateStatus,
+    open,persist,saveState,enqueue,loadState,syncPending,updateStatus,
     isSupported:()=>('indexedDB' in global)
   };
-  global.addEventListener('online',updateStatus);
+  global.addEventListener('online',()=>{updateStatus();syncPending()});
   global.addEventListener('offline',updateStatus);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateStatus);else updateStatus();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{updateStatus();syncPending()});else {updateStatus();syncPending();}
 })(window);
