@@ -101,6 +101,10 @@
   async function persist(state,reason){
     await saveState(state);
     await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
+    if(reason==='sale-created' && state?.ventas?.length){
+      const sale=state.ventas[state.ventas.length-1];
+      await enqueue('sale-created',{sale:clone(sale),at:new Date().toISOString()});
+    }
     updateStatus();
     if(navigator.onLine) { await syncPending(); await pullProductsInventory(); }
   }
