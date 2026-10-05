@@ -77,7 +77,7 @@ productos:[
 ],
 clientes:[{id:'CL-001',nombre:'Constructora Central',documento:'J-00000001',telefono:'555-0101',email:'compras@constructora.local',direccion:'Av. Principal 100',limite:5000,saldo:0}],
 proveedores:[{id:'PV-001',nombre:'Distribuidora Ferretera Nacional',documento:'J-10000001',telefono:'555-0202',email:'ventas@distribuidora.local',direccion:'Zona Industrial',saldo:0}],
-ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:false,saldo:0,apertura:null},seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7}
+ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7}
 };
 let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
@@ -690,8 +690,54 @@ function openQuote(){openModal('Nuevo presupuesto',`<div class="formgrid"><div c
 function saveQuote(){let c=db.clientes.find(x=>x.id===document.getElementById('qClient').value),p=db.productos.find(x=>x.id===document.getElementById('qProduct').value),q=Number(document.getElementById('qQty').value)||1,days=Number(document.getElementById('qDays').value)||15,sub=q*p.precio,tax=sub*db.config.impuesto/100,total=sub+tax;let d=new Date();d.setDate(d.getDate()+days);db.presupuestos.push({numero:id('PRE','presupuesto'),fecha:fmt(),vigencia:d.toLocaleDateString('es-ES'),cliente:c.nombre,clienteId:c.id,total,estado:'Pendiente',lineas:[{id:p.id,qty:q,price:p.precio}]});save();closeModal();renderView();toast('Presupuesto guardado')}
 function quoteToSale(num){let q=db.presupuestos.find(x=>x.numero===num);if(!q)return;saleCustomer=q.clienteId;cart=q.lineas.map(l=>({id:l.id,qty:l.qty,price:l.price,disc:0}));saleType='contado';go('pos');toast('Presupuesto cargado en el POS')}
 function reportesView(){let ventas=db.ventas.reduce((s,x)=>s+x.total,0),compras=db.compras.reduce((s,x)=>s+x.total,0),util=ventas-compras;return listPage('Reportes','Indicadores y movimientos del sistema',null,`<div class="cards"><div class="card">Ventas<b>${money(ventas)}</b><span>total registrado</span></div><div class="card">Compras<b>${money(compras)}</b><span>total registrado</span></div><div class="card">Margen bruto<b>${money(util)}</b><span>estimado sobre movimientos</span></div><div class="card">Clientes<b>${db.clientes.length}</b><span>registrados</span></div><div class="card">Proveedores<b>${db.proveedores.length}</b><span>registrados</span></div></div><div class="grid2"><div class="panel"><div class="panelhead">Ventas por documento</div><div class="panelbody">${salesTable(db.ventas.slice().reverse())}</div></div><div class="panel"><div class="panelhead">Kardex / movimientos recientes</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice(-20).reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div></div>`)}
-function cajaView(){return listPage('Caja y Finanzas','Apertura, cierre, ingresos y egresos',`<button class="btn ${db.caja.abierta?'danger':'green'}" onclick="toggleCaja()">${db.caja.abierta?'Cerrar caja':'Abrir caja'}</button>`,`<div class="cards"><div class="card">Estado<b>${db.caja.abierta?'ABIERTA':'CERRADA'}</b><span>${db.caja.apertura||'Sin apertura'}</span></div><div class="card">Saldo de caja<b>${money(db.caja.saldo)}</b><span>movimiento neto</span></div></div><div class="panel"><div class="panelhead">Movimientos de caja</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice().reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div>`)}
-function toggleCaja(){if(db.caja.abierta){if(confirm('¿Cerrar la caja?')){db.caja.abierta=false;save();renderView();toast('Caja cerrada')}}else{db.caja.abierta=true;db.caja.apertura=fmt();save();renderView();toast('Caja abierta')}}
+function cajaPeriodoMovimientos(){
+  const since=db.caja.ultimoCorteAt?new Date(db.caja.ultimoCorteAt).getTime():0;
+  return db.movimientos.filter(x=>{const t=new Date(x.fecha).getTime();return !since||Number.isNaN(t)||t>=since;});
+}
+function cajaResumen(){
+  const ventas=db.ventas.filter(v=>{const since=db.caja.ultimoCorteAt?new Date(db.caja.ultimoCorteAt).getTime():0;const t=new Date(v.fecha).getTime();return !since||Number.isNaN(t)||t>=since;});
+  const contado=ventas.filter(v=>v.tipo==='contado').reduce((s,v)=>s+(v.pagado||0),0);
+  const credito=ventas.filter(v=>v.tipo==='credito').reduce((s,v)=>s+v.total,0);
+  const devol=ventas.filter(v=>v.tipo==='devolucion').reduce((s,v)=>s+Math.abs(v.total),0);
+  const cobros=db.movimientos.filter(x=>x.tipo==='Cobro CxC').reduce((s,x)=>s+Number(x.monto||0),0);
+  const compras=db.movimientos.filter(x=>x.tipo==='Compra').reduce((s,x)=>s+Number(x.monto||0),0);
+  const pagos=db.movimientos.filter(x=>x.tipo==='Pago CxP').reduce((s,x)=>s+Number(x.monto||0),0);
+  return {ventas,contado,credito,devol,cobros,compras,pagos};
+}
+function showCorteX(){
+  const r=cajaResumen();
+  openModal('Corte X — Consulta de caja',`<div class="cards">
+    <div class="card">Ventas contado<b>${money(r.contado)}</b><span>cobrado en ventas</span></div>
+    <div class="card">Cobros CxC<b>${money(r.cobros)}</b><span>ingresos por cuentas</span></div>
+    <div class="card">Devoluciones<b>${money(r.devol)}</b><span>reembolsos registrados</span></div>
+    <div class="card">Compras/Pagos<b>${money(r.compras+r.pagos)}</b><span>salidas registradas</span></div>
+  </div><div class="panel"><div class="panelbody"><b>Saldo actual de caja:</b> ${money(db.caja.saldo)}<br><small>El Corte X no cierra ni modifica la caja.</small></div></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="printView()">Imprimir</button>`);
+}
+function showCorteZ(){
+  if(!db.caja.abierta)return toast('Abra la caja para ejecutar Corte Z');
+  const r=cajaResumen();
+  openModal('Corte Z — Cierre de caja',`<div class="cards">
+    <div class="card">Ventas contado<b>${money(r.contado)}</b></div>
+    <div class="card">Cobros CxC<b>${money(r.cobros)}</b></div>
+    <div class="card">Devoluciones<b>${money(r.devol)}</b></div>
+    <div class="card">Saldo caja<b>${money(db.caja.saldo)}</b></div>
+  </div><div style="padding:9px;background:#fff8e6;border:1px solid #e6c36a;font-size:11px">El Corte Z guarda un snapshot del período y cierra la caja. Esta operación no borra ventas, inventario ni movimientos.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executeCorteZ()">Ejecutar Corte Z</button>`);
+}
+function executeCorteZ(){
+  if(!db.caja.abierta)return toast('La caja ya está cerrada');
+  const r=cajaResumen(),now=new Date(),numero='Z-'+String((db.caja.cortes?.length||0)+1).padStart(5,'0');
+  db.caja.cortes=db.caja.cortes||[];
+  db.caja.cortes.push({numero,fecha:fmt(),saldoFinal:db.caja.saldo,ventasContado:r.contado,cobros:r.cobros,devoluciones:r.devol,ventasCredito:r.credito});
+  db.caja.ultimoCorteAt=now.toISOString();db.caja.abierta=false;db.caja.apertura=null;save();closeModal();renderView();toast(numero+' ejecutado. Caja cerrada.');
+}
+function cajaView(){
+  return listPage('Caja y Finanzas','Apertura, movimientos y cortes X/Z',
+    `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn ${db.caja.abierta?'danger':'green'}" onclick="toggleCaja()">${db.caja.abierta?'Cerrar caja':'Abrir caja'}</button><button class="btn" onclick="showCorteX()">Corte X</button><button class="btn primary" onclick="showCorteZ()">Corte Z</button></div>`,
+    `<div class="cards"><div class="card">Estado<b>${db.caja.abierta?'ABIERTA':'CERRADA'}</b><span>${db.caja.apertura||'Sin apertura'}</span></div><div class="card">Saldo de caja<b>${money(db.caja.saldo)}</b><span>movimiento neto</span></div><div class="card">Cortes Z<b>${db.caja.cortes?.length||0}</b><span>cierres registrados</span></div></div>
+    <div class="panel"><div class="panelhead">Historial de Cortes Z</div><div class="panelbody"><table><thead><tr><th>Corte</th><th>Fecha</th><th>Ventas contado</th><th>Cobros</th><th>Devoluciones</th><th>Saldo final</th></tr></thead><tbody>${(db.caja.cortes||[]).slice().reverse().map(z=>`<tr><td><b>${z.numero}</b></td><td>${z.fecha}</td><td>${money(z.ventasContado)}</td><td>${money(z.cobros)}</td><td>${money(z.devoluciones)}</td><td>${money(z.saldoFinal)}</td></tr>`).join('')||'<tr><td colspan="6">No hay cortes Z.</td></tr>'}</tbody></table></div></div>
+    <div class="panel"><div class="panelhead">Movimientos de caja</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice().reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div>`);
+}
+function toggleCaja(){if(db.caja.abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}db.caja.abierta=true;db.caja.apertura=fmt();save();renderView();toast('Caja abierta')}
 function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
 function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'FERRETERÍA SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
 function resetData(){if(confirm('Se eliminarán los datos actuales y se restaurarán los datos de demostración.')){db=structuredClone(seed);cart=[];save();renderShell();toast('Datos restaurados')}}
