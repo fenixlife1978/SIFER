@@ -1,8 +1,27 @@
-// SIFER360 - Catálogo Máster Universal de Proveedores y Motor Comercial de Precios (+100.000 Productos)
+// SIFER360 - Catálogo Máster Universal de Proveedores y Motor Comercial de Precios (+900.000 Productos)
 // Especializado en Mercado Venezolano: Aceites y Lubricantes (Nacionales e Importados en todas las presentaciones),
-// Repuestos Automotrices para Marcas Comerciales (Toyota, Chevrolet, Ford, Hyundai, Nissan, etc.) y Marcas Chinas (Chery, Jac, Changan, Great Wall).
+// Repuestos Automotrices de Alta Frecuencia Comercial (Bujes, Gomas, Lápiz/Bieletas, Rodamientos, Baterías,
+// Luces de Faros y Stop, Cilindros de Ignición/Switcheras, Relex/Relés, Mangueras de Radiador, Frenos, Suspensión,
+// Motor, Inyección, etc.) para Marcas Comerciales (Toyota, Chevrolet, Ford, Hyundai, Nissan, etc.) y Marcas Chinas (Chery, Jac, Changan, Great Wall).
 
 (function(global){
+
+  // ==========================================
+  // 0. UTILIDADES GLOBALES DE BÚSQUEDA POR PALABRAS CLAVES
+  // ==========================================
+
+  function normalizeSearchText(s) {
+    if (!s) return '';
+    return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function matchKeywords(text, query) {
+    if (!query || !query.trim()) return true;
+    if (!text) return false;
+    const normText = normalizeSearchText(text);
+    const tokens = normalizeSearchText(query).trim().split(/\s+/).filter(Boolean);
+    return tokens.every(token => normText.includes(token));
+  }
 
   // ==========================================
   // 1. BANCO DE DATOS DE MARCAS Y ESPECIFICACIONES
@@ -75,63 +94,80 @@
   ];
 
   // ==========================================
-  // 2. PARQUE AUTOMOTOR VENEZOLANO (VEHÍCULOS Y REPUESTOS)
+  // 2. PARQUE AUTOMOTOR VENEZOLANO EXTENDIDO
   // ==========================================
 
   const VEHICLES_IN_VENEZUELA = [
-    // Chevrolet (Masivo en Venezuela)
-    { marca: 'Chevrolet', modelo: 'Aveo', anios: '2005-2018', motor: '1.6L F16D3', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Optra (Design / Advance / Limited)', anios: '2004-2014', motor: '1.8L T18SED / 1.4L', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Corsa / Chevy C2', anios: '1998-2011', motor: '1.4L / 1.6L MPFI', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Spark', anios: '2006-2016', motor: '1.0L B10S', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Silverado / Tahoe / Avalanche', anios: '2000-2023', motor: '5.3L Vortec V8', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Cruze', anios: '2010-2017', motor: '1.8L Ecotec', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'LUV D-Max', anios: '2005-2015', motor: '3.5L V6 / 3.0L Diesel', tipo: 'comercial_masivo' },
-    { marca: 'Chevrolet', modelo: 'Grand Vitara (Suzuki / Chevrolet)', anios: '2001-2014', motor: '2.0L 4L / 2.5L / 2.7L V6', tipo: 'comercial_masivo' },
+    // Chevrolet (Líder en Venezuela)
+    { marca: 'Chevrolet', modelo: 'Aveo (3 Puertas / 4 Puertas / 5 Puertas / Speed)', anios: '2005-2018', motor: '1.6L F16D3 DOHC', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Corsa / Chevy C2 / Corsa Evolution', anios: '1998-2012', motor: '1.3L / 1.4L / 1.6L / 1.8L MPFI', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Optra (Design / Advance / Limited / Hatchback)', anios: '2004-2014', motor: '1.8L T18SED / 1.4L', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Spark (724 / Cronos / LT)', anios: '2006-2016', motor: '1.0L B10S 4 Cilindros', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Silverado / Tahoe / Avalanche / Suburban', anios: '2000-2023', motor: '5.3L Vortec V8 / 6.0L', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Cruze (Sedán / Hatchback)', anios: '2010-2017', motor: '1.8L Ecotec DOHC', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'LUV D-Max 4x2 / 4x4', anios: '2005-2015', motor: '3.5L V6 Gasolina / 3.0L Isuzu Diesel', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Grand Vitara (Suzuki / Chevrolet 4L y V6)', anios: '2001-2014', motor: '2.0L 4L / 2.5L / 2.7L V6', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Astra / Zafira', anios: '2000-2008', motor: '1.8L / 2.0L / 2.2L 16V', tipo: 'comercial_masivo' },
+    { marca: 'Chevrolet', modelo: 'Cavalier / Sunfire', anios: '1996-2004', motor: '2.2L / 2.4L Twin Cam', tipo: 'comercial_masivo' },
 
     // Ford (Clásicos y masivos en Venezuela)
-    { marca: 'Ford', modelo: 'Fiesta (Power / Max / Move / Titanium)', anios: '2001-2019', motor: '1.6L Zetec Rocam / 1.6L Sigma', tipo: 'comercial_masivo' },
-    { marca: 'Ford', modelo: 'Explorer (Eddie Bauer / Limited / 4.6L / 3.5L)', anios: '2002-2022', motor: '4.6L V8 / 4.0L V6 / 3.5L EcoBoost', tipo: 'comercial_masivo' },
-    { marca: 'Ford', modelo: 'F-150 / Fortaleza / Super Duty', anios: '1997-2023', motor: '4.6L / 5.4L Triton / 6.2L', tipo: 'comercial_masivo' },
-    { marca: 'Ford', modelo: 'EcoSport', anios: '2004-2018', motor: '1.6L / 2.0L Duratec', tipo: 'comercial_masivo' },
-    { marca: 'Ford', modelo: 'Focus', anios: '2001-2013', motor: '2.0L Duratec', tipo: 'comercial_masivo' },
-    { marca: 'Ford', modelo: 'Ranger', anios: '2000-2022', motor: '2.3L Gasolina / 3.0L Diesel', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Fiesta (Power / Max / Move / Titanium / Supercharger)', anios: '2001-2019', motor: '1.6L Zetec Rocam / 1.6L Sigma', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Explorer (Eddie Bauer / Limited / XLT / 4.6L / 3.5L)', anios: '2002-2022', motor: '4.6L V8 3V / 4.0L V6 / 3.5L EcoBoost', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'F-150 / Fortaleza / Triton / Super Duty FX4', anios: '1997-2023', motor: '4.6L / 5.4L Triton V8 / 6.2L', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'EcoSport 4x2 / 4x4', anios: '2004-2018', motor: '1.6L Rocam / 2.0L Duratec', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Focus (Sedán / Hatchback)', anios: '2001-2013', motor: '2.0L Duratec / 2.0L Zetec', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Ka (Fly / Action / Viral)', anios: '2004-2012', motor: '1.6L Zetec Rocam', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Ranger 4x2 / 4x4', anios: '2000-2022', motor: '2.3L Gasolina / 3.0L PowerStroke Diesel', tipo: 'comercial_masivo' },
+    { marca: 'Ford', modelo: 'Fusion V6', anios: '2006-2015', motor: '3.0L / 3.5L Duratec V6', tipo: 'comercial_masivo' },
 
-    // Toyota (Líder en confiabilidad en Venezuela)
-    { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación / GLi / 2015+)', anios: '1993-2024', motor: '1.6L 4AFE / 1.8L 1ZZ / 2ZR', tipo: 'comercial_masivo' },
-    { marca: 'Toyota', modelo: 'Hilux (Kavak / Vigo / Revo)', anios: '1998-2024', motor: '2.7L 2TR-FE / 4.0L 1GR / 1KD Diesel', tipo: 'comercial_masivo' },
-    { marca: 'Toyota', modelo: 'Fortuner / 4Runner', anios: '2003-2024', motor: '4.0L 1GR-FE V6', tipo: 'comercial_masivo' },
-    { marca: 'Toyota', modelo: 'Yaris (Belta / Sol / Hatchback)', anios: '2000-2023', motor: '1.3L 2NZ / 1.5L 1NZ-FE', tipo: 'comercial_masivo' },
-    { marca: 'Toyota', modelo: 'Land Cruiser (Machito / Serie 70 / Samurai / Prado)', anios: '1990-2024', motor: '4.5L 1FZ / 4.0L 1GR', tipo: 'comercial_masivo' },
+    // Toyota (Referencia de confiabilidad en Venezuela)
+    { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación / GLi / 2015+)', anios: '1993-2024', motor: '1.6L 4AFE / 1.8L 1ZZ-FE / 2.0L 2ZR-FE', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'Hilux (Kavak / Vigo / Revo / 2.7L / 4.0L / Diesel)', anios: '1998-2024', motor: '2.7L 2TR-FE / 4.0L 1GR-FE / 1KD 3.0L', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'Fortuner / 4Runner (SR5 / Limited)', anios: '2003-2024', motor: '4.0L 1GR-FE V6 Dual VVT-i', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'Yaris (Belta / Sol / Hatchback / Sedán)', anios: '2000-2023', motor: '1.3L 2NZ-FE / 1.5L 1NZ-FE', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'Land Cruiser (Machito / Serie 70 / Samurai / Prado / Merú)', anios: '1990-2024', motor: '4.5L 1FZ-FE / 4.0L 1GR / 2.7L 3RZ', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'Terios / Daihatsu Terios Cool / BeGo', anios: '2002-2016', motor: '1.3L K3-VE / 1.5L 3SZ-VE', tipo: 'comercial_masivo' },
+    { marca: 'Toyota', modelo: 'RAV4 4x2 / 4x4', anios: '2001-2022', motor: '2.0L / 2.4L 2AZ-FE / 2.5L', tipo: 'comercial_masivo' },
 
     // Hyundai y Kia
-    { marca: 'Hyundai', modelo: 'Getz / Accent / Elantra', anios: '2000-2016', motor: '1.3L / 1.5L / 1.6L / 2.0L', tipo: 'comercial_masivo' },
-    { marca: 'Hyundai', modelo: 'Tucson / Santa Fe', anios: '2005-2020', motor: '2.0L / 2.7L V6', tipo: 'comercial_masivo' },
-    { marca: 'Kia', modelo: 'Rio (Stylus / JB / Rio 4) / Picanto', anios: '2002-2020', motor: '1.1L / 1.5L / 1.6L', tipo: 'comercial_masivo' },
-    { marca: 'Kia', modelo: 'Sportage', anios: '2005-2020', motor: '2.0L / 2.7L V6', tipo: 'comercial_masivo' },
+    { marca: 'Hyundai', modelo: 'Getz (GL / GLS)', anios: '2006-2014', motor: '1.3L / 1.6L G4ED Alpha DOHC', tipo: 'comercial_masivo' },
+    { marca: 'Hyundai', modelo: 'Accent (Verna / Maxx / Brisa / Accent 4)', anios: '2000-2017', motor: '1.3L / 1.5L / 1.6L', tipo: 'comercial_masivo' },
+    { marca: 'Hyundai', modelo: 'Elantra (XD / HD / MD)', anios: '2001-2017', motor: '1.6L / 2.0L Beta II', tipo: 'comercial_masivo' },
+    { marca: 'Hyundai', modelo: 'Tucson (GLS / 4x2 / 4x4)', anios: '2005-2020', motor: '2.0L Beta / 2.7L V6 Delta', tipo: 'comercial_masivo' },
+    { marca: 'Hyundai', modelo: 'Santa Fe V6', anios: '2002-2018', motor: '2.7L / 3.3L / 3.5L V6', tipo: 'comercial_masivo' },
+    { marca: 'Kia', modelo: 'Rio (Stylus / JB / Rio 4 / Spice)', anios: '2002-2020', motor: '1.1L / 1.5L / 1.6L G4ED', tipo: 'comercial_masivo' },
+    { marca: 'Kia', modelo: 'Picanto (Morning / Ion)', anios: '2005-2020', motor: '1.0L / 1.1L / 1.2L Kappa', tipo: 'comercial_masivo' },
+    { marca: 'Kia', modelo: 'Sportage (LX / EX / Pro)', anios: '2005-2020', motor: '2.0L Beta / 2.7L V6', tipo: 'comercial_masivo' },
+    { marca: 'Kia', modelo: 'Cerato / Spectra', anios: '2006-2018', motor: '1.6L / 2.0L DOHC', tipo: 'comercial_masivo' },
 
-    // Nissan, Mitsubishi, Renault, Fiat, VW
-    { marca: 'Nissan', modelo: 'Sentra (B13 / B14 / B15 / B16) / Tiida', anios: '1995-2018', motor: '1.6L GA16DE / 1.8L QG18 / MR18', tipo: 'comercial_masivo' },
-    { marca: 'Nissan', modelo: 'Frontier / Pathfinder / Patrol', anios: '2000-2022', motor: '2.4L / 4.0L V6', tipo: 'comercial_masivo' },
-    { marca: 'Mitsubishi', modelo: 'Lancer (Signo / CK / Touring 2.0)', anios: '1998-2016', motor: '1.3L / 1.6L 4G18 / 2.0L 4G94', tipo: 'comercial_masivo' },
-    { marca: 'Mitsubishi', modelo: 'Montero (Dakar / Sport / Limited)', anios: '1998-2015', motor: '3.0L / 3.5L / 3.8L V6', tipo: 'comercial_masivo' },
-    { marca: 'Renault', modelo: 'Clio / Symbol / Logan / Megane', anios: '2000-2018', motor: '1.4L / 1.6L K4M / K7M', tipo: 'comercial_masivo' },
-    { marca: 'Fiat', modelo: 'Palio / Siena / Uno Fire', anios: '1998-2016', motor: '1.3L Fire / 1.4L / 1.8L Powertrain', tipo: 'comercial_masivo' },
-    { marca: 'Volkswagen', modelo: 'Gol (G3 / G4 / G5) / Fox / CrossFox / Bora', anios: '2000-2017', motor: '1.6L / 1.8L / 2.0L EA111', tipo: 'comercial_masivo' },
+    // Nissan, Mitsubishi, Renault, Fiat, VW, Jeep
+    { marca: 'Nissan', modelo: 'Sentra (B13 / B14 / B15 / B16 / Clásico)', anios: '1995-2018', motor: '1.6L GA16DE / 1.8L QG18 / 2.0L MR20DE', tipo: 'comercial_masivo' },
+    { marca: 'Nissan', modelo: 'Tiida (Sedán / Hatchback)', anios: '2007-2018', motor: '1.8L MR18DE 16V', tipo: 'comercial_masivo' },
+    { marca: 'Nissan', modelo: 'Frontier / D22 / Navara 4x2 / 4x4', anios: '2000-2022', motor: '2.4L KA24DE / 2.5L Diesel YD25', tipo: 'comercial_masivo' },
+    { marca: 'Nissan', modelo: 'Pathfinder / Patrol / X-Trail', anios: '2001-2020', motor: '2.5L QR25 / 3.5L / 4.0L VQ40 V6', tipo: 'comercial_masivo' },
+    { marca: 'Mitsubishi', modelo: 'Lancer (Signo / CK / GLX / Touring 2.0)', anios: '1998-2016', motor: '1.3L / 1.6L 4G18 / 2.0L 4G94 DOHC', tipo: 'comercial_masivo' },
+    { marca: 'Mitsubishi', modelo: 'Montero (Dakar / Sport / Limited / Cara de Gato)', anios: '1998-2015', motor: '3.0L 6G72 / 3.5L 6G74 / 3.8L V6', tipo: 'comercial_masivo' },
+    { marca: 'Renault', modelo: 'Clio / Symbol / Logan / Sandero / Megane', anios: '2000-2019', motor: '1.4L / 1.6L K4M 16V / K7M 8V', tipo: 'comercial_masivo' },
+    { marca: 'Renault', modelo: 'Twingo / Kangoo', anios: '1998-2012', motor: '1.2L D7F / 1.2L 16V D4F', tipo: 'comercial_masivo' },
+    { marca: 'Fiat', modelo: 'Palio / Siena / Uno Fire / Weekend / Strada', anios: '1998-2017', motor: '1.3L Fire / 1.4L Fire / 1.8L Powertrain', tipo: 'comercial_masivo' },
+    { marca: 'Volkswagen', modelo: 'Gol (G3 / G4 / G5 / Parati) / Fox / CrossFox / Bora', anios: '2000-2017', motor: '1.6L / 1.8L / 2.0L EA111 / EA827', tipo: 'comercial_masivo' },
+    { marca: 'Jeep', modelo: 'Cherokee (XJ / KJ Liberty / WK / KK / Grand Cherokee)', anios: '1992-2022', motor: '4.0L PowerTech 6L / 3.7L V6 / 4.7L / 5.7L Hemi V8', tipo: 'comercial_masivo' },
+    { marca: 'Jeep', modelo: 'Wrangler (YJ / TJ / JK Rubicon)', anios: '1995-2020', motor: '4.0L 6L / 3.8L / 3.6L Pentastar V6', tipo: 'comercial_masivo' },
 
     // Marcas Chinas muy comerciales en Venezuela
-    { marca: 'Chery', modelo: 'Arauca (Face / A1)', anios: '2012-2020', motor: '1.3L Acteco SQR473F', tipo: 'china_comercial' },
-    { marca: 'Chery', modelo: 'Orinoco (A3 / M11 / Cielo)', anios: '2012-2020', motor: '1.8L Acteco SQR484F', tipo: 'china_comercial' },
-    { marca: 'Chery', modelo: 'QQ / Cowin 1', anios: '2006-2018', motor: '0.8L / 1.1L 3/4 Cilindros', tipo: 'china_comercial' },
-    { marca: 'Chery', modelo: 'Grand Tiger (Pick-up ZX Auto / Chery)', anios: '2012-2021', motor: '2.4L Mitsubishi 4G64', tipo: 'china_comercial' },
+    { marca: 'Chery', modelo: 'Arauca (Face / A1)', anios: '2012-2020', motor: '1.3L Acteco SQR473F 16V', tipo: 'china_comercial' },
+    { marca: 'Chery', modelo: 'Orinoco (A3 / M11 / Cielo)', anios: '2012-2020', motor: '1.8L Acteco SQR484F DOHC', tipo: 'china_comercial' },
+    { marca: 'Chery', modelo: 'QQ / Cowin 1 / Sweet', anios: '2006-2018', motor: '0.8L / 1.1L 3/4 Cilindros', tipo: 'china_comercial' },
+    { marca: 'Chery', modelo: 'Grand Tiger Pick-up ZX Auto / Chery', anios: '2012-2021', motor: '2.4L Mitsubishi 4G64 Gasolina', tipo: 'china_comercial' },
     { marca: 'Chery', modelo: 'Tiggo (Tiggo 2 / Tiggo 3 / Tiggo 5)', anios: '2012-2024', motor: '1.5L / 1.6L / 2.0L Acteco', tipo: 'china_comercial' },
+    { marca: 'Chery', modelo: 'X1 (Beat / Indis)', anios: '2012-2018', motor: '1.3L Acteco', tipo: 'china_comercial' },
     { marca: 'Jac', modelo: 'J3 / J5 / Arena / Heyue', anios: '2012-2022', motor: '1.3L / 1.5L VVT', tipo: 'china_comercial' },
-    { marca: 'Jac', modelo: 'T6 / T8 Pick-up', anios: '2016-2024', motor: '2.0L Turbo Gasolina / Diesel', tipo: 'china_comercial' },
-    { marca: 'Jac', modelo: 'Camiones Ligeros 1040 / 1042 / 1061', anios: '2010-2024', motor: '2.8L Isuzu Tech Diesel', tipo: 'china_comercial' },
-    { marca: 'Changan', modelo: 'Benni / Alsvin / CS15 / CS35 / CS55 / Hunter', anios: '2012-2024', motor: '1.0L / 1.4L / 1.5L BlueCore', tipo: 'china_comercial' },
-    { marca: 'Great Wall', modelo: 'Haval / Wingle 5 / Wingle 7', anios: '2011-2024', motor: '2.2L / 2.4L Mitsubishi / 2.0L Turbo', tipo: 'china_comercial' },
-    { marca: 'DFSK / DFM', modelo: 'Mini Auto / Van / Camioneta Panel', anios: '2010-2023', motor: '1.0L / 1.3L', tipo: 'china_comercial' },
-    { marca: 'Foton', modelo: 'Tunland / Ollin / Aumark', anios: '2013-2024', motor: '2.8L Cummins ISF', tipo: 'china_comercial' }
+    { marca: 'Jac', modelo: 'T6 / T8 Pick-up 4x2 y 4x4', anios: '2016-2024', motor: '2.0L Turbo Gasolina / 1.9L Diesel', tipo: 'china_comercial' },
+    { marca: 'Jac', modelo: 'Camiones Ligeros 1040 / 1042 / 1061', anios: '2010-2024', motor: '2.8L Isuzu Tech Diesel Intercooler', tipo: 'china_comercial' },
+    { marca: 'Changan', modelo: 'Benni / Alsvin / CS15 / CS35 / CS55 / Hunter Pick-up', anios: '2012-2024', motor: '1.0L / 1.4L / 1.5L BlueCore / 1.9L Turbo', tipo: 'china_comercial' },
+    { marca: 'Great Wall', modelo: 'Haval H3 / H5 / H6 / Wingle 5 / Wingle 7', anios: '2011-2024', motor: '2.2L / 2.4L Mitsubishi / 2.0L Turbo Diesel', tipo: 'china_comercial' },
+    { marca: 'DFSK / DFM', modelo: 'Mini Auto / Van Pasajeros / Camioneta Panel Cargo', anios: '2010-2023', motor: '1.0L / 1.3L DongFeng', tipo: 'china_comercial' },
+    { marca: 'Foton', modelo: 'Tunland Pick-up / Ollin / Aumark Camión', anios: '2013-2024', motor: '2.8L Cummins ISF Turbo Diesel', tipo: 'china_comercial' }
   ];
 
   // Marcas de Repuestos (Económicas, Nacionales, Importadas)
@@ -163,6 +199,14 @@
     { nombre: 'Mahle', origen: 'Alemania / Brasil', tipo: 'premium' },
     { nombre: 'Victor Reinz', origen: 'Alemania / USA', tipo: 'premium' },
     { nombre: 'Taranto', origen: 'Argentina', tipo: 'calidad' },
+    { nombre: 'Duncan Baterías', origen: 'Venezuela / Nacional Líder', tipo: 'nacional_lider' },
+    { nombre: 'Fulgor Baterías', origen: 'Venezuela / Nacional', tipo: 'nacional_lider' },
+    { nombre: 'Titan Baterías', origen: 'Venezuela / Nacional', tipo: 'nacional_lider' },
+    { nombre: 'Willard', origen: 'Colombia / Importado', tipo: 'calidad' },
+    { nombre: 'Osram Automotive Lighting', origen: 'Alemania / Brasil', tipo: 'premium' },
+    { nombre: 'Philips Automotive', origen: 'Holanda / Polonia', tipo: 'premium' },
+    { nombre: 'Hella Automotive', origen: 'Alemania / México', tipo: 'premium' },
+    { nombre: 'Flosser Germany', origen: 'Alemania', tipo: 'calidad' },
     { nombre: 'Takama Parts', origen: 'Importado Económico (China/Taiwán)', tipo: 'economica' },
     { nombre: 'Sankei / Senkei', origen: 'Importado Económico (China)', tipo: 'economica' },
     { nombre: 'Wender Parts', origen: 'Importado Económico (China)', tipo: 'economica' },
@@ -173,56 +217,169 @@
     { nombre: 'Changan Motors Spare Parts', origen: 'China / Changan OEM', tipo: 'oem' }
   ];
 
-  // Plantillas de Repuestos Automotrices
+  // Plantillas de Repuestos Automotrices de Alta Demanda Comercial en Venezuela
   const AUTO_PART_TEMPLATES = [
-    // Frenos
-    { nameTpl: 'Juego de Pastillas de Freno Delanteras Cerámicas', cat: 'Frenos y Fricción', cost: 14.50, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '04465', u: 'Juego (4 piezas)' },
+    // 1. BUJES Y GOMAS (Suspensión y Tren Delantero)
+    { nameTpl: 'Buje de Meseta Delantera Inferior (Grande / Trasero de Tijera)', cat: 'Bujes y Gomas', cost: 4.80, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48655', u: 'Unidad' },
+    { nameTpl: 'Buje de Meseta Delantera Inferior (Pequeño / Delantero de Tijera)', cat: 'Bujes y Gomas', cost: 3.90, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48654', u: 'Unidad' },
+    { nameTpl: 'Buje de Barra Estabilizadora Delantera en Goma Vulcanizada', cat: 'Bujes y Gomas', cost: 2.80, margen: 50, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48815', u: 'Par (2 piezas)' },
+    { nameTpl: 'Goma de Barra Estabilizadora / Abrazadera de Suspensión Reforzada', cat: 'Bujes y Gomas', cost: 2.50, margen: 50, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '54813', u: 'Par (2 piezas)' },
+    { nameTpl: 'Buje de Puente Trasero / Eje de Torsión Reforzado', cat: 'Bujes y Gomas', cost: 9.50, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '55160', u: 'Unidad' },
+    { nameTpl: 'Goma Guardapolvo de Tripoide / Junta Homocinética Lado Rueda con Abrazaderas y Grasa', cat: 'Bujes y Gomas', cost: 5.20, margen: 45, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '04438', u: 'Kit con Grasa' },
+    { nameTpl: 'Goma Guardapolvo de Tripoide / Copa Lado Caja de Velocidades con Grasa', cat: 'Bujes y Gomas', cost: 5.50, margen: 45, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '04437', u: 'Kit con Grasa' },
+    { nameTpl: 'Juego de Gomas y Sellos de Válvula de Motor en Vitón Alta Temperatura', cat: 'Bujes y Gomas', cost: 6.80, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: '90913', u: 'Juego (16 piezas)' },
+    { nameTpl: 'Tope de Amortiguador y Guardapolvo Delantero de Poliuretano', cat: 'Bujes y Gomas', cost: 4.50, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48331', u: 'Par (2 piezas)' },
+
+    // 2. LÁPIZ Y BIELETAS (Suspensión y Estabilidad)
+    { nameTpl: 'Lápiz Estabilizador Delantero / Bieleta de Barra Estabilizadora (Lado Izq/Der)', cat: 'Lápiz y Bieletas', cost: 6.90, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48820', u: 'Unidad' },
+    { nameTpl: 'Lápiz Estabilizador Trasero / Bieleta de Suspensión Trasera', cat: 'Lápiz y Bieletas', cost: 6.50, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48830', u: 'Unidad' },
+    { nameTpl: 'Terminal de Barra Estabilizadora Reforzado con Tuercas Autoblocantes', cat: 'Lápiz y Bieletas', cost: 7.20, margen: 45, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '54830', u: 'Unidad' },
+
+    // 3. RODAMIENTOS Y BALEROS
+    { nameTpl: 'Rodamiento de Rueda Delantero Sellado Doble Hilera de Bolas (DAC)', cat: 'Rodamientos', cost: 11.50, margen: 40, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '90369', u: 'Unidad' },
+    { nameTpl: 'Masa / Cubo de Rueda Delantero con Espárragos de Rueda', cat: 'Rodamientos', cost: 18.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '43502', u: 'Unidad' },
+    { nameTpl: 'Maza Trasera Completa con Rodamiento Integrado y Sensor ABS', cat: 'Rodamientos', cost: 32.00, margen: 30, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '42450', u: 'Unidad' },
+    { nameTpl: 'Rodamiento de Alternador de Alta Velocidad (6202 / 6203 / 6303 2RS)', cat: 'Rodamientos', cost: 3.50, margen: 50, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '90099', u: 'Unidad' },
+    { nameTpl: 'Rodamiento para Polea de Compresor de Aire Acondicionado', cat: 'Rodamientos', cost: 8.50, margen: 45, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '30BD52', u: 'Unidad' },
+    { nameTpl: 'Soporte y Rodamiento Central de Cardán con Goma Anti-vibración', cat: 'Rodamientos', cost: 24.00, margen: 35, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '37230', u: 'Unidad' },
+
+    // 4. BATERÍAS AUTOMOTRICES
+    { nameTpl: 'Batería Automotriz 12V 24R (800 AMP) Libre de Mantenimiento Terminal Positivo Derecho', cat: 'Baterías', cost: 68.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'BAT-24R', u: 'Unidad' },
+    { nameTpl: 'Batería Automotriz 12V 34R (900 AMP) Heavy Duty Alto Desempeño', cat: 'Baterías', cost: 78.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'BAT-34R', u: 'Unidad' },
+    { nameTpl: 'Batería Automotriz 12V 42 / 27 (1100 AMP) para Camionetas y Carga Pesada', cat: 'Baterías', cost: 95.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'BAT-42D', u: 'Unidad' },
+    { nameTpl: 'Batería Automotriz 12V 45AH Compacta (Spark / Picanto / QQ / Benni)', cat: 'Baterías', cost: 58.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'BAT-45AH', u: 'Unidad' },
+
+    // 5. LUCES DE FAROS Y STOP / ILUMINACIÓN
+    { nameTpl: 'Bombillo Halógeno H4 12V 60/55W P43t Alta y Baja para Faros Principales', cat: 'Luces y Faros', cost: 2.20, margen: 50, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '90981-H4', u: 'Unidad' },
+    { nameTpl: 'Bombillo Halógeno H7 12V 55W PX26d Luz de Cruce / Faro Delantero', cat: 'Luces y Faros', cost: 2.40, margen: 50, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '90981-H7', u: 'Unidad' },
+    { nameTpl: 'Bombillos LED H4 / H7 Ultra Blanco 6000K Canbus 16000LM Alta Potencia', cat: 'Luces y Faros', cost: 16.50, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'LED-6000K', u: 'Par (2 bombillos LED)' },
+    { nameTpl: 'Bombillo Halógeno H1 / H11 / 9005 / 9006 / 881 para Faros Antiniebla', cat: 'Luces y Faros', cost: 2.80, margen: 50, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '90981-FOG', u: 'Unidad' },
+    { nameTpl: 'Bombillo 1157 2 Contactos 12V (Freno / Stop y Luz de Posición / Patas Desparejas)', cat: 'Luces y Faros', cost: 0.80, margen: 60, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '1157-BAY15D', u: 'Caja (10 piezas)' },
+    { nameTpl: 'Bombillo 1156 1 Contacto 12V (Luz de Cruce / Retroceso / Pata Pareja)', cat: 'Luces y Faros', cost: 0.75, margen: 60, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '1156-BA15S', u: 'Caja (10 piezas)' },
+    { nameTpl: 'Bombillos T10 Piojito LED 12V Blanco Siliconado para Cocuyos y Tablero', cat: 'Luces y Faros', cost: 1.20, margen: 60, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'T10-W5W', u: 'Blíster (4 piezas)' },
+    { nameTpl: 'Unidad Sellada Faro Redondo 7 Pulgadas Halógeno / LED (Jeep / Machito / Samurai)', cat: 'Luces y Faros', cost: 22.00, margen: 35, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '7INCH-SEALED', u: 'Unidad' },
+
+    // 6. CILINDROS DE IGNICIÓN Y SWITCHERAS
+    { nameTpl: 'Cilindro de Switchera de Ignición y Encendido con 2 Llaves Mecánicas', cat: 'Cilindros de Ignición', cost: 12.50, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '69057', u: 'Kit con Llaves' },
+    { nameTpl: 'Cilindro de Switchera con Espacio para Chip Transponder e Inmovilizador', cat: 'Cilindros de Ignición', cost: 16.80, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '81900', u: 'Kit con Llave Chip' },
+    { nameTpl: 'Juego de Cilindros de Cerradura de Puertas Delanteras y Maleta con Llave Única', cat: 'Cilindros de Ignición', cost: 18.50, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '69005', u: 'Juego de 3 Cilindros' },
+    { nameTpl: 'Conmutador / Pastilla Eléctrica de Switchera de Encendido', cat: 'Cilindros de Ignición', cost: 8.50, margen: 45, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '84450', u: 'Unidad' },
+
+    // 7. RELEX Y RELÉS AUTOMOTRICES
+    { nameTpl: 'Relex / Relé Automotriz Universal 12V 4 Pines 40A con Portarrelé y Fusible', cat: 'Relex y Relés', cost: 2.20, margen: 55, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'RLY-12V-4P', u: 'Unidad' },
+    { nameTpl: 'Relex / Relé Automotriz 12V 5 Pines 40/30A con Diodo de Protección Contra Picos', cat: 'Relex y Relés', cost: 2.50, margen: 55, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'RLY-12V-5P', u: 'Unidad' },
+    { nameTpl: 'Relex / Relé Original de Bomba de Gasolina e Inyección 12V', cat: 'Relex y Relés', cost: 4.80, margen: 45, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: '90987-02006', u: 'Unidad' },
+    { nameTpl: 'Relex de Electroventilador Alta y Baja Velocidad Reforzado 12V 50A', cat: 'Relex y Relés', cost: 5.20, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '90987-04002', u: 'Unidad' },
+    { nameTpl: 'Relex Flasher Electrónico de Cruces y Luces de Emergencia (Intermitentes 3 Pines)', cat: 'Relex y Relés', cost: 3.80, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '81980', u: 'Unidad' },
+    { nameTpl: 'Micro Relex Miniatura 12V para Fusilera y Módulos Confort BCM', cat: 'Relex y Relés', cost: 2.90, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'MICRO-RLY', u: 'Unidad' },
+
+    // 8. MANGUERAS AUTOMOTRICES (Refrigeración y Fluidos)
+    { nameTpl: 'Manguera Superior de Radiador en EPDM Reforzada con Malla Textil', cat: 'Mangueras', cost: 6.80, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16571', u: 'Unidad' },
+    { nameTpl: 'Manguera Inferior de Radiador Moldeada con Espiral Interno Anticolapso', cat: 'Mangueras', cost: 7.90, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16572', u: 'Unidad' },
+    { nameTpl: 'Manguera de Calefacción / Bypass de Termostato de Alta Resistencia Térmica', cat: 'Mangueras', cost: 4.50, margen: 50, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '87245', u: 'Unidad' },
+    { nameTpl: 'Manguera de Reservorio / Tanque de Expansión de Refrigerante', cat: 'Mangueras', cost: 3.80, margen: 50, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16573', u: 'Unidad' },
+    { nameTpl: 'Manguera Flexible de Freno Delantero / Trasero de Alta Presión Blindada', cat: 'Mangueras', cost: 6.20, margen: 45, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '90947', u: 'Unidad' },
+    { nameTpl: 'Manguera de Dirección Hidráulica Línea de Presión Alta Carga', cat: 'Mangueras', cost: 19.50, margen: 35, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '44410', u: 'Unidad' },
+    { nameTpl: 'Manguera de Combustible e Inyección R7 5/16 y 3/8 Reforzada con Hilo', cat: 'Mangueras', cost: 2.80, margen: 50, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: 'HOSE-R7', u: 'Metro' },
+
+    // 9. FRENOS Y FRICCIÓN
+    { nameTpl: 'Juego de Pastillas de Freno Delanteras Cerámicas Premium', cat: 'Frenos y Fricción', cost: 14.50, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '04465', u: 'Juego (4 piezas)' },
     { nameTpl: 'Juego de Pastillas de Freno Traseras Semimetálicas', cat: 'Frenos y Fricción', cost: 12.00, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '04466', u: 'Juego (4 piezas)' },
-    { nameTpl: 'Disco de Freno Delantero Ventilado', cat: 'Frenos y Fricción', cost: 22.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '43512', u: 'Unidad' },
-    { nameTpl: 'Bomba Principal de Frenos con Depósito', cat: 'Frenos y Fricción', cost: 28.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '47201', u: 'Unidad' },
+    { nameTpl: 'Disco de Freno Delantero Ventilado de Alta Disipación Térmica', cat: 'Frenos y Fricción', cost: 22.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '43512', u: 'Unidad' },
+    { nameTpl: 'Bomba Principal de Frenos con Depósito y Sensores', cat: 'Frenos y Fricción', cost: 28.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '47201', u: 'Unidad' },
+    { nameTpl: 'Juego de Bandas / Zapatas de Freno Traseras Vulcanizadas', cat: 'Frenos y Fricción', cost: 13.50, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '04495', u: 'Juego (4 zapatas)' },
 
-    // Suspensión y Dirección
+    // 10. SUSPENSIÓN Y DIRECCIÓN
     { nameTpl: 'Amortiguador Delantero a Gas Reforzado (Lado Izq/Der)', cat: 'Suspensión y Dirección', cost: 28.50, margen: 30, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48510', u: 'Unidad' },
-    { nameTpl: 'Amortiguador Trasero de Doble Tubo Hidráulico', cat: 'Suspensión y Dirección', cost: 21.00, margen: 30, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48530', u: 'Unidad' },
-    { nameTpl: 'Muñón / Rótula de Suspensión Inferior', cat: 'Suspensión y Dirección', cost: 8.50, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '43330', u: 'Unidad' },
+    { nameTpl: 'Amortiguador Trasero de Doble Tubo Hidráulico Nitro-Cell', cat: 'Suspensión y Dirección', cost: 21.00, margen: 30, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48530', u: 'Unidad' },
+    { nameTpl: 'Muñón / Rótula de Suspensión Inferior Reforzada', cat: 'Suspensión y Dirección', cost: 8.50, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '43330', u: 'Unidad' },
     { nameTpl: 'Terminal de Dirección Exterior (Tie Rod End)', cat: 'Suspensión y Dirección', cost: 7.20, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '45046', u: 'Unidad' },
-    { nameTpl: 'Meseta / Brazo de Suspensión Delantero Completo con Bujes', cat: 'Suspensión y Dirección', cost: 34.00, margen: 30, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48068', u: 'Unidad' },
+    { nameTpl: 'Meseta / Brazo de Suspensión Delantero Completo con Bujes y Muñón', cat: 'Suspensión y Dirección', cost: 34.00, margen: 30, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48068', u: 'Unidad' },
 
-    // Motor y Distribución
-    { nameTpl: 'Kit de Correa de Distribución / Tiempo con Tensor y Rodamiento', cat: 'Motor y Distribución', cost: 24.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13568', u: 'Kit Completo' },
-    { nameTpl: 'Bomba de Agua con Empacadura de Sellado', cat: 'Motor y Distribución', cost: 19.50, margen: 35, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16100', u: 'Unidad' },
-    { nameTpl: 'Bomba de Aceite de Motor de Alta Presión', cat: 'Motor y Distribución', cost: 36.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '15100', u: 'Unidad' },
-    { nameTpl: 'Termostato de Motor 82°C con Empacadura', cat: 'Motor y Distribución', cost: 8.20, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '90916', u: 'Unidad' },
-    { nameTpl: 'Juego de Empacaduras de Motor Completo (Cámara, Tapa Válvulas, Sellos)', cat: 'Motor y Distribución', cost: 26.00, margen: 35, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: '04111', u: 'Juego Completo' },
+    // 11. MOTOR Y DISTRIBUCIÓN
+    { nameTpl: 'Kit de Correa de Distribución / Tiempo con Tensor y Rodamiento Guía', cat: 'Motor y Distribución', cost: 24.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13568', u: 'Kit Completo' },
+    { nameTpl: 'Bomba de Agua con Empacadura de Sellado y Turbina Metálica', cat: 'Motor y Distribución', cost: 19.50, margen: 35, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16100', u: 'Unidad' },
+    { nameTpl: 'Bomba de Aceite de Motor de Alta Presión y Caudal', cat: 'Motor y Distribución', cost: 36.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '15100', u: 'Unidad' },
+    { nameTpl: 'Termostato de Motor 82°C con Empacadura y Válvula de Alivio', cat: 'Motor y Distribución', cost: 8.20, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '90916', u: 'Unidad' },
+    { nameTpl: 'Juego de Empacaduras de Motor Completo (Cámara, Tapa Válvulas, Retenes)', cat: 'Motor y Distribución', cost: 26.00, margen: 35, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: '04111', u: 'Juego Completo' },
 
-    // Partes Eléctricas e Inyección
-    { nameTpl: 'Juego de Bujías de Iridio / Platino Larga Vida', cat: 'Partes Eléctricas', cost: 16.00, margen: 40, img: '/images/rep_bujia_iridio_1791152658933.jpg', oemPref: '90919', u: 'Juego (4 unidades)' },
+    // 12. PARTES ELÉCTRICAS E INYECCIÓN
+    { nameTpl: 'Juego de Bujías de Iridio / Platino Larga Vida 100.000 KM', cat: 'Partes Eléctricas', cost: 16.00, margen: 40, img: '/images/rep_bujia_iridio_1791152658933.jpg', oemPref: '90919', u: 'Juego (4 unidades)' },
     { nameTpl: 'Bobina de Encendido Individual Tipo Lápiz (Cop Ignition Coil)', cat: 'Partes Eléctricas', cost: 18.50, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '90919', u: 'Unidad' },
-    { nameTpl: 'Alternador 12V con Polea Multicanal', cat: 'Partes Eléctricas', cost: 85.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '27060', u: 'Unidad' },
-    { nameTpl: 'Motor de Arranque 12V Reforzado', cat: 'Partes Eléctricas', cost: 72.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '28100', u: 'Unidad' },
+    { nameTpl: 'Alternador 12V con Polea Multicanal y Regulador Incorporado', cat: 'Partes Eléctricas', cost: 85.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '27060', u: 'Unidad' },
+    { nameTpl: 'Motor de Arranque 12V Reforzado de Reducción Planetaria', cat: 'Partes Eléctricas', cost: 72.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '28100', u: 'Unidad' },
     { nameTpl: 'Sensor de Posición de Cigüeñal (Sensor CKP)', cat: 'Partes Eléctricas', cost: 9.50, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '96418', u: 'Unidad' },
-    { nameTpl: 'Sensor de Oxígeno Primario / Secundario de 4 Cables', cat: 'Partes Eléctricas', cost: 19.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '89465', u: 'Unidad' },
-    { nameTpl: 'Pila / Bomba de Gasolina Sumergible 3.5 Bar Universal con Filtro', cat: 'Sistema de Combustible', cost: 13.50, margen: 40, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: '95808', u: 'Kit con Cedazo' },
+    { nameTpl: 'Sensor de Oxígeno Primario / Secundario de 4 Cables con Conector Original', cat: 'Partes Eléctricas', cost: 19.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '89465', u: 'Unidad' },
+    { nameTpl: 'Pila / Bomba de Gasolina Sumergible 3.5 Bar Universal con Cedazo y Conector', cat: 'Sistema de Combustible', cost: 13.50, margen: 40, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: '95808', u: 'Kit con Cedazo' },
 
-    // Transmisión y Embrague
-    { nameTpl: 'Kit de Embrague / Cloche Completo (Plato, Disco y Collarín)', cat: 'Transmisión y Embrague', cost: 58.00, margen: 30, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '31210', u: 'Kit 3 Piezas' },
-    { nameTpl: 'Punta de Tripoide / Junta Homocinética Lado Rueda con Guardapolvo', cat: 'Transmisión y Embrague', cost: 17.50, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '43410', u: 'Kit con Grasa' },
-    { nameTpl: 'Rodamiento de Rueda Delantero Sellado', cat: 'Transmisión y Embrague', cost: 11.50, margen: 40, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '90369', u: 'Unidad' },
+    // 13. TRANSMISIÓN, TRACCIÓN Y EMBRAGUE
+    { nameTpl: 'Kit de Embrague / Cloche Completo (Plato de Presión, Disco y Collarín)', cat: 'Transmisión y Embrague', cost: 58.00, margen: 30, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '31210', u: 'Kit 3 Piezas' },
+    { nameTpl: 'Punta de Tripoide / Junta Homocinética Lado Rueda con Guardapolvo y Tuerca', cat: 'Transmisión y Embrague', cost: 17.50, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '43410', u: 'Kit con Grasa' },
+    { nameTpl: 'Triceta y Copa de Tripoide Lado Caja de Velocidades', cat: 'Transmisión y Embrague', cost: 16.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '43403', u: 'Kit con Grasa' },
+    { nameTpl: 'Bomba Principal de Embrague / Cilindro Maestro de Croche', cat: 'Transmisión y Embrague', cost: 18.50, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '31420', u: 'Unidad' },
+    { nameTpl: 'Bombín Auxiliar / Secundario de Embrague (Collarín Hidráulico)', cat: 'Transmisión y Embrague', cost: 15.00, margen: 35, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '31470', u: 'Unidad' },
+    { nameTpl: 'Soporte / Base de Motor Hidráulica Delantera / Derecha', cat: 'Soportes de Motor y Caja', cost: 22.00, margen: 35, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '12305', u: 'Unidad' },
+    { nameTpl: 'Soporte / Base de Caja de Velocidades Antivibración', cat: 'Soportes de Motor y Caja', cost: 18.00, margen: 35, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '12371', u: 'Unidad' },
+    { nameTpl: 'Cruceta de Cardán con Grasera de Lubricación', cat: 'Transmisión y Embrague', cost: 9.50, margen: 40, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '04371', u: 'Unidad' },
 
-    // Filtros de Mantenimiento
-    { nameTpl: 'Filtro de Aceite de Motor Blindado con Válvula Antidrenaje', cat: 'Filtros y Mantenimiento', cost: 3.20, margen: 45, img: '/images/rep_filtro_aceite_1791152641120.jpg', oemPref: '90915', u: 'Unidad' },
-    { nameTpl: 'Filtro de Aire Motor Tipo Panel de Celulosa', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '17801', u: 'Unidad' },
-    { nameTpl: 'Filtro de Gasolina en Línea Metálico', cat: 'Filtros y Mantenimiento', cost: 3.90, margen: 45, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: '23300', u: 'Unidad' }
+    // 14. MOTOR INTERNO, PISTONES Y METALES
+    { nameTpl: 'Juego de Pistones con Pasadores Grado Automotriz (Medida Estándar / 0.20 / 0.30)', cat: 'Motor y Distribución', cost: 45.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13101', u: 'Juego (4 pistones)' },
+    { nameTpl: 'Juego de Anillos de Motor Cromados y de Fricción', cat: 'Motor y Distribución', cost: 18.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13011', u: 'Juego Completo' },
+    { nameTpl: 'Juego de Conchas de Biela Trimétalicas de Alta Resistencia', cat: 'Motor y Distribución', cost: 14.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13041', u: 'Juego (8 conchas)' },
+    { nameTpl: 'Juego de Conchas de Bancada / Cojinetes de Cigüeñal', cat: 'Motor y Distribución', cost: 16.50, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '11701', u: 'Juego Completo' },
+    { nameTpl: 'Árbol de Levas de Admisión / Escape Tratado Térmicamente', cat: 'Motor y Distribución', cost: 55.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13501', u: 'Unidad' },
+    { nameTpl: 'Juego de Taquetes / Buzos Hidráulicos de Válvula Silenciosos', cat: 'Motor y Distribución', cost: 24.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13750', u: 'Juego (16 taquetes)' },
+    { nameTpl: 'Juego de Válvulas de Admisión y Escape Nitruradas', cat: 'Motor y Distribución', cost: 28.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13711', u: 'Juego (16 válvulas)' },
+    { nameTpl: 'Damper / Polea de Cigüeñal Amortiguada con Goma Antivibración', cat: 'Motor y Distribución', cost: 32.00, margen: 30, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '13408', u: 'Unidad' },
+    { nameTpl: 'Kit de Cadena de Tiempo con Patines Guía y Tensores Hidráulicos', cat: 'Motor y Distribución', cost: 65.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: '13506', u: 'Kit Distribución Cadena' },
+
+    // 15. REFRIGERACIÓN, RADIADORES Y CLIMATIZACIÓN
+    { nameTpl: 'Radiador de Motor de Aluminio Soldado con Tanques Plásticos Reforzados', cat: 'Refrigeración', cost: 48.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16400', u: 'Unidad' },
+    { nameTpl: 'Electroventilador Completo con Aspas, Motor y Deflector de Aire', cat: 'Refrigeración', cost: 38.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16363', u: 'Unidad Completa' },
+    { nameTpl: 'Toma de Agua / Brida de Termostato de Aluminio con Sensor de Temperatura', cat: 'Refrigeración', cost: 11.50, margen: 40, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16321', u: 'Unidad' },
+    { nameTpl: 'Envase / Depósito Reservorio de Refrigerante con Tapa Presurizada', cat: 'Refrigeración', cost: 12.00, margen: 40, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '16470', u: 'Unidad con Tapa' },
+    { nameTpl: 'Compresor de Aire Acondicionado 12V con Válvula de Control', cat: 'Refrigeración', cost: 135.00, margen: 25, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: '88310', u: 'Unidad' },
+
+    // 16. INYECCIÓN, SENSORES Y COMBUSTIBLE
+    { nameTpl: 'Inyector de Gasolina Multipunto de Alta Precisión y Pulverización', cat: 'Sistema de Combustible', cost: 14.50, margen: 40, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: '23209', u: 'Unidad' },
+    { nameTpl: 'Cuerpo de Aceleración Electrónico con Sensor TPS y Motor Paso a Paso', cat: 'Sistema de Combustible', cost: 65.00, margen: 30, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '22030', u: 'Unidad' },
+    { nameTpl: 'Sensor de Presión Absoluta del Múltiple (Sensor MAP / MAF)', cat: 'Partes Eléctricas', cost: 13.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '89420', u: 'Unidad' },
+    { nameTpl: 'Sensor de Posición del Árbol de Levas (Sensor CMP)', cat: 'Partes Eléctricas', cost: 11.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '90919-CMP', u: 'Unidad' },
+    { nameTpl: 'Sensor de Temperatura del Refrigerante de Motor (Sensor ECT 2 Pines)', cat: 'Partes Eléctricas', cost: 5.50, margen: 50, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '89422', u: 'Unidad' },
+    { nameTpl: 'Válvula de Control de Mínimo / Marcha Lenta (Sensor Válvula IAC)', cat: 'Partes Eléctricas', cost: 12.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '22270', u: 'Unidad' },
+    { nameTpl: 'Módulo Completo de Bomba de Gasolina con Flotante y Regulador', cat: 'Sistema de Combustible', cost: 42.00, margen: 30, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: '77020', u: 'Módulo Completo' },
+
+    // 17. SUSPENSIÓN SUPERIOR, DIRECCIÓN Y FRENOS TRASEROS
+    { nameTpl: 'Base de Amortiguador Delantero con Rodamiento / Crapodina', cat: 'Suspensión y Dirección', cost: 13.50, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48609', u: 'Unidad' },
+    { nameTpl: 'Espiral de Suspensión Delantero / Trasero Progresivo Reforzado', cat: 'Suspensión y Dirección', cost: 24.00, margen: 35, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '48131', u: 'Par (2 espirales)' },
+    { nameTpl: 'Terminal Interior de Dirección / Terminal Axial / Muñón Axial', cat: 'Suspensión y Dirección', cost: 8.50, margen: 40, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '45503', u: 'Unidad' },
+    { nameTpl: 'Cremallera / Cajetín de Dirección Hidráulica Completo con Terminales', cat: 'Suspensión y Dirección', cost: 88.00, margen: 25, img: '/images/rep_amortiguador_1791152649395.jpg', oemPref: '44250', u: 'Unidad Completa' },
+    { nameTpl: 'Bomba de Dirección Hidráulica con Polea y Válvula Reguladora', cat: 'Suspensión y Dirección', cost: 46.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: '44320', u: 'Unidad' },
+    { nameTpl: 'Tambor de Freno Trasero Balanceado en Fundición Gris', cat: 'Frenos y Fricción', cost: 19.00, margen: 35, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '42431', u: 'Unidad' },
+    { nameTpl: 'Bombín de Freno de Rueda Trasero con Purgador', cat: 'Frenos y Fricción', cost: 6.50, margen: 45, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '47550', u: 'Unidad' },
+    { nameTpl: 'Caliper / Mordaza de Freno Delantera con Pistón y Pasadores', cat: 'Frenos y Fricción', cost: 35.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '47730', u: 'Unidad' },
+    { nameTpl: 'Sensor de Velocidad de Rueda / Freno Antibloqueo (Sensor ABS)', cat: 'Frenos y Fricción', cost: 12.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: '89542', u: 'Unidad' },
+
+    // 18. CARROCERÍA, GUAYAS Y ACCESORIOS
+    { nameTpl: 'Guaya de Embrague / Croche Reforzada con Ajustador de Tensión', cat: 'Carrocería y Mandos', cost: 7.50, margen: 45, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: '31340', u: 'Unidad' },
+    { nameTpl: 'Guaya de Freno de Mano Trasera Derecha / Izquierda', cat: 'Carrocería y Mandos', cost: 8.50, margen: 45, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: '46410', u: 'Unidad' },
+    { nameTpl: 'Manilla Exterior de Puerta Delantera / Trasera en ABS Negro / Cromado', cat: 'Carrocería y Mandos', cost: 6.80, margen: 45, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: '69210', u: 'Unidad' },
+    { nameTpl: 'Juego de Escobillas Limpiaparabrisas de Silicona Aerodinámicas Universales (Par)', cat: 'Carrocería y Mandos', cost: 5.50, margen: 50, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'WIPER-PAIR', u: 'Par (2 escobillas)' },
+
+    // 19. FILTROS DE MANTENIMIENTO
+    { nameTpl: 'Filtro de Aceite de Motor Blindado con Válvula Antidrenaje de Silicona', cat: 'Filtros y Mantenimiento', cost: 3.20, margen: 45, img: '/images/rep_filtro_aceite_1791152641120.jpg', oemPref: '90915', u: 'Unidad' },
+    { nameTpl: 'Filtro de Aire Motor Tipo Panel de Microfibras de Celulosa', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '17801', u: 'Unidad' },
+    { nameTpl: 'Filtro de Gasolina en Línea Metálico de Alta Presión', cat: 'Filtros y Mantenimiento', cost: 3.90, margen: 45, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: '23300', u: 'Unidad' },
+    { nameTpl: 'Filtro de Cabina / Polen de Aire Acondicionado con Carbón Activado', cat: 'Filtros y Mantenimiento', cost: 5.20, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '87139', u: 'Unidad' }
   ];
 
   // ==========================================
-  // 3. MOTOR PROCEDURAL DE GENERACIÓN Y BÚSQUEDA (+100.000 SKUs)
+  // 3. MOTOR PROCEDURAL DE GENERACIÓN Y BÚSQUEDA (+2.000.000 SKUs)
   // ==========================================
 
-  // Cantidad total virtual del catálogo indexado
-  const TOTAL_VIRTUAL_CATALOG_COUNT = 104850;
+  // Cantidad total virtual del catálogo indexado (+2.450.000 artículos referenciales)
+  const TOTAL_VIRTUAL_CATALOG_COUNT = 2450000;
 
-  // Cache para almacenar ítems instanciados en memoria de manera ultrarrápida
   let virtualCache = new Map();
   let activeMasterCategory = 'Todos';
   let activeMasterPage = 1;
@@ -233,7 +390,7 @@
     if (virtualCache.has(index)) return virtualCache.get(index);
 
     let item;
-    const isLubricantZone = index < 45000;
+    const isLubricantZone = index < 120000;
 
     if (isLubricantZone) {
       // Generar combinación de Lubricante
@@ -244,7 +401,7 @@
       const pIdx = Math.floor(index / (LUBRICANT_BRANDS_VENEZUELA.length * LUBRICANT_TYPES.length)) % PRESENTATIONS.length;
       const pres = PRESENTATIONS[pIdx];
 
-      const masterId = `MST-LUB-${String(index + 1).padStart(6, '0')}`;
+      const masterId = `MST-LUB-${String(index + 1).padStart(7, '0')}`;
       const codeProv = `${brand.nombre.substring(0,3).toUpperCase()}-${type.sub.substring(0,3).toUpperCase()}-${pres.suffix}-${(index % 999) + 100}`;
       const codeOEM = `${type.spec.split('.')[0] || 'API SP'}`;
       const cost = Number((type.costoBase * pres.mult * (brand.tipo.includes('premium') ? 1.25 : (brand.tipo === 'nacional' ? 0.95 : 1.10))).toFixed(2));
@@ -279,7 +436,7 @@
       };
     } else {
       // Generar combinación de Repuesto Automotriz
-      const adjIdx = index - 45000;
+      const adjIdx = index - 120000;
       const vIdx = adjIdx % VEHICLES_IN_VENEZUELA.length;
       const veh = VEHICLES_IN_VENEZUELA[vIdx];
       const tplIdx = Math.floor(adjIdx / VEHICLES_IN_VENEZUELA.length) % AUTO_PART_TEMPLATES.length;
@@ -287,15 +444,15 @@
       const bIdx = Math.floor(adjIdx / (VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length)) % SPARE_PART_BRANDS.length;
       const brand = SPARE_PART_BRANDS[bIdx];
 
-      const masterId = `MST-AUT-${String(index + 1).padStart(6, '0')}`;
+      const masterId = `MST-AUT-${String(index + 1).padStart(7, '0')}`;
       const codeOEM = `${tpl.oemPref}-${(adjIdx % 89999) + 10000}`;
       const codeProv = `${brand.nombre.substring(0,3).toUpperCase()}-${tpl.cat.substring(0,3).toUpperCase()}-${codeOEM}`;
-      const cost = Number((tpl.cost * (brand.tipo === 'premium' ? 1.35 : (brand.tipo === 'economica' ? 0.75 : 1.05))).toFixed(2));
+      const cost = Number((tpl.cost * (brand.tipo.includes('premium') || brand.tipo === 'oem' ? 1.30 : (brand.tipo === 'economica' ? 0.78 : 1.05))).toFixed(2));
 
       item = {
         masterId: masterId,
         nombre: `${tpl.nameTpl} para ${veh.marca} ${veh.modelo} (${veh.anios}) — Marca ${brand.nombre}`,
-        descripcionTecnica: `Componente fabricado bajo tolerancias de equipo original para ${veh.marca} ${veh.modelo} años ${veh.anios} motor ${veh.motor}. Garantía contra defectos de fábrica.`,
+        descripcionTecnica: `Componente técnico grado equipo original para ${veh.marca} ${veh.modelo} años ${veh.anios} con motor ${veh.motor}. Garantía contra defectos de fábrica. Cumple especificaciones de ensamblaje automotriz.`,
         categoria: tpl.cat,
         subcategoria: veh.marca,
         marca: brand.nombre,
@@ -306,7 +463,7 @@
         unidadMedida: tpl.u,
         costoReferencial: cost,
         margenSugerido: tpl.margen,
-        especificaciones: `Aplicación directa en ${veh.marca} ${veh.modelo} ${veh.motor}. Calidad ${brand.tipo.toUpperCase()}.`,
+        especificaciones: `Aplicación directa en ${veh.marca} ${veh.modelo} ${veh.motor}. Calidad ${brand.tipo.toUpperCase()}. Tolerancia de fábrica garantizada.`,
         fotoReal: tpl.img,
         fotoFallback: tpl.img,
         distribuidor: `Distribuidor Mayorista ${veh.marca} & Repuestos Venezuela B2B`,
@@ -316,57 +473,81 @@
           { marca: 'Takama Alternate', codigo: `TAK-${codeOEM}` }
         ],
         compatibilidad: [
-          { marca: veh.marca, modelo: veh.modelo, anios: veh.anios, motor: veh.motor, posicion: 'Tren Delantero / Motor' }
+          { marca: veh.marca, modelo: veh.modelo, anios: veh.anios, motor: veh.motor, posicion: 'Tren Delantero / Motor / Eléctrico' }
         ]
       };
+    }
+
+    // Cache management
+    if (virtualCache.size > 2500) {
+      const firstKeys = virtualCache.keys();
+      for (let k = 0; k < 500; k++) {
+        virtualCache.delete(firstKeys.next().value);
+      }
     }
 
     virtualCache.set(index, item);
     return item;
   }
 
-  // Búsqueda inteligente a través del espacio virtual de +100.000 productos
+  // Búsqueda inteligente multicriterio por palabras claves dentro del espacio de +900.000 productos
   function queryMasterCatalog(query = '', category = 'Todos', page = 1, pageSize = ITEMS_PER_PAGE) {
-    const q = query.trim().toLowerCase();
+    const rawQ = (query || '').trim();
     const results = [];
-    const maxScan = 2500; // Muestreo de escaneo de alta velocidad
+    const maxScanLimit = 4500;
 
-    // Estrategia de búsqueda distribuida determinística
     let step = 1;
-    if (q) {
+    if (rawQ) {
       step = 1;
     } else if (category === 'Todos') {
-      step = Math.max(1, Math.floor(TOTAL_VIRTUAL_CATALOG_COUNT / maxScan));
+      step = Math.max(1, Math.floor(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
     }
 
     let matchCount = 0;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
 
-    for (let i = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1000; i += step) {
+    for (let i = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1200; i += step) {
       const item = getMasterItemByIndex(i);
 
       let matchesCat = true;
       if (category !== 'Todos') {
+        const catLow = category.toLowerCase();
         if (category === 'Aceites y Lubricantes') {
           matchesCat = item.categoria.includes('Aceite');
         } else if (category === 'Nacionales Venezolanas') {
-          matchesCat = item.origenMarca && item.origenMarca.includes('Venezuela');
+          matchesCat = (item.origenMarca && item.origenMarca.includes('Venezuela')) || item.tipoMarca === 'nacional_lider' || item.tipoMarca === 'nacional';
         } else if (category === 'Importadas Premium') {
           matchesCat = item.tipoMarca === 'importada_premium' || item.tipoMarca === 'premium';
         } else if (category === 'Repuestos Chinos') {
           matchesCat = item.subcategoria === 'Chery' || item.subcategoria === 'Jac' || item.subcategoria === 'Changan' || item.subcategoria === 'Great Wall' || item.tipoMarca === 'economica';
+        } else if (category === 'Bujes y Gomas') {
+          matchesCat = item.categoria === 'Bujes y Gomas' || item.nombre.toLowerCase().includes('buje') || item.nombre.toLowerCase().includes('goma');
+        } else if (category === 'Lápiz y Bieletas') {
+          matchesCat = item.categoria === 'Lápiz y Bieletas' || item.nombre.toLowerCase().includes('lapiz') || item.nombre.toLowerCase().includes('bieleta');
+        } else if (category === 'Rodamientos') {
+          matchesCat = item.categoria === 'Rodamientos' || item.nombre.toLowerCase().includes('rodamiento') || item.nombre.toLowerCase().includes('maza');
+        } else if (category === 'Baterías') {
+          matchesCat = item.categoria === 'Baterías' || item.nombre.toLowerCase().includes('bateria');
+        } else if (category === 'Luces y Faros') {
+          matchesCat = item.categoria === 'Luces y Faros' || item.nombre.toLowerCase().includes('bombillo') || item.nombre.toLowerCase().includes('faro') || item.nombre.toLowerCase().includes('led');
+        } else if (category === 'Cilindros de Ignición') {
+          matchesCat = item.categoria === 'Cilindros de Ignición' || item.nombre.toLowerCase().includes('cilindro') || item.nombre.toLowerCase().includes('switchera');
+        } else if (category === 'Relex y Relés') {
+          matchesCat = item.categoria === 'Relex y Relés' || item.nombre.toLowerCase().includes('relex') || item.nombre.toLowerCase().includes('rele') || item.nombre.toLowerCase().includes('relay');
+        } else if (category === 'Mangueras') {
+          matchesCat = item.categoria === 'Mangueras' || item.nombre.toLowerCase().includes('manguera');
         } else {
-          matchesCat = item.categoria.toLowerCase().includes(category.toLowerCase()) || item.subcategoria.toLowerCase().includes(category.toLowerCase());
+          matchesCat = item.categoria.toLowerCase().includes(catLow) || item.subcategoria.toLowerCase().includes(catLow);
         }
       }
 
       if (!matchesCat) continue;
 
       let matchesQ = true;
-      if (q) {
-        const fullText = `${item.nombre} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca}`.toLowerCase();
-        matchesQ = fullText.includes(q);
+      if (rawQ) {
+        const fullSearchableText = `${item.nombre} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
+        matchesQ = matchKeywords(fullSearchableText, rawQ);
       }
 
       if (matchesQ) {
@@ -431,31 +612,57 @@
   let currentSelectorQuery = '';
   let currentSelectorCategory = 'Todos';
 
+  const MASTER_CATEGORY_TABS = [
+    'Todos',
+    'Bujes y Gomas',
+    'Lápiz y Bieletas',
+    'Rodamientos',
+    'Baterías',
+    'Luces y Faros',
+    'Cilindros de Ignición',
+    'Relex y Relés',
+    'Mangueras',
+    'Motor y Distribución',
+    'Refrigeración',
+    'Sistema de Combustible',
+    'Frenos y Fricción',
+    'Suspensión y Dirección',
+    'Transmisión y Embrague',
+    'Soportes de Motor y Caja',
+    'Carrocería y Mandos',
+    'Filtros y Mantenimiento',
+    'Partes Eléctricas',
+    'Aceites y Lubricantes',
+    'Repuestos Chinos',
+    'Nacionales Venezolanas',
+    'Importadas Premium'
+  ];
+
   function openMasterCatalogSelectorModal(targetType = 'producto') {
     currentSelectorTarget = targetType;
     currentSelectorPage = 1;
     currentSelectorQuery = '';
     currentSelectorCategory = 'Todos';
 
-    openModal('📖 Buscar en Catálogo Máster Universal (+100.000 Productos)', `
+    openModal('📖 Buscar en Catálogo Máster Universal (+2.000.000 Productos)', `
       <div style="background:#f0f5fb;border:1px solid #bfd3eb;padding:10px;border-radius:4px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
-            <b style="color:#0b4f85;font-size:13px">Catálogo Máster Universal de Distribuidores</b>
-            <div style="font-size:11px;color:#555">+100.000 referencias de Lubricantes (Nacionales e Importados), Repuestos Comerciales y Marcas Chinas</div>
+            <b style="color:#0b4f85;font-size:13px">Catálogo Máster Universal de Distribuidores (+2.000.000 Productos)</b>
+            <div style="font-size:11px;color:#555">Búsqueda inteligente por palabras claves: Motor, Pistones, Tiempo, Radiadores, Inyección, Sensores, Bujes, Gomas, Lápiz, Rodamientos, Baterías, Faros/Stop, Cilindros, Relex, Mangueras, Cloche, Aceites y Marcas Nacionales/Importadas</div>
           </div>
-          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con Distribuidores B2B</span>
+          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con +2.450.000 SKUs B2B</span>
         </div>
       </div>
 
       <div style="display:flex;gap:6px;margin-bottom:8px">
-        <input id="masterModalSearchInput" placeholder="🔍 Escriba para buscar por nombre, viscosidad (20W-50, 5W-30), marca (PDV, Inca, Mobil), auto (Aveo, Corolla, Chery, Jac)..."
+        <input id="masterModalSearchInput" placeholder="🔍 Búsqueda por palabras claves (ej: bujes aveo, relex bomba fiesta, manguera optra, bateria duncan, bombillo h4 corolla)..."
           style="flex:1;padding:8px;font-size:12px;border:1px solid #0b63ce;border-radius:3px"
           oninput="debounceMasterModalSearch(this.value)">
       </div>
 
       <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px">
-        ${['Todos', 'Aceites y Lubricantes', 'Nacionales Venezolanas', 'Importadas Premium', 'Frenos y Fricción', 'Suspensión y Dirección', 'Partes Eléctricas', 'Repuestos Chinos'].map(cat => `
+        ${MASTER_CATEGORY_TABS.map(cat => `
           <button class="btn ${cat==='Todos'?'primary':''}" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="setMasterSelectorCategory('${cat}', this)">${cat}</button>
         `).join('')}
       </div>
@@ -476,7 +683,7 @@
       currentSelectorPage = 1;
       const c = document.getElementById('masterSearchResultsContainer');
       if (c) c.innerHTML = renderMasterSelectorResultsHTML();
-    }, 200);
+    }, 150);
   }
 
   function setMasterSelectorCategory(cat, btn) {
@@ -495,8 +702,8 @@
 
     if (!res.items.length) {
       return `<div style="padding:24px;text-align:center;color:#666">
-        <div style="font-size:18px">🔍 No se encontraron coincidencias</div>
-        <div style="font-size:11px;margin-top:4px">Intente buscar por viscosidad (20W-50, 5W-30), marca (PDV, Inca, Mobil, Valvoline), modelo de vehículo o código OEM</div>
+        <div style="font-size:18px">🔍 No se encontraron coincidencias para «${esc(currentSelectorQuery)}»</div>
+        <div style="font-size:11px;margin-top:4px">Intente combinando palabras claves: "buje meseta corsa", "relex bomba aveo", "manguera radiador", "bateria 24r", "bombillo h4" o marcas (Duncan, Bosch, Toyota, Chevrolet, Chery)</div>
       </div>`;
     }
 
@@ -561,7 +768,6 @@
   }
 
   function selectMasterItemByIndex(masterId) {
-    // Buscar en el cache o generar el ítem
     let foundItem = null;
     for (let [k, v] of virtualCache.entries()) {
       if (v.masterId === masterId) {
@@ -571,7 +777,6 @@
     }
 
     if (!foundItem) {
-      // Si no está en cache, escanear
       for (let i = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT; i++) {
         let it = getMasterItemByIndex(i);
         if (it.masterId === masterId) {
@@ -600,103 +805,99 @@
   // ==========================================
 
   function openCommercialProductFormWithMaster(item = null) {
-    const initialCost = item ? item.costoReferencial : 10.00;
-    const defaultMarginDetal = item ? (item.margenSugerido || 35) : 35;
-    const defaultMarginTaller = 20;
-    const defaultMarginMayor = 12;
-
-    const metrics = calculatePricingEngine(initialCost, defaultMarginDetal, defaultMarginTaller, defaultMarginMayor);
+    const isNew = !item;
+    const baseCost = item ? item.costoReferencial : 5.00;
+    const defMargin = item ? (item.margenSugerido || 35) : 35;
+    const initialPricing = calculatePricingEngine(baseCost, defMargin, 20, 12);
+    const code = item ? item.codigoProveedor : (id('PR','producto'));
+    const oem = item ? item.codigoOEM : '';
+    const name = item ? item.nombre : '';
+    const cat = item ? item.categoria : 'Aceites y Lubricantes';
+    const brand = item ? item.marca : 'PDV';
+    const unit = item ? (item.unidadMedida || 'Unidad') : 'Unidad';
     const photo = item ? (item.fotoReal || '/icon.svg') : '/icon.svg';
 
-    openModal(item ? `Nuevo Producto desde Máster: ${item.marca}` : 'Nuevo Producto / Configuración Comercial', `
+    openModal(item ? `Incorporar a Inventario: ${esc(item.nombre)}` : 'Nuevo Producto Comercial', `
       <div style="background:#f4f7fb;border:1px solid #c9d8eb;padding:8px 10px;margin-bottom:10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo Máster Vinculado</span>
-          <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Ficha en blanco'}</div>
+          <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Producto manual'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Cambiar del Catálogo Máster</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar en Catálogo Máster (+900.000)</button>
       </div>
 
       <div class="formgrid">
-        <!-- DATOS TÉCNICOS AUTOCOMPLETADOS -->
         <div class="field">
           <label>Código de Barras / SKU</label>
-          <input id="prodCodigo" value="${item ? (item.codigoProveedor || generateUniqueSKU(item.categoria, item.marca, item.codigoOEM)) : id('PR','producto')}">
+          <input id="prodCodigo" value="${esc(code)}">
         </div>
         <div class="field">
           <label>Código OEM / Fábrica</label>
-          <input id="prodOEM" value="${esc(item ? item.codigoOEM : '')}" placeholder="Código de fábrica">
+          <input id="prodOEM" value="${esc(oem)}">
         </div>
         <div class="field full">
-          <label>Nombre Comercial / Descripción del Producto</label>
-          <input id="prodNombre" value="${esc(item ? item.nombre : '')}">
+          <label>Nombre Comercial del Producto</label>
+          <input id="prodNombre" value="${esc(name)}">
         </div>
         <div class="field">
           <label>Categoría</label>
-          <input id="prodCat" value="${esc(item ? item.categoria : 'Aceites y Lubricantes')}">
+          <input id="prodCat" value="${esc(cat)}">
         </div>
         <div class="field">
           <label>Marca / Fabricante</label>
-          <input id="prodMarca" value="${esc(item ? item.marca : '')}">
+          <input id="prodMarca" value="${esc(brand)}">
         </div>
         <div class="field">
-          <label>Unidad de Medida</label>
-          <input id="prodUnidad" value="${esc(item ? item.unidadMedida : 'Unidad')}">
+          <label>Presentación / Unidad</label>
+          <input id="prodUnidad" value="${esc(unit)}">
         </div>
         <div class="field">
-          <label>Ubicación Almacén / Estante</label>
-          <input id="prodUbicacion" value="Pasillo L1 - Estante 2" placeholder="Ej: Pasillo A1">
+          <label>Ubicación Almacén</label>
+          <input id="prodUbicacion" value="Almacén Principal">
         </div>
 
-        <!-- MOTOR COMERCIAL Y SIMULADOR DE PRECIOS -->
-        <div class="field full" style="margin-top:6px;border-top:2px solid #0b63ce;padding-top:8px">
-          <b style="color:#0b4f85;font-size:12px">⚡ MOTOR COMERCIAL Y SIMULADOR DE PRECIOS</b>
-        </div>
-
-        <div class="field" style="background:#fffbe6;padding:6px;border:1px solid #ffe58f">
-          <label style="color:#874d00">1. PRECIO DE COSTO COMPRA (USD)</label>
-          <input id="simCosto" type="number" step=".01" value="${metrics.costo}" oninput="updateCommercialSimulator()" style="font-weight:bold;font-size:14px;color:#0b4f85">
-        </div>
-
-        <div class="field" style="background:#e6f7ff;padding:6px;border:1px solid #91d5ff">
-          <label style="color:#0050b3">2. MARGEN DETAL DESEADO (%)</label>
-          <input id="simMargenDetal" type="number" step="1" value="${metrics.margenDetalPct}" oninput="updateCommercialSimulator()" style="font-weight:bold;font-size:14px">
-        </div>
-
-        <!-- SIMULADOR DINÁMICO DE NIVELES DE PRECIOS -->
-        <div class="field full">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#fff;border:1px solid #d9d9d9;padding:8px;border-radius:3px">
-            <!-- Precio Detal -->
-            <div style="border-right:1px solid #eee;padding-right:6px">
-              <div style="font-size:10px;font-weight:bold;color:#0b4f85">PRECIO DETAL (PÚBLICO)</div>
-              <div id="dispPrecioDetalUSD" style="font-size:18px;font-weight:bold;color:#0b4f85;margin:2px 0">${money(metrics.precioDetal)}</div>
-              <div id="dispPrecioDetalBs" style="font-size:10px;color:#0a6839;font-weight:bold">Bs ${metrics.precioDetalBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-              <div id="dispGananciaDetal" style="font-size:9px;color:#666;margin-top:3px">Ganancia: +${money(metrics.gananciaDetal)}</div>
-            </div>
-            <!-- Precio Taller / Mecánico -->
-            <div style="border-right:1px solid #eee;padding-right:6px">
-              <div style="font-size:10px;font-weight:bold;color:#595959">PRECIO TALLER / MECÁNICO (-${metrics.margenTallerPct}%)</div>
-              <div id="dispPrecioTallerUSD" style="font-size:16px;font-weight:bold;color:#262626;margin:2px 0">${money(metrics.precioTaller)}</div>
-              <div id="dispPrecioTallerBs" style="font-size:10px;color:#0a6839">Bs ${metrics.precioTallerBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-              <div id="dispGananciaTaller" style="font-size:9px;color:#666;margin-top:3px">Ganancia: +${money(metrics.gananciaTaller)}</div>
-            </div>
-            <!-- Precio Mayorista / Volumen -->
+        <div class="field full" style="background:#fffbe6;border:1px solid #ffe58f;padding:8px;border-radius:4px;margin:4px 0">
+          <div style="font-weight:bold;font-size:12px;color:#874d00;margin-bottom:6px">⚙️ Motor de Precios y Simulación de Márgenes (Tasa BCV: ${fmtRate(initialPricing.tasaBCV)} Bs/USD)</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
             <div>
-              <div style="font-size:10px;font-weight:bold;color:#595959">PRECIO MAYOR / VOLUMEN (-${metrics.margenMayorPct}%)</div>
-              <div id="dispPrecioMayorUSD" style="font-size:16px;font-weight:bold;color:#262626;margin:2px 0">${money(metrics.precioMayor)}</div>
-              <div id="dispPrecioMayorBs" style="font-size:10px;color:#0a6839">Bs ${metrics.precioMayorBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-              <div id="dispGananciaMayor" style="font-size:9px;color:#666;margin-top:3px">Ganancia: +${money(metrics.gananciaMayor)}</div>
+              <label style="font-size:10px;color:#666">Costo Compra USD</label>
+              <input id="simCosto" type="number" step=".01" value="${initialPricing.costo}" oninput="updateCommercialSimulator()" style="font-weight:bold">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#666">Margen Detal %</label>
+              <input id="simMargenDetal" type="number" step="1" value="${initialPricing.margenDetalPct}" oninput="updateCommercialSimulator()">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#666">Precio Venta Detal (USD)</label>
+              <div id="dispPrecioDetalUSD" style="font-weight:bold;color:#0b4f85;font-size:13px;margin-top:4px">${money(initialPricing.precioDetal)}</div>
+              <div id="dispGananciaDetal" style="font-size:9px;color:#0a6839">+${money(initialPricing.gananciaDetal)}</div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:#666">Precio Detal en Bolívares</label>
+              <div id="dispPrecioDetalBs" style="font-weight:bold;color:#0b4f85;font-size:12px;margin-top:4px">Bs ${initialPricing.precioDetalBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;padding-top:6px;border-top:1px dashed #d9d9d9">
+            <div style="background:#fff;padding:4px 8px;border-radius:3px">
+              <span style="font-size:10px;color:#555">🔧 Precio Taller (-15% margen / 20% sobre costo):</span>
+              <b id="dispPrecioTallerUSD" style="color:#0b4f85;font-size:11px">${money(initialPricing.precioTaller)}</b>
+              <small id="dispPrecioTallerBs" style="color:#777"> (Bs ${initialPricing.precioTallerBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})})</small>
+            </div>
+            <div style="background:#fff;padding:4px 8px;border-radius:3px">
+              <span style="font-size:10px;color:#555">📦 Precio Mayorista (-23% margen / 12% sobre costo):</span>
+              <b id="dispPrecioMayorUSD" style="color:#0b4f85;font-size:11px">${money(initialPricing.precioMayor)}</b>
+              <small id="dispPrecioMayorBs" style="color:#777"> (Bs ${initialPricing.precioMayorBs.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})})</small>
             </div>
           </div>
         </div>
 
-        <!-- GESTIÓN DE STOCK Y REORDEN -->
         <div class="field">
-          <label>Stock Inicial Físico</label>
+          <label>Existencia Físico Inicial</label>
           <input id="prodStock" type="number" value="12" min="0">
         </div>
         <div class="field">
-          <label>Stock Mínimo Alerta</label>
+          <label>Stock Mínimo</label>
           <input id="prodMin" type="number" value="3" min="1" oninput="document.getElementById('prodReorder').value=Math.round(this.value*1.6)">
         </div>
         <div class="field">
@@ -779,8 +980,8 @@
       id: 'AUT-' + String(db.seq.producto++).padStart(5, '0'),
       sku: item ? (item.codigoProveedor || generateUniqueSKU(item.categoria, item.marca, item.codigoOEM)) : generateUniqueSKU('AUT', 'REP'),
       nombre: item ? item.nombre : '',
-      categoria: item ? item.categoria : 'Frenos y Fricción',
-      marca: item ? item.marca : 'Bosch',
+      categoria: item ? item.categoria : 'Bujes y Gomas',
+      marca: item ? item.marca : '555',
       codigoOEM: item ? item.codigoOEM : '',
       referenciasCruzadas: item ? item.referenciasCruzadas : [],
       compatibilidad: item ? item.compatibilidad : [],
@@ -803,7 +1004,7 @@
           <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo Máster Vinculado</span>
           <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Ficha en blanco'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (+900.000)</button>
       </div>
 
       <div class="formgrid">
@@ -878,7 +1079,7 @@
       if (container) {
         container.innerHTML = renderMasterExplorerTableContainerHTML();
       }
-    }, 150);
+    }, 120);
   }
 
   function setMasterViewCategory(cat, btn) {
@@ -961,7 +1162,7 @@
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fafafa;border-top:1px solid #ddd">
-        <span style="font-size:11px;color:#666">Página <b>${res.page}</b> de <b>${res.totalPages}</b> (Total: ${res.totalMatched.toLocaleString()} artículos)</span>
+        <span style="font-size:11px;color:#666">Página <b>${res.page}</b> de <b>${res.totalPages}</b> (Total: ${res.totalMatched.toLocaleString()} artículos indexados)</span>
         <div style="display:flex;gap:6px">
           <button class="btn" ${res.page <= 1 ? 'disabled' : ''} onclick="changeMasterViewPage(${res.page - 1})">◀ Anterior</button>
           <button class="btn" ${res.page >= res.totalPages ? 'disabled' : ''} onclick="changeMasterViewPage(${res.page + 1})">Siguiente ▶</button>
@@ -974,8 +1175,8 @@
     return `
     <div class="pagehead">
       <div>
-        <h2>📖 Catálogo Máster Universal de Proveedores</h2>
-        <div class="sub">Biblioteca técnica de +100.000 productos · Lubricantes Nacionales e Importados, Repuestos Comerciales y Marcas Chinas</div>
+        <h2>📖 Catálogo Máster Universal de Proveedores (+2.000.000 Productos)</h2>
+        <div class="sub">Biblioteca técnica integral con más de +2.450.000 repuestos automotrices indexados · Todas las clases de repuestos: Motor, Distribución, Inyección, Sensores, Suspensión, Frenos, Cloche, Baterías, Faros, Lubricantes Nacionales e Importados y Marcas Chinas</div>
       </div>
       <div class="actions" style="margin:0">
         <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar Nuevo Producto a Mi Tienda</button>
@@ -984,20 +1185,21 @@
 
     <div class="cards">
       <div class="card">Catálogo Indexado<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>artículos disponibles</span></div>
-      <div class="card">Aceites y Lubricantes<b>45.000+</b><span>PDV, Inca, Venoco, Mobil...</span></div>
-      <div class="card">Repuestos Masivos<b>35.000+</b><span>Toyota, Chevrolet, Ford...</span></div>
-      <div class="card">Marcas Chinas<b>24.000+</b><span>Chery, Jac, Changan, Haval...</span></div>
+      <div class="card">Motor, Tiempo e Inyección<b>640.000+</b><span>Pistones, válvulas, sensores...</span></div>
+      <div class="card">Tren Delantero y Suspensión<b>580.000+</b><span>Bujes, mesetas, lápiz, bases...</span></div>
+      <div class="card">Frenos, Cloche y Caja<b>480.000+</b><span>Pastillas, discos, embragues...</span></div>
+      <div class="card">Baterías, Luces y Relex<b>550.000+</b><span>Duncan, H4/LED, 12V 40A...</span></div>
       <div class="card">Mi Inventario Activo<b>${db.productos.length + getRepuestos().length}</b><span>en mi tienda local</span></div>
     </div>
 
     <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #ddd">
-      ${['Todos', 'Aceites y Lubricantes', 'Nacionales Venezolanas', 'Importadas Premium', 'Frenos y Fricción', 'Suspensión y Dirección', 'Partes Eléctricas', 'Repuestos Chinos'].map(cat => `
+      ${MASTER_CATEGORY_TABS.map(cat => `
         <button class="btn ${activeMasterCategory===cat?'primary':''}" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="setMasterViewCategory('${cat}', this)">${cat}</button>
       `).join('')}
     </div>
 
     <div class="searchbar">
-      <input id="masterExpQ" value="${esc(masterViewSearchQuery)}" placeholder="🔍 Buscar entre +100.000 productos por nombre, viscosidad (20W-50, 15W-40, 5W-30), marca (PDV, Inca, Mobil, Valvoline), auto (Aveo, Corolla, Chery, Jac)..." oninput="onMasterSearchInput(this.value)">
+      <input id="masterExpQ" value="${esc(masterViewSearchQuery)}" placeholder="🔍 Búsqueda inteligente en +2.450.000 repuestos por palabras claves (ej: piston corolla, bujes aveo, relex bomba corsa, radiador optra, bateria 34r, bombillo h7, lapiz fiesta)..." oninput="onMasterSearchInput(this.value)">
     </div>
 
     <div class="panel" id="masterExplorerTableContainer">
@@ -1006,7 +1208,9 @@
     `;
   }
 
-  // Exportar funciones globales
+  // Exportar funciones y utilidades globales
+  global.normalizeSearchText = normalizeSearchText;
+  global.matchKeywords = matchKeywords;
   global.calculatePricingEngine = calculatePricingEngine;
   global.openMasterCatalogSelectorModal = openMasterCatalogSelectorModal;
   global.debounceMasterModalSearch = debounceMasterModalSearch;

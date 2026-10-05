@@ -386,14 +386,17 @@ function changeSelectedQty(delta){if(selected==null||!cart[selected])return toas
 function openClientSearch(){openModal('Buscar cliente',`<div class="searchbar"><input id="clientQ" placeholder="Nombre o documento" oninput="renderClientChoices()"></div><div id="clientChoices"></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);renderClientChoices()}
 function renderClientChoices(){let q=(document.getElementById('clientQ')?.value||'').toLowerCase(),a=db.clientes.filter(c=>(c.nombre+' '+c.documento).toLowerCase().includes(q));document.getElementById('clientChoices').innerHTML=`<table><thead><tr><th>Cliente</th><th>Documento</th><th>Saldo</th><th></th></tr></thead><tbody>${a.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${money(c.saldo)}</td><td><button class="btn primary" onclick="saleCustomer='${c.id}';closeModal();renderView()">Seleccionar</button></td></tr>`).join('')}</tbody></table>`}
 
-function filterPos(){let q=document.getElementById('posSearch').value.toLowerCase();openItemSearch(q)}
-function openItemSearch(q=''){openModal('Agregar artículo',`<div class="searchbar"><input id="itemQ" value="${esc(q)}" oninput="renderItemChoices()"><button class="btn" onclick="renderItemChoices()">Buscar</button></div><div id="itemChoices"></div>`, `<button class="btn" onclick="closeModal()">Cerrar</button>`);renderItemChoices()}
+function filterPos(){let q=document.getElementById('posSearch')?.value||'';openItemSearch(q)}
+function openItemSearch(q=''){openModal('Agregar artículo',`<div class="searchbar"><input id="itemQ" value="${esc(q)}" placeholder="🔍 Búsqueda inteligente por palabras claves (ej: bujes aveo, lapiz fiesta, bateria duncan, bombillo h4, aceite 20w50)..." oninput="renderItemChoices()"><button class="btn" onclick="renderItemChoices()">Buscar</button></div><div id="itemChoices"></div>`, `<button class="btn" onclick="closeModal()">Cerrar</button>`);renderItemChoices()}
 function renderItemChoices(){
-  let q=(document.getElementById('itemQ')?.value||'').toLowerCase();
-  let prods=db.productos.filter(p=>(p.codigo+' '+p.nombre+' '+p.categoria).toLowerCase().includes(q));
+  let q=document.getElementById('itemQ')?.value||'';
+  let prods=db.productos.filter(p=>{
+    let text = `${p.codigo} ${p.codigoOEM||''} ${p.nombre} ${p.categoria} ${p.marca||''}`;
+    return typeof matchKeywords==='function' ? matchKeywords(text, q) : text.toLowerCase().includes(q.toLowerCase());
+  });
   let reps=typeof getRepuestos==='function' ? getRepuestos().filter(r=>{
-    let text = (r.sku+' '+r.codigoOEM+' '+r.nombre+' '+r.categoria+' '+r.marca+' '+(r.compatibilidad||[]).map(c=>c.marca+' '+c.modelo).join(' ')).toLowerCase();
-    return text.includes(q);
+    let text = `${r.sku} ${r.codigoOEM||''} ${r.nombre} ${r.categoria} ${r.marca||''} ${(r.compatibilidad||[]).map(c=>c.marca+' '+c.modelo).join(' ')}`;
+    return typeof matchKeywords==='function' ? matchKeywords(text, q) : text.toLowerCase().includes(q.toLowerCase());
   }) : [];
 
   document.getElementById('itemChoices').innerHTML=`
@@ -527,7 +530,7 @@ function productosView(){
       <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Nuevo desde Catálogo Máster</button>
       <button class="btn" onclick="openCommercialProductFormWithMaster(null)">➕ Nuevo Producto</button>
     </div>`,
-    `<div class="searchbar"><input placeholder="Buscar por código, nombre, categoría, OEM o marca..." oninput="filterTable(this,'productsTable')"></div>
+    `<div class="searchbar"><input placeholder="🔍 Búsqueda inteligente por palabras claves (ej: buje, manguera, aceite 20w50, duncan, corsa, aveo, filtro)..." oninput="filterTable(this,'productsTable')"></div>
     <div class="panel"><div class="panelbody"><table id="productsTable">
       <thead><tr>
         <th style="width:48px;text-align:center">Foto</th>
@@ -659,7 +662,9 @@ function toggleCaja(){if(db.caja.abierta){if(confirm('¿Cerrar la caja?')){db.ca
 function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos de demostración</button></div></div>`)}
 function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'FERRETERÍA SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
 function resetData(){if(confirm('Se eliminarán los datos actuales y se restaurarán los datos de demostración.')){db=structuredClone(seed);cart=[];save();renderShell();toast('Datos restaurados')}}
-function filterTable(inp,id){let q=inp.value.toLowerCase();document.querySelectorAll('#'+id+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')}
+function normalizeSearchText(s){return s?String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''):''}
+function matchKeywords(text,query){if(!query||!query.trim())return true;if(!text)return false;const normText=normalizeSearchText(text),tokens=normalizeSearchText(query).trim().split(/\s+/).filter(Boolean);return tokens.every(t=>normText.includes(t))}
+function filterTable(inp,id){let q=inp.value;document.querySelectorAll('#'+id+' tbody tr').forEach(r=>r.style.display=matchKeywords(r.textContent,q)?'':'none')}
 function openModal(title,body,foot){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modalFoot').innerHTML=foot||'';document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
 function fit(){document.getElementById('stage').style.transform='none'}

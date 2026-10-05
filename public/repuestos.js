@@ -1,12 +1,349 @@
 // SIFER360 - Módulo Especializado de Repuestos Automotrices
-// Sincronización B2B, Referencias Cruzadas, Compatibilidad Vehicular y SKUs Únicos
+// Sincronización B2B, Referencias Cruzadas, Compatibilidad Vehicular, Búsqueda Inteligente por Palabras Claves y SKUs Únicos
 
 const REPUESTOS_SEED = [
+  // 1. Bujes y Gomas
   {
     id: 'AUT-00001',
+    sku: 'SKU-BUJ-555-48655',
+    nombre: 'Buje de Meseta Delantera Inferior Grande (Tijera)',
+    categoria: 'Bujes y Gomas',
+    marca: '555 (Three Five)',
+    codigoOEM: '48655-12170 / 48655-02050',
+    referenciasCruzadas: [
+      { marca: 'CTR', codigo: 'CVT-44' },
+      { marca: 'Moog', codigo: 'K200780' },
+      { marca: 'Febest', codigo: 'TAB-003' },
+      { marca: 'Takama', codigo: 'TK-48655' }
+    ],
+    compatibilidad: [
+      { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación)', anios: '1998-2014', motor: '1.6L 4AFE / 1.8L 1ZZ-FE', posicion: 'Meseta Delantera Inferior' },
+      { marca: 'Toyota', modelo: 'Yaris (Belta / Sol)', anios: '2000-2018', motor: '1.3L 2NZ / 1.5L 1NZ-FE', posicion: 'Meseta Delantera' },
+      { marca: 'Toyota', modelo: 'Matrix', anios: '2003-2013', motor: '1.8L 1ZZ', posicion: 'Meseta Delantera' }
+    ],
+    costo: 5.20,
+    precio: 9.50,
+    stock: 24,
+    min: 6,
+    ubicacion: 'Pasillo B1 - Estante 2',
+    garantia: '12 meses / 20.000 km',
+    especificaciones: 'Caucho natural vulcanizado de alta resiliencia. Casquillo de acero zincado antioxidante.',
+    imagen: '/images/rep_amortiguador_1791152649395.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'AutoDist B2B Network', stock: 120, precioMayor: 4.60, despacho: '24 hrs' }
+    ]
+  },
+  {
+    id: 'AUT-00002',
+    sku: 'SKU-GOM-CTR-54813',
+    nombre: 'Goma / Buje de Barra Estabilizadora Delantera',
+    categoria: 'Bujes y Gomas',
+    marca: 'CTR',
+    codigoOEM: '96535154 / 54813-25000',
+    referenciasCruzadas: [
+      { marca: 'ACDelco', codigo: '93740710' },
+      { marca: 'Takama', codigo: 'TK-GM965' },
+      { marca: 'Moog', codigo: 'K200812' }
+    ],
+    compatibilidad: [
+      { marca: 'Chevrolet', modelo: 'Aveo (3P / 4P / 5P / Speed)', anios: '2005-2018', motor: '1.6L F16D3', posicion: 'Barra Estabilizadora Delantera' },
+      { marca: 'Chevrolet', modelo: 'Optra (Design / Advance / Limited)', anios: '2004-2014', motor: '1.8L T18SED', posicion: 'Barra Estabilizadora' },
+      { marca: 'Daewoo', modelo: 'Kalos / Lanos', anios: '2000-2008', motor: '1.5L / 1.6L', posicion: 'Barra Estabilizadora' }
+    ],
+    costo: 2.80,
+    precio: 5.50,
+    stock: 36,
+    min: 8,
+    ubicacion: 'Pasillo B1 - Estante 3',
+    garantia: '6 meses',
+    especificaciones: 'Par de gomas abrazadera de 19mm en elastómero de alta fricción antiruido.',
+    imagen: '/images/rep_amortiguador_1791152649395.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'Global Parts Cloud', stock: 200, precioMayor: 2.30, despacho: '12 hrs' }
+    ]
+  },
+
+  // 2. Lápiz y Bieletas
+  {
+    id: 'AUT-00003',
+    sku: 'SKU-LAP-555-48820',
+    nombre: 'Lápiz Estabilizador Delantero / Bieleta de Suspensión',
+    categoria: 'Lápiz y Bieletas',
+    marca: '555 (Three Five)',
+    codigoOEM: '48820-47010 / 48820-02030',
+    referenciasCruzadas: [
+      { marca: 'CTR', codigo: 'CLT-29' },
+      { marca: 'Moog', codigo: 'K80230' },
+      { marca: 'Sankei', codigo: 'SL-3640' },
+      { marca: 'Febest', codigo: '0123-001' }
+    ],
+    compatibilidad: [
+      { marca: 'Toyota', modelo: 'Corolla', anios: '2003-2022', motor: '1.8L 1ZZ-FE / 2ZR-FE', posicion: 'Delantero Derecho e Izquierdo' },
+      { marca: 'Toyota', modelo: 'Prius', anios: '2004-2018', motor: '1.5L / 1.8L Hybrid', posicion: 'Delantero' },
+      { marca: 'Toyota', modelo: 'Yaris', anios: '2006-2020', motor: '1.5L 1NZ-FE', posicion: 'Delantero' }
+    ],
+    costo: 8.50,
+    precio: 15.00,
+    stock: 18,
+    min: 4,
+    ubicacion: 'Pasillo S2 - Estante 1',
+    garantia: '12 meses / 30.000 km',
+    especificaciones: 'Rótula sellada con grasa sintética de larga duración y tuercas de seguridad autofrenantes.',
+    imagen: '/images/rep_amortiguador_1791152649395.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'AutoDist B2B Network', stock: 65, precioMayor: 7.40, despacho: '24 hrs' }
+    ]
+  },
+  {
+    id: 'AUT-00004',
+    sku: 'SKU-LAP-MOO-2S61',
+    nombre: 'Lápiz Estabilizador Delantero Reforzado (Par)',
+    categoria: 'Lápiz y Bieletas',
+    marca: 'Moog',
+    codigoOEM: '2S61-3B438-AD / 1146150',
+    referenciasCruzadas: [
+      { marca: 'CTR', codigo: 'CLF-10' },
+      { marca: 'Motorcraft', codigo: 'MEF-11' },
+      { marca: 'Takama', codigo: 'TK-FIE02' }
+    ],
+    compatibilidad: [
+      { marca: 'Ford', modelo: 'Fiesta (Power / Max / Move / Titanium)', anios: '2002-2018', motor: '1.6L Zetec Rocam', posicion: 'Barra Delantera' },
+      { marca: 'Ford', modelo: 'EcoSport', anios: '2004-2017', motor: '1.6L / 2.0L', posicion: 'Barra Delantera' },
+      { marca: 'Ford', modelo: 'Ka', anios: '2005-2014', motor: '1.6L Rocam', posicion: 'Barra Delantera' }
+    ],
+    costo: 7.90,
+    precio: 14.00,
+    stock: 16,
+    min: 4,
+    ubicacion: 'Pasillo S2 - Estante 2',
+    garantia: '12 meses',
+    especificaciones: 'Vástago de acero forjado de 10mm con rótulas de polímero autolubricado.',
+    imagen: '/images/rep_amortiguador_1791152649395.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'TecDoc Exchange Feed', stock: 45, precioMayor: 6.90, despacho: '24 hrs' }
+    ]
+  },
+
+  // 3. Rodamientos y Baleros
+  {
+    id: 'AUT-00005',
+    sku: 'SKU-ROD-KOY-90369',
+    nombre: 'Rodamiento de Rueda Delantero Sellado DAC3872',
+    categoria: 'Rodamientos',
+    marca: 'Koyo',
+    codigoOEM: '90369-38022 / 90369-38021',
+    referenciasCruzadas: [
+      { marca: 'SKF', codigo: 'VKBA 3984' },
+      { marca: 'NSK', codigo: '38BWD26' },
+      { marca: 'NTN', codigo: 'DE08A45' },
+      { marca: 'GMB', codigo: 'GH038022' }
+    ],
+    compatibilidad: [
+      { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación)', anios: '1993-2014', motor: '1.6L / 1.8L', posicion: 'Maza Rueda Delantera' },
+      { marca: 'Toyota', modelo: 'Yaris', anios: '2000-2018', motor: '1.3L / 1.5L', posicion: 'Delantero' },
+      { marca: 'Geely', modelo: 'CK / MK', anios: '2008-2016', motor: '1.5L', posicion: 'Delantero' }
+    ],
+    costo: 13.50,
+    precio: 24.00,
+    stock: 14,
+    min: 4,
+    ubicacion: 'Pasillo R2 - Estante 1',
+    garantia: '12 meses / 40.000 km',
+    especificaciones: 'Medidas: 38mm x 72mm x 37mm. Doble hilera angular con sellos de goma 2RS.',
+    imagen: '/images/rep_kit_embrague_1791152677700.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'Global Parts Cloud', stock: 80, precioMayor: 11.90, despacho: '24 hrs' }
+    ]
+  },
+
+  // 4. Baterías Automotrices
+  {
+    id: 'AUT-00006',
+    sku: 'SKU-BAT-DUN-24R800',
+    nombre: 'Batería Automotriz Duncan 24R (800 AMP) Libre de Mantenimiento',
+    categoria: 'Baterías',
+    marca: 'Duncan Baterías',
+    codigoOEM: 'DUN-24R-800 / BCI-24R',
+    referenciasCruzadas: [
+      { marca: 'Fulgor', codigo: 'FUL-24R' },
+      { marca: 'Titan', codigo: 'TT-24R-800' },
+      { marca: 'Willard', codigo: 'W-24R' },
+      { marca: 'ACDelco', codigo: 'AC-24R' }
+    ],
+    compatibilidad: [
+      { marca: 'Chevrolet', modelo: 'Aveo / Optra / Cruze / Silverado', anios: '2000-2024', motor: '1.6L / 1.8L / 5.3L', posicion: 'Compartimiento Batería' },
+      { marca: 'Toyota', modelo: 'Corolla / Yaris / Hilux / Fortuner', anios: '2000-2024', motor: '1.8L / 2.7L / 4.0L', posicion: 'Compartimiento Batería' },
+      { marca: 'Ford', modelo: 'Fiesta / EcoSport / Explorer / F-150', anios: '2000-2024', motor: '1.6L / 2.0L / 4.6L', posicion: 'Compartimiento Batería' },
+      { marca: 'Chery', modelo: 'Orinoco / Tiggo / Arauca', anios: '2010-2024', motor: '1.3L / 1.8L / 2.0L', posicion: 'Compartimiento Batería' }
+    ],
+    costo: 72.00,
+    precio: 98.00,
+    stock: 8,
+    min: 2,
+    ubicacion: 'Área Baterías - Almacén Central',
+    garantia: '12 meses con certificado de garantía nacional',
+    especificaciones: 'Capacidad 800 AMP arranque en frío (CCA 600A). Terminales cónicos estándar SAE, polaridad derecha (+) R.',
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'AutoDist B2B Network', stock: 25, precioMayor: 68.00, despacho: '12 hrs' }
+    ]
+  },
+
+  // 5. Luces de Faros y Stop
+  {
+    id: 'AUT-00007',
+    sku: 'SKU-LUC-OSR-H46055',
+    nombre: 'Bombillo Halógeno H4 12V 60/55W Bilux Luz Alta/Baja Original',
+    categoria: 'Luces y Faros',
+    marca: 'Osram Automotive Lighting',
+    codigoOEM: '90981-13058 / 64193',
+    referenciasCruzadas: [
+      { marca: 'Philips', codigo: '12342' },
+      { marca: 'Hella', codigo: '8GJ 002 525-131' },
+      { marca: 'Flosser', codigo: '2040' },
+      { marca: 'Bosch', codigo: '1987301001' }
+    ],
+    compatibilidad: [
+      { marca: 'Toyota', modelo: 'Corolla / Hilux / Machito / Yaris', anios: '1995-2022', motor: 'Todos', posicion: 'Faro Delantero Principal' },
+      { marca: 'Chevrolet', modelo: 'Corsa / Spark / Aveo 3P / Luv D-Max', anios: '1998-2018', motor: 'Todos', posicion: 'Faro Principal' },
+      { marca: 'Ford', modelo: 'Fiesta Power / Ka / EcoSport', anios: '2001-2015', motor: 'Todos', posicion: 'Faro Principal' },
+      { marca: 'Chery', modelo: 'Arauca / QQ / Grand Tiger', anios: '2006-2022', motor: 'Todos', posicion: 'Faro Principal' }
+    ],
+    costo: 2.30,
+    precio: 4.80,
+    stock: 45,
+    min: 10,
+    ubicacion: 'Vitrina Iluminación V1',
+    garantia: '6 meses',
+    especificaciones: 'Base P43t. Flujo luminoso 1650/1000 lúmenes. Cristal de cuarzo UV bloqueador.',
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'Global Parts Cloud', stock: 350, precioMayor: 1.95, despacho: '12 hrs' }
+    ]
+  },
+  {
+    id: 'AUT-00008',
+    sku: 'SKU-LUC-PHI-1157',
+    nombre: 'Bombillo 1157 2 Contactos 12V (Freno/Stop y Posición) Patas Desparejas',
+    categoria: 'Luces y Faros',
+    marca: 'Philips Automotive',
+    codigoOEM: '1157 / BAY15D / P21/5W',
+    referenciasCruzadas: [
+      { marca: 'Osram', codigo: '7528' },
+      { marca: 'Hella', codigo: '8GD 002 078-121' },
+      { marca: 'Flosser', codigo: '2112' }
+    ],
+    compatibilidad: [
+      { marca: 'Universal', modelo: 'Vehículos con faros de stop convencionales', anios: 'Todos', motor: 'Gasolina / Diesel', posicion: 'Stop Trasero / Cocuyo' }
+    ],
+    costo: 0.70,
+    precio: 1.60,
+    stock: 90,
+    min: 20,
+    ubicacion: 'Vitrina Iluminación V2',
+    garantia: '3 meses',
+    especificaciones: 'Casquillo metálico BAY15D con dos filamentos (21W para freno y 5W para luz de noche).',
+    imagen: '/images/prod_alternador_12v_1791155201792.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'AutoDist B2B Network', stock: 600, precioMayor: 0.55, despacho: '12 hrs' }
+    ]
+  },
+
+  // 6. Cilindros de Ignición y Switcheras
+  {
+    id: 'AUT-00009',
+    sku: 'SKU-IGN-GEN-90050',
+    nombre: 'Cilindro de Switchera de Ignición y Encendido con 2 Llaves',
+    categoria: 'Cilindros de Ignición',
+    marca: 'ACDelco',
+    codigoOEM: '90050843 / 90050844',
+    referenciasCruzadas: [
+      { marca: 'Valeo', codigo: '252522' },
+      { marca: 'Takama', codigo: 'TK-SW900' }
+    ],
+    compatibilidad: [
+      { marca: 'Chevrolet', modelo: 'Corsa / Chevy C2 / Montana', anios: '1998-2012', motor: '1.4L / 1.6L / 1.8L', posicion: 'Columna de Dirección' },
+      { marca: 'Chevrolet', modelo: 'Astra', anios: '2000-2006', motor: '1.8L / 2.0L', posicion: 'Columna de Dirección' }
+    ],
+    costo: 11.50,
+    precio: 21.00,
+    stock: 7,
+    min: 2,
+    ubicacion: 'Pasillo E2 - Estante 1',
+    garantia: '12 meses',
+    especificaciones: 'Cuerpo de zamak de precisión con 6 pines de combinación y par de llaves con logo.',
+    imagen: '/images/prod_bobina_encendido_1791155210560.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'Global Parts Cloud', stock: 28, precioMayor: 9.80, despacho: '24 hrs' }
+    ]
+  },
+
+  // 7. Relex y Relés Automotrices
+  {
+    id: 'AUT-00010',
+    sku: 'SKU-RLY-BOS-0332',
+    nombre: 'Relex Automotriz Universal 12V 4 Pines 40A Reforzado',
+    categoria: 'Relex y Relés',
+    marca: 'Bosch',
+    codigoOEM: '0 332 019 150 / 90987-02006',
+    referenciasCruzadas: [
+      { marca: 'Hella', codigo: '4RA 933 791-061' },
+      { marca: 'Denso', codigo: '056700-5260' },
+      { marca: 'Omron', codigo: 'G8HN-1C4T-RJ' },
+      { marca: 'Flosser', codigo: '2240' }
+    ],
+    compatibilidad: [
+      { marca: 'Universal', modelo: 'Electroventilador, Bomba Gasolina, Faros Halógenos, Corneta', anios: 'Todos', motor: 'Todos', posicion: 'Fusilera / Ramal Eléctrico' }
+    ],
+    costo: 2.40,
+    precio: 4.95,
+    stock: 42,
+    min: 10,
+    ubicacion: 'Vitrina Eléctricos E1',
+    garantia: '12 meses',
+    especificaciones: 'Contactos de plata-óxido de estaño (AgSnO2) resistentes a la soldadura y chisporroteo eléctrico. Soporta 40 Amperios continuos.',
+    imagen: '/images/prod_sensor_ckp_1791152221865.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'AutoDist B2B Network', stock: 350, precioMayor: 1.90, despacho: '12 hrs' }
+    ]
+  },
+
+  // 8. Mangueras Automotrices
+  {
+    id: 'AUT-00011',
+    sku: 'SKU-MAN-GAT-16571',
+    nombre: 'Manguera Superior de Radiador en EPDM Reforzada',
+    categoria: 'Mangueras',
+    marca: 'Gates',
+    codigoOEM: '16571-0D050 / 16571-22080',
+    referenciasCruzadas: [
+      { marca: 'Dayco', codigo: '71928' },
+      { marca: 'Continental', codigo: '66184' },
+      { marca: 'Cauplas', codigo: '4821' }
+    ],
+    compatibilidad: [
+      { marca: 'Toyota', modelo: 'Corolla (Pantallita / New Sensación / GLi)', anios: '2003-2015', motor: '1.8L 1ZZ-FE / 2.0L 2ZR', posicion: 'Radiador a Motor (Superior)' },
+      { marca: 'Toyota', modelo: 'Matrix', anios: '2003-2012', motor: '1.8L', posicion: 'Radiador Superior' }
+    ],
+    costo: 6.50,
+    precio: 12.80,
+    stock: 11,
+    min: 3,
+    ubicacion: 'Pasillo M1 - Estante 3',
+    garantia: '12 meses',
+    especificaciones: 'Construcción EPDM sintético resistente a la degradación electroquímica (ECR) y temperaturas de -40°C a 135°C.',
+    imagen: '/images/rep_bomba_agua_1791152689068.jpg',
+    distribuidoresStock: [
+      { distribuidor: 'TecDoc Exchange Feed', stock: 40, precioMayor: 5.60, despacho: '24 hrs' }
+    ]
+  },
+
+  // 9. Frenos y Fricción
+  {
+    id: 'AUT-00012',
     sku: 'SKU-FRE-BOS-04465',
     nombre: 'Pastillas de Freno Delanteras Cerámicas Premium',
-    categoria: 'Frenos',
+    categoria: 'Frenos y Fricción',
     marca: 'Bosch',
     codigoOEM: '04465-02220 / 04465-47070',
     referenciasCruzadas: [
@@ -19,8 +356,7 @@ const REPUESTOS_SEED = [
     compatibilidad: [
       { marca: 'Toyota', modelo: 'Corolla', anios: '2008-2022', motor: '1.8L 2ZR-FE / 2.0L 3ZR', posicion: 'Eje Delantero' },
       { marca: 'Toyota', modelo: 'Yaris', anios: '2010-2020', motor: '1.5L 1NZ-FE', posicion: 'Eje Delantero' },
-      { marca: 'Toyota', modelo: 'Matrix', anios: '2009-2014', motor: '1.8L 2ZR-FE', posicion: 'Eje Delantero' },
-      { marca: 'Pontiac', modelo: 'Vibe', anios: '2009-2010', motor: '1.8L L4', posicion: 'Eje Delantero' }
+      { marca: 'Toyota', modelo: 'Matrix', anios: '2009-2014', motor: '1.8L 2ZR-FE', posicion: 'Eje Delantero' }
     ],
     costo: 26.50,
     precio: 42.00,
@@ -35,11 +371,13 @@ const REPUESTOS_SEED = [
       { distribuidor: 'Global Parts Cloud', stock: 120, precioMayor: 22.90, despacho: '48 hrs' }
     ]
   },
+
+  // 10. Filtración
   {
-    id: 'AUT-00002',
+    id: 'AUT-00013',
     sku: 'SKU-FIL-DEN-90915',
     nombre: 'Filtro de Aceite Blindado Sintético Alto Flujo',
-    categoria: 'Filtración',
+    categoria: 'Filtros y Mantenimiento',
     marca: 'Denso',
     codigoOEM: '90915-YZZD2 / 90915-YZZD4',
     referenciasCruzadas: [
@@ -52,8 +390,7 @@ const REPUESTOS_SEED = [
       { marca: 'Toyota', modelo: 'Corolla', anios: '2002-2024', motor: '1.6L / 1.8L / 2.0L', posicion: 'Motor' },
       { marca: 'Toyota', modelo: 'Yaris', anios: '2006-2023', motor: '1.3L / 1.5L', posicion: 'Motor' },
       { marca: 'Toyota', modelo: 'RAV4', anios: '2001-2019', motor: '2.0L / 2.4L / 2.5L', posicion: 'Motor' },
-      { marca: 'Chevrolet', modelo: 'Tracker', anios: '2013-2021', motor: '1.8L Ecotec', posicion: 'Motor' },
-      { marca: 'Daihatsu', modelo: 'Terios', anios: '2002-2016', motor: '1.3L / 1.5L', posicion: 'Motor' }
+      { marca: 'Chevrolet', modelo: 'Tracker', anios: '2013-2021', motor: '1.8L Ecotec', posicion: 'Motor' }
     ],
     costo: 4.20,
     precio: 7.95,
@@ -67,11 +404,13 @@ const REPUESTOS_SEED = [
       { distribuidor: 'AutoDist B2B Network', stock: 240, precioMayor: 3.60, despacho: '12 hrs' }
     ]
   },
+
+  // 11. Suspensión y Dirección
   {
-    id: 'AUT-00003',
+    id: 'AUT-00014',
     sku: 'SKU-SUS-MON-72145',
-    nombre: 'Amortiguador Delantero a Gas Nitro-Cell',
-    categoria: 'Suspensión',
+    nombre: 'Amortiguador Delantero a Gas Nitro-Cell Reforzado',
+    categoria: 'Suspensión y Dirección',
     marca: 'Monroe',
     codigoOEM: '96407819 / 96407820',
     referenciasCruzadas: [
@@ -82,8 +421,7 @@ const REPUESTOS_SEED = [
     ],
     compatibilidad: [
       { marca: 'Chevrolet', modelo: 'Aveo', anios: '2005-2019', motor: '1.6L F16D3 DOHC', posicion: 'Delantero Derecho/Izq' },
-      { marca: 'Chevrolet', modelo: 'Optra', anios: '2004-2013', motor: '1.8L / 2.0L', posicion: 'Delantero' },
-      { marca: 'Pontiac', modelo: 'G3', anios: '2007-2010', motor: '1.6L', posicion: 'Delantero' }
+      { marca: 'Chevrolet', modelo: 'Optra', anios: '2004-2013', motor: '1.8L / 2.0L', posicion: 'Delantero' }
     ],
     costo: 35.00,
     precio: 58.00,
@@ -97,12 +435,14 @@ const REPUESTOS_SEED = [
       { distribuidor: 'Global Parts Cloud', stock: 35, precioMayor: 31.00, despacho: '24 hrs' }
     ]
   },
+
+  // 12. Encendido y Eléctrico
   {
-    id: 'AUT-00004',
+    id: 'AUT-00015',
     sku: 'SKU-IGN-NGK-7098',
     nombre: 'Bujía de Iridio Laser Spark Alta Eficiencia',
-    categoria: 'Encendido / Eléctrico',
-    marca: 'NGK',
+    categoria: 'Partes Eléctricas',
+    marca: 'NGK / NTK',
     codigoOEM: '22401-ED815 / 12290-R40-A01',
     referenciasCruzadas: [
       { marca: 'Denso', codigo: 'IK20TT' },
@@ -128,8 +468,10 @@ const REPUESTOS_SEED = [
       { distribuidor: 'AutoDist B2B Network', stock: 180, precioMayor: 5.90, despacho: '12 hrs' }
     ]
   },
+
+  // 13. Motor y Distribución
   {
-    id: 'AUT-00005',
+    id: 'AUT-00016',
     sku: 'SKU-MOT-GAT-9543',
     nombre: 'Kit de Correa de Distribución y Rodamiento Tensor',
     categoria: 'Motor / Distribución',
@@ -158,8 +500,10 @@ const REPUESTOS_SEED = [
       { distribuidor: 'TecDoc Exchange Feed', stock: 18, precioMayor: 34.50, despacho: '24 hrs' }
     ]
   },
+
+  // 14. Embrague y Transmisión
   {
-    id: 'AUT-00006',
+    id: 'AUT-00017',
     sku: 'SKU-TRA-VAL-82631',
     nombre: 'Kit de Embrague Completo (Disco, Plato y Collarín)',
     categoria: 'Embrague / Transmisión',
@@ -189,8 +533,10 @@ const REPUESTOS_SEED = [
       { distribuidor: 'AutoDist B2B Network', stock: 12, precioMayor: 72.00, despacho: '24 hrs' }
     ]
   },
+
+  // 15. Refrigeración
   {
-    id: 'AUT-00007',
+    id: 'AUT-00018',
     sku: 'SKU-REF-GMB-1209',
     nombre: 'Bomba de Agua con Empacadura Reforzada',
     categoria: 'Refrigeración',
@@ -264,11 +610,15 @@ function getRepuestos(){
   if (!Array.isArray(db.repuestos)) {
     db.repuestos = structuredClone(REPUESTOS_SEED);
   } else {
-    db.repuestos.forEach((r, i) => {
-      if (REPUESTOS_SEED[i] && (!r.imagen || r.imagen.startsWith('https://images.unsplash'))) {
-        r.imagen = REPUESTOS_SEED[i].imagen;
-      }
-    });
+    // Si la base de datos de repuestos tiene menos items que el seed expandido, combinamos los nuevos
+    if (db.repuestos.length < REPUESTOS_SEED.length) {
+      const existingIds = new Set(db.repuestos.map(r => r.id));
+      REPUESTOS_SEED.forEach(s => {
+        if (!existingIds.has(s.id)) {
+          db.repuestos.push(structuredClone(s));
+        }
+      });
+    }
   }
   return db.repuestos;
 }
@@ -309,16 +659,17 @@ function repuestosView(){
   <div class="pagehead">
     <div>
       <h2>🚗 Gestión Integral de Repuestos Automotrices</h2>
-      <div class="sub">Catálogo técnico · Sincronización B2B en tiempo real · Referencias cruzadas · Compatibilidad vehicular</div>
+      <div class="sub">Catálogo técnico multicriterio · Búsqueda por palabras claves · Referencias cruzadas · Compatibilidad vehicular · Sincronización B2B</div>
     </div>
     <div class="actions" style="margin:0">
+      <button class="btn" onclick="openMasterCatalogSelectorModal('repuesto')">📖 Buscar en Catálogo Máster (+2.000.000)</button>
       <button class="btn primary" onclick="openRepuestoModal()">➕ Nuevo Repuesto</button>
       <button class="btn green" onclick="syncDistribuidoresModal()">⚡ Sincronizar Distribuidores</button>
     </div>
   </div>
 
   <div class="cards">
-    <div class="card">Repuestos en Catálogo<b>${repuestos.length}</b><span>SKUs únicos indexados</span></div>
+    <div class="card">Repuestos en Catálogo<b>${repuestos.length}</b><span>SKUs únicos locales</span></div>
     <div class="card">Stock Físico Local<b>${totalStock}</b><span>unidades en almacén</span></div>
     <div class="card">Red Distribuidores<b>+${totalExtStock}</b><span>disponibles en tiempo real</span></div>
     <div class="card">Referencias Cruzadas<b>${totalRefCruzadas}</b><span>códigos y marcas cruzadas</span></div>
@@ -349,36 +700,27 @@ function renderCatalogTab(){
   const b = bcvData();
   const rate = b.rate || 1;
 
+  // Extraer categorías y marcas únicas existentes
+  const categoriasUnicas = Array.from(new Set(repuestos.map(r => r.categoria).filter(Boolean))).sort();
+  const marcasUnicas = Array.from(new Set(repuestos.map(r => r.marca).filter(Boolean))).sort();
+
   return `
-  <div class="searchbar" style="display:grid;grid-template-columns:1fr 180px 180px auto;gap:6px">
-    <input id="repuestoQ" placeholder="🔍 Buscar por SKU, OEM, Nombre, Marca, Referencia o Auto (ej: Corolla, Aveo, 04465, Bosch)..." oninput="filterRepuestosTable()">
+  <div class="searchbar" style="display:grid;grid-template-columns:1fr 190px 180px auto;gap:6px">
+    <input id="repuestoQ" placeholder="🔍 Búsqueda por palabras claves (ej: bujes aveo, lapiz fiesta, bateria duncan, bombillo h4, manguera optra, relex 12v, 04465, bosch)..." oninput="filterRepuestosTable()">
     <select id="repuestoCatFilter" onchange="filterRepuestosTable()">
       <option value="">Todas las Categorías</option>
-      <option>Frenos</option>
-      <option>Filtración</option>
-      <option>Suspensión</option>
-      <option>Encendido / Eléctrico</option>
-      <option>Motor / Distribución</option>
-      <option>Embrague / Transmisión</option>
-      <option>Refrigeración</option>
+      ${categoriasUnicas.map(cat => `<option value="${esc(cat)}">${esc(cat)}</option>`).join('')}
     </select>
     <select id="repuestoMarcaFilter" onchange="filterRepuestosTable()">
       <option value="">Todas las Marcas</option>
-      <option>Bosch</option>
-      <option>Denso</option>
-      <option>Monroe</option>
-      <option>NGK</option>
-      <option>Gates</option>
-      <option>Valeo</option>
-      <option>GMB</option>
-      <option>Brembo</option>
+      ${marcasUnicas.map(mar => `<option value="${esc(mar)}">${esc(mar)}</option>`).join('')}
     </select>
     <button class="btn" onclick="openSKUGeneratorBatchModal()">✨ Asignar SKUs</button>
   </div>
 
   <div class="panel">
     <div class="panelhead" style="display:flex;justify-content:space-between;align-items:center">
-      <span>Listado Técnico de Repuestos Automotrices</span>
+      <span>Listado Técnico de Repuestos Automotrices (Búsqueda por palabras claves en nombre, SKU, OEM, marcas y vehículos)</span>
       <span style="font-size:11px;color:#555">Tasa BCV de cálculo: <b>${fmtRate(rate)} Bs/USD</b></span>
     </div>
     <div class="panelbody" style="padding:0;overflow:auto">
@@ -387,7 +729,7 @@ function renderCatalogTab(){
           <tr>
             <th style="width:48px;text-align:center">Foto</th>
             <th style="width:140px">SKU / ID</th>
-            <th>Repuesto / Marca</th>
+            <th>Repuesto / Categoría / Marca</th>
             <th>Código OEM</th>
             <th>Referencias Cruzadas</th>
             <th>Compatibilidad Vehicular</th>
@@ -404,7 +746,7 @@ function renderCatalogTab(){
             const fitPreview = (r.compatibilidad || []).map(x => `${esc(x.marca)} ${esc(x.modelo)} (${x.anios})`).slice(0, 2).join(', ');
             
             return `
-            <tr class="clickrow">
+            <tr class="clickrow" data-cat="${esc(r.categoria)}" data-brand="${esc(r.marca)}">
               <td style="text-align:center;padding:3px">
                 <img src="${r.imagen || '/icon.svg'}" alt="${esc(r.nombre)}" style="width:38px;height:38px;object-fit:cover;border:1px solid #ccc;border-radius:3px;cursor:pointer" onclick="viewPhotoZoom('${r.id}')" title="Clic para ampliar foto de alta resolución" onerror="this.src='/icon.svg'">
               </td>
@@ -414,7 +756,7 @@ function renderCatalogTab(){
               </td>
               <td>
                 <b>${esc(r.nombre)}</b>
-                <div style="font-size:10px;color:#555">Marca: <b>${esc(r.marca)}</b> · Cat: ${esc(r.categoria)}</div>
+                <div style="font-size:10px;color:#555">Marca: <b>${esc(r.marca)}</b> · Cat: <span style="color:#0b4f85;font-weight:600">${esc(r.categoria)}</span></div>
               </td>
               <td>
                 <span style="font-family:monospace;font-weight:700;background:#f0f4fa;padding:1px 4px;border:1px solid #d0dbe8;font-size:10px">${esc(r.codigoOEM || 'N/A')}</span>
@@ -450,18 +792,20 @@ function renderCatalogTab(){
   </div>`;
 }
 
-// Filtro en vivo de catálogo
+// Filtro inteligente en vivo de catálogo por palabras claves
 function filterRepuestosTable(){
-  const q = (document.getElementById('repuestoQ')?.value || '').toLowerCase();
-  const cat = document.getElementById('repuestoCatFilter')?.value || '';
-  const mar = document.getElementById('repuestoMarcaFilter')?.value || '';
+  const rawQ = (document.getElementById('repuestoQ')?.value || '').trim();
+  const cat = (document.getElementById('repuestoCatFilter')?.value || '').toLowerCase();
+  const mar = (document.getElementById('repuestoMarcaFilter')?.value || '').toLowerCase();
   const rows = document.querySelectorAll('#repuestosTable tbody tr');
   
   rows.forEach(r => {
-    const text = r.textContent.toLowerCase();
-    const matchQ = !q || text.includes(q);
-    const matchCat = !cat || text.includes(cat.toLowerCase());
-    const matchMar = !mar || text.includes(mar.toLowerCase());
+    const text = r.textContent;
+    const matchQ = typeof matchKeywords === 'function' ? matchKeywords(text, rawQ) : (!rawQ || text.toLowerCase().includes(rawQ.toLowerCase()));
+    const rowCat = (r.getAttribute('data-cat') || text).toLowerCase();
+    const rowBrand = (r.getAttribute('data-brand') || text).toLowerCase();
+    const matchCat = !cat || rowCat.includes(cat);
+    const matchMar = !mar || rowBrand.includes(mar);
     r.style.display = (matchQ && matchCat && matchMar) ? '' : 'none';
   });
 }
@@ -579,7 +923,7 @@ function renderCrossReferenceTab(){
     <div class="panelhead">Buscador Universal de Referencias Cruzadas (Intercambiabilidad de Códigos)</div>
     <div class="panelbody">
       <div class="searchbar">
-        <input id="crossQ" placeholder="Escriba código OEM o código de cualquier fabricante (ej: 04465, P83082, 51394, W68/3, 96407819, 333418)..." oninput="filterTable(this,'crossTable')">
+        <input id="crossQ" placeholder="Escriba código OEM o código de cualquier fabricante (ej: 04465, P83082, 51394, W68/3, 96407819, 333418, 24R, H4)..." oninput="filterTable(this,'crossTable')">
       </div>
       <p style="font-size:11px;color:#666;margin:4px 0 10px">
         Esta matriz permite encontrar repuestos equivalentes de diferentes marcas cuando no se cuenta con el código OEM original.
@@ -799,8 +1143,8 @@ function openRepuestoModal(id){
     id: '',
     sku: '',
     nombre: '',
-    categoria: 'Frenos',
-    marca: 'Bosch',
+    categoria: 'Bujes y Gomas',
+    marca: '555',
     codigoOEM: '',
     referenciasCruzadas: [],
     compatibilidad: [],
@@ -832,24 +1176,31 @@ function openRepuestoModal(id){
       </div>
       <div class="field full">
         <label>Descripción / Nombre del Repuesto</label>
-        <input id="repNombre" value="${esc(r.nombre)}" placeholder="Ej: Pastillas de Freno Cerámicas Delanteras">
+        <input id="repNombre" value="${esc(r.nombre)}" placeholder="Ej: Buje de Meseta Delantera Inferior">
       </div>
       <div class="field">
         <label>Categoría</label>
         <select id="repCat">
-          <option ${r.categoria==='Frenos'?'selected':''}>Frenos</option>
-          <option ${r.categoria==='Filtración'?'selected':''}>Filtración</option>
-          <option ${r.categoria==='Suspensión'?'selected':''}>Suspensión</option>
-          <option ${r.categoria==='Encendido / Eléctrico'?'selected':''}>Encendido / Eléctrico</option>
+          <option ${r.categoria==='Bujes y Gomas'?'selected':''}>Bujes y Gomas</option>
+          <option ${r.categoria==='Lápiz y Bieletas'?'selected':''}>Lápiz y Bieletas</option>
+          <option ${r.categoria==='Rodamientos'?'selected':''}>Rodamientos</option>
+          <option ${r.categoria==='Baterías'?'selected':''}>Baterías</option>
+          <option ${r.categoria==='Luces y Faros'?'selected':''}>Luces y Faros</option>
+          <option ${r.categoria==='Cilindros de Ignición'?'selected':''}>Cilindros de Ignición</option>
+          <option ${r.categoria==='Relex y Relés'?'selected':''}>Relex y Relés</option>
+          <option ${r.categoria==='Mangueras'?'selected':''}>Mangueras</option>
+          <option ${r.categoria==='Frenos y Fricción'?'selected':''}>Frenos y Fricción</option>
+          <option ${r.categoria==='Filtros y Mantenimiento'?'selected':''}>Filtros y Mantenimiento</option>
+          <option ${r.categoria==='Suspensión y Dirección'?'selected':''}>Suspensión y Dirección</option>
+          <option ${r.categoria==='Partes Eléctricas'?'selected':''}>Partes Eléctricas</option>
           <option ${r.categoria==='Motor / Distribución'?'selected':''}>Motor / Distribución</option>
           <option ${r.categoria==='Embrague / Transmisión'?'selected':''}>Embrague / Transmisión</option>
           <option ${r.categoria==='Refrigeración'?'selected':''}>Refrigeración</option>
-          <option ${r.categoria==='Dirección'?'selected':''}>Dirección</option>
         </select>
       </div>
       <div class="field">
         <label>Marca del Repuesto</label>
-        <input id="repMarca" value="${esc(r.marca)}" placeholder="Ej: Bosch, Denso, Monroe...">
+        <input id="repMarca" value="${esc(r.marca)}" placeholder="Ej: Bosch, Denso, 555, Monroe, Duncan...">
       </div>
       <div class="field">
         <label>Costo USD</label>
@@ -877,11 +1228,11 @@ function openRepuestoModal(id){
       </div>
       <div class="field full">
         <label>Referencias Cruzadas (Formato: Marca: Código, Marca: Código)</label>
-        <input id="repRefs" value="${esc(refText)}" placeholder="Ej: Brembo: P83082, Ferodo: FDB1641, TRW: GDB3425">
+        <input id="repRefs" value="${esc(refText)}" placeholder="Ej: Brembo: P83082, CTR: CVT-44, Moog: K200780">
       </div>
       <div class="field full">
         <label>Compatibilidad Vehicular (Una línea por vehículo: Marca - Modelo - Años - Motor - Posición)</label>
-        <textarea id="repFit" placeholder="Toyota - Corolla - 2008-2020 - 1.8L - Delantero&#10;Toyota - Yaris - 2010-2019 - 1.5L - Delantero">${esc(fitText)}</textarea>
+        <textarea id="repFit" placeholder="Toyota - Corolla - 2008-2020 - 1.8L - Delantero&#10;Chevrolet - Aveo - 2005-2018 - 1.6L - Delantero">${esc(fitText)}</textarea>
       </div>
       <div class="field full">
         <label>URL de Imagen Referencial</label>
@@ -966,9 +1317,9 @@ function syncDistribuidoresModal(){
       <div id="syncProgressArea" style="background:#f4f4f4;border:1px solid #ccc;padding:10px;height:160px;overflow:auto;font-family:monospace;font-size:11px;line-height:1.5">
         <div style="color:#0b4f85">▶ Conectando con AutoDist B2B Network API... OK (42ms)</div>
         <div style="color:#0b4f85">▶ Conectando con Global Parts Cloud Network... OK (68ms)</div>
-        <div style="color:#0b4f85">▶ Verificando catálogo maestro TecDoc... OK</div>
-        <div>✔ Comparando 7 repuestos locales con 432,650 referencias externas...</div>
-        <div>✔ Ajustando stock externo en tiempo real (+465 unidades disponibles para pedido).</div>
+        <div style="color:#0b4f85">▶ Verificando catálogo maestro TecDoc (+900.000 SKUs)... OK</div>
+        <div>✔ Comparando repuestos locales con catálogo nacional e importado...</div>
+        <div>✔ Ajustando stock externo en tiempo real (+860 unidades disponibles para despacho inmediato).</div>
         <div style="color:#0a6839;font-weight:bold">✔ ¡Sincronización completada con éxito!</div>
       </div>
     </div>
@@ -1011,7 +1362,6 @@ function venderRepuestoEnPOS(id){
     toast('Advertencia: El repuesto tiene stock local en 0 (puede solicitarse a distribuidor)');
   }
   
-  // Agregar al carrito POS
   let line = cart.find(x => x.id === r.id);
   if (line) {
     line.qty++;
@@ -1076,3 +1426,23 @@ function applyBatchSKUs(){
   renderView();
   toast('SKUs normalizados y asociados a todos los repuestos');
 }
+
+// Exponer funciones globales
+window.getRepuestos = getRepuestos;
+window.getDistribuidores = getDistribuidores;
+window.generateUniqueSKU = generateUniqueSKU;
+window.repuestosView = repuestosView;
+window.filterRepuestosTable = filterRepuestosTable;
+window.viewPhotoZoom = viewPhotoZoom;
+window.openPhotoPickerModal = openPhotoPickerModal;
+window.saveRepuestoPhoto = saveRepuestoPhoto;
+window.openRepuestoDetail = openRepuestoDetail;
+window.openRepuestoModal = openRepuestoModal;
+window.saveRepuesto = saveRepuesto;
+window.syncDistribuidoresModal = syncDistribuidoresModal;
+window.finishSyncB2B = finishSyncB2B;
+window.testDistributorPing = testDistributorPing;
+window.syncSingleDistributor = syncSingleDistributor;
+window.venderRepuestoEnPOS = venderRepuestoEnPOS;
+window.openSKUGeneratorBatchModal = openSKUGeneratorBatchModal;
+window.applyBatchSKUs = applyBatchSKUs;
