@@ -87,12 +87,33 @@
   root.querySelector('.sifer-ai-close').addEventListener('click',()=>toggle(false));
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
+  function buildReadOnlyData(){
+    try{
+      const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
+      const safeArray=(v,max=200)=>Array.isArray(v)?v.slice(0,max):[];
+      const pick=(obj,keys)=>{const out={}; if(!obj||typeof obj!=='object')return out; keys.forEach(k=>{if(obj[k]!==undefined)out[k]=obj[k]}); return out;};
+      return {
+        config:pick(db.config,['empresa','moneda','impuesto','bcv']),
+        productos:safeArray(db.productos).map(x=>pick(x,['id','codigo','nombre','categoria','marca','unidad','costo','precio','stock','min'])),
+        clientes:safeArray(db.clientes).map(x=>pick(x,['id','nombre','cedula','telefono','email','tipo','saldo','limiteCredito'])),
+        proveedores:safeArray(db.proveedores).map(x=>pick(x,['id','nombre','rif','telefono','email'])),
+        ventas:safeArray(db.ventas).map(x=>pick(x,['numero','fecha','cliente','clienteId','total','subtotal','impuesto','tipo','estado','cajaId','usuarioId','items'])),
+        compras:safeArray(db.compras).map(x=>pick(x,['numero','fecha','proveedor','proveedorId','total','subtotal','impuesto','estado','items'])),
+        pedidos:safeArray(db.pedidos).map(x=>pick(x,['id','numero','fecha','cliente','total','estado','items'])),
+        cajas:safeArray(db.cajas).map(x=>pick(x,['id','nombre','abierta','saldo','apertura','ultimoCorteAt'])),
+        cxc:safeArray(db.cxc).map(x=>pick(x,['id','cliente','clienteId','documento','saldo','monto','fecha','estado'])),
+        cxp:safeArray(db.cxp).map(x=>pick(x,['id','proveedor','proveedorId','documento','saldo','monto','fecha','estado'])),
+        pos:{cart:safeArray(db.posCart).map(x=>pick(x,['productId','codigo','nombre','qty','precio','discount','total']))}
+      };
+    }catch{return {error:'No se pudo leer el estado local de consulta.'};}
+  }
+
   async function ask(text){
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
     const userMsg={role:'user',text}; messages.push(userMsg); render();
     const aiIndex=messages.push({role:'assistant',text:''})-1; render();
     try{
-      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz'};
+      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData:buildReadOnlyData()};
       const history=messages.filter((_,i)=>i!==aiIndex).slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
       const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,context})});
       if(!r.ok){let e='No pude conectar con el núcleo de inteligencia de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
