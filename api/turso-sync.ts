@@ -97,18 +97,18 @@ export default async function handler(req:any,res:any){
           reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id)
         )`,args:[]});
         const now=new Date().toISOString();
-        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({
-          sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at) VALUES(?,?,?,?,?,?)`,
-          args:[operationId,String(sale.numero),String(l.id),-(Number(l.qty)||0),String(sale.total<0?'return':'sale'),now]
-        }));
-        if(stmts.length) await db.batch(stmts,'write');
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_order_reservations(
           order_id TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,reserved_at TEXT NOT NULL,
           PRIMARY KEY(order_id,product_id)
         )`,args:[]});
-        const applied=await db.execute({sql:'SELECT product_id,qty_delta FROM sifer_inventory_ledger WHERE operation_id=?',args:[operationId]});
-        for(const row of applied.rows){
-          const pid=String(row.product_id),delta=Number(row.qty_delta)||0;
+        // Cada fila del ledger es la unidad idempotente de inventario. Solo aplicamos
+        // el delta cuando esta solicitud logró insertar la fila; un reintento después
+        // de un fallo parcial no vuelve a descontar/abonar el inventario.
+        for(const l of lines.filter((x:any)=>x?.id)){
+          const pid=String(l.id),delta=-(Number(l.qty)||0);
+          const inserted=await db.execute({sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at) VALUES(?,?,?,?,?,?)`,
+            args:[operationId,String(sale.numero),pid,delta,String(sale.total<0?'return':'sale'),now]});
+          if(!inserted.rowsAffected) continue;
           const reservation=await db.execute({sql:`SELECT r.order_id,r.qty FROM sifer_order_reservations r
             JOIN sifer_customer_orders o ON o.id=r.order_id
             WHERE r.product_id=? AND json_extract(o.payload_json,'$.saleNumber')=? LIMIT 1`,args:[pid,String(sale.numero)]});
