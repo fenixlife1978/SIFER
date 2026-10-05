@@ -64,7 +64,7 @@
   }
   async function persist(state,reason){
     await saveState(state);
-    await enqueue('state-change',{reason,at:new Date().toISOString()});
+    await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
     updateStatus();
     if(navigator.onLine) syncPending();
   }
