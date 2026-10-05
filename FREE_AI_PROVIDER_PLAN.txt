@@ -1,1 +1,0 @@
-SIFER can use a free hosted AI provider. Keep the assistant layer isolated and reversible.
