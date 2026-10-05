@@ -327,7 +327,7 @@ function maybeRefreshBCV(){
 function navItems(){return [['inicio','🏠 Inicio'],['pos','🛒 Punto de Venta'],['master_catalog','📖 Catálogo Automotriz'],['repuestos','🚗 Repuestos'],['productos','📦 Inventario'],['compras','🛍️ Compras'],['clientes','👤 Clientes'],['proveedores','🏭 Proveedores'],['cxc','💰 CxC'],['cxp','💳 CxP'],['presupuestos','📋 Presupuestos'],['reportes','📊 Reportes'],['caja','🏦 Caja'],['config','⚙️ Configuración']]}
 function renderShell(){
  document.getElementById('windowTitle').textContent=title(view);
- const menus=[['Archivo',()=>menu('Sistema')],['Ventas',()=>menu('Ventas')],['Inventario',()=>menu('Inventario')],['Compras',()=>menu('Compras')],['Cuentas',()=>menu('Cuentas')],['Contactos',()=>menu('Contactos')],['Reportes',()=>menu('Reportes')],['Sistema',()=>menu('Sistema')]];
+ const menus=[['Archivo',()=>menu('Sistema')],['Ventas',()=>menu('Ventas')],['Inventario',()=>go('productos')],['Compras',()=>menu('Compras')],['Cuentas',()=>menu('Cuentas')],['Contactos',()=>menu('Contactos')],['Reportes',()=>menu('Reportes')],['Sistema',()=>menu('Sistema')]];
  document.getElementById('menubar').innerHTML=menus.map(m=>`<button style="background:none;border:none;padding:3px 7px;font-size:11px" onclick="(${m[1]})()">${m[0]}</button>`).join('');
  const modules=navItems().concat([['pedidos','📝 Pedidos'],['usuarios','👥 Usuarios/Cajas']]);
  document.getElementById('toolbar').insertAdjacentHTML('beforebegin',
@@ -337,34 +337,21 @@ function renderShell(){
  const bars=document.querySelectorAll('.modulebar'); if(bars.length>1) bars[0].remove();
  const actionButtons=view==='pos'?[
    ['👥','Cliente',()=>openClientSearch()],['➕','Aumentar',()=>changeSelectedQty(1)],['➖','Disminuir',()=>changeSelectedQty(-1)],
-   ['A','Factura / Venta',()=>checkout()],['C','Condición',()=>saleType=saleType==='contado'?'credito':'contado'],['P','Presupuesto',()=>go('presupuestos')]
+   ['A','Factura / Venta',()=>checkout()],['C','Condición',()=>saleType=saleType==='contado'?'credito':'contado']
  ]:view==='master_catalog'?[
-   ['📥','Añadir a Mi Tienda',()=>openMasterCatalogSelectorModal('producto')],
    ['🔍','Buscar en Máster',()=>focusSearch()],
-   ['📦','Ver Mi Inventario',()=>go('productos')],
-   ['🚗','Ver Repuestos',()=>go('repuestos')],
-   ['🔄','Actualizar',()=>{renderView()}],
-   ['🖨️','Imprimir',()=>printView()]
+   ['📦','Mi Inventario',()=>go('productos')],
+   ['🚗','Repuestos',()=>go('repuestos')]
  ]:view==='repuestos'?[
-   ['➕','Nuevo Repuesto',()=>openMasterCatalogSelectorModal('repuesto')],
-   ['⚡','Sincronizar APIs',()=>syncDistribuidoresModal()],
    ['🚘','Fitment Auto',()=>toggleFitmentView()],
    ['🔗','Ref. Cruzadas',()=>toggleCrossRefView()],
-   ['✨','Asignar SKUs',()=>openSKUGeneratorBatchModal()],
-   ['🖨️','Imprimir',()=>printView()],
+   ['✨','Asignar SKUs',()=>openSKUGeneratorBatchModal()]
+ ]:view==='productos'?[
+   ['🔎','Buscar',()=>focusSearch()],
+   ['🚗','Repuestos',()=>go('repuestos')]
+ ]:[
    ['🔄','Actualizar',()=>{db=load();renderShell()}],
    ['🔎','Buscar',()=>focusSearch()]
- ]:view==='productos'?[
-   ['➕','Nuevo desde Máster',()=>openMasterCatalogSelectorModal('producto')],
-   ['📖','Explorar Máster',()=>go('master_catalog')],
-   ['➕','Nuevo Manual',()=>openProduct()],
-   ['🖨️','Imprimir',()=>printView()],
-   ['🔄','Actualizar',()=>{db=load();renderShell()}],
-   ['🔎','Buscar',()=>focusSearch()],
-   ['⚠️','Alertas',()=>go('reportes')]
- ]:[
-   ['➕','Nuevo',()=>newAction()],['💾','Guardar',()=>saveAction()],['✎','Editar',()=>toast('Seleccione un registro en la tabla')],
-   ['🖨️','Imprimir',()=>printView()],['🔄','Actualizar',()=>{db=load();renderShell()}],['🔎','Buscar',()=>focusSearch()],['⚠️','Alertas',()=>go('reportes')]
  ];
  actionButtons.push(['▣','Tasa BCV',()=>openBCV()]);
  document.getElementById('toolbar').innerHTML=actionButtons.map((x,i)=>`<button class="tool ${i===0?'cream':''}" onclick="(${x[2]})"><span class="ico">${x[0]}</span>${x[1]}</button>`).join('');
@@ -383,7 +370,7 @@ function printView(){window.print()}
 function bindView(){}
 function openBCV(){const b=bcvData();openModal('Tasa BCV',`<div class="panel" style="margin:0"><div class="panelbody"><div style="font-size:11px;color:#666;text-transform:uppercase">Tasa BCV vigente</div><div style="font-size:34px;font-weight:800;color:#0b4f85;margin:5px 0 8px">${fmtRate(b.rate)} Bs/USD</div><div style="font-size:12px">Vigencia: <b>${fmtDate(b.effectiveDate)}</b></div><div style="font-size:11px;color:#666;margin-top:3px">Última captura: ${b.updatedAt?fmt(b.updatedAt):'—'}</div></div></div>`,`<button class="btn" onclick="showBCVHistory()">Histórico</button><button class="btn primary" onclick="updateBCVRate()">Actualizar ahora</button><button class="btn" onclick="closeModal()">Cerrar</button>`)}
 function dashboard(){
- const ventas=db.ventas.reduce((s,x)=>s+x.total,0), cxc=db.cxc.reduce((s,x)=>s+x.saldo,0),cxp=db.cxp.reduce((s,x)=>s+x.saldo,0),stock=db.productos.reduce((s,x)=>s+x.stock,0),low=db.productos.filter(x=>x.stock<=x.min).length;
+ const ventas=db.ventas.reduce((s,x)=>s+x.total,0), cxc=db.cxc.reduce((s,x)=>s+x.saldo,0),cxp=db.cxp.reduce((s,x)=>s+x.saldo,0),invProductos=db.productos||[],invRepuestos=typeof getRepuestos==='function'?getRepuestos():[],stock=[...invProductos,...invRepuestos].reduce((s,x)=>s+Number(x.stock||0),0),low=[...invProductos,...invRepuestos].filter(x=>Number(x.stock||0)<=Number(x.min||0)).length;
  return `<div class="pagehead"><div><h2>Panel principal</h2><div class="sub">Control integral de ventas, compras, inventario y finanzas</div></div><button class="btn primary" onclick="go('pos')">Abrir Punto de Venta</button></div>
  <div class="cards"><div class="card">Ventas acumuladas<b>${money(ventas)}</b><span>${db.ventas.length} operaciones</span></div><div class="card">Cuentas por cobrar<b>${money(cxc)}</b><span>${db.cxc.length} documentos</span></div><div class="card">Cuentas por pagar<b>${money(cxp)}</b><span>${db.cxp.length} documentos</span></div><div class="card">Existencias<b>${stock}</b><span>unidades registradas</span></div><div class="card">Stock bajo<b>${low}</b><span>requieren reposición</span></div></div>
  ${bcvPanel()}
@@ -633,45 +620,55 @@ async function finishSale(total){
   save('sale-created');activeOrderId=null;cart=[];selected=null;closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
 }function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
 function productosView(){
+  const productos = Array.isArray(db.productos)?db.productos:[];
+  const repuestos = typeof getRepuestos==='function' ? getRepuestos() : [];
+  const inventario = [
+    ...productos.map(p=>({...p,_source:'Producto',_sourceId:p.id})),
+    ...repuestos.map(r=>({...r,_source:'Repuesto',_sourceId:r.id,codigo:r.sku||r.id,codigoOEM:r.codigoOEM,unidad:r.unidad||'Unidad'}))
+  ];
+  const totalUnidades=inventario.reduce((s,p)=>s+Number(p.stock||0),0);
+  const bajos=inventario.filter(p=>Number(p.stock||0)<=Number(p.min||0)).length;
   return listPage(
-    'Inventario y Productos',
-    'Catálogo propio de venta, existencias, simulación de márgenes, precios multinivel y puntos de reorden',
+    'Inventario',
+    'Existencias reales de productos y repuestos registrados en SIFER. El Catálogo Máster es referencial y no representa stock.',
     `<div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn" onclick="go('master_catalog')">📖 Explorar Catálogo Máster</button>
-      <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Nuevo desde Catálogo Máster</button>
+      <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Agregar desde Catálogo Máster</button>
       <button class="btn" onclick="openCommercialProductFormWithMaster(null)">➕ Nuevo Producto</button>
+      <button class="btn" onclick="go('repuestos')">🚗 Gestionar Repuestos</button>
     </div>`,
-    `<div class="searchbar"><input placeholder="🔍 Búsqueda inteligente por palabras claves (ej: buje, manguera, aceite 20w50, duncan, corsa, aveo, filtro)..." oninput="filterTable(this,'productsTable')"></div>
-    <div class="panel"><div class="panelbody"><table id="productsTable">
-      <thead><tr>
-        <th style="width:48px;text-align:center">Foto</th>
-        <th>Código / SKU</th>
-        <th>Producto</th>
-        <th>Categoría</th>
-        <th>Costo Compra</th>
-        <th>Precio Detal</th>
-        <th>Precio Taller</th>
-        <th>Precio Mayor</th>
-        <th>Stock</th>
-        <th>Mín / Reorden</th>
-        <th>Estado</th>
-        <th style="width:80px;text-align:right"></th>
-      </tr></thead>
-      <tbody>${db.productos.map(p=>`<tr>
-        <td style="text-align:center;padding:3px"><img src="${p.imagen||'/icon.svg'}" alt="${esc(p.nombre)}" style="width:36px;height:36px;object-fit:cover;border:1px solid #ccc;border-radius:3px;cursor:pointer" onclick="viewProductPhotoZoom('${p.id}')" title="Clic para ampliar foto" onerror="this.src='/icon.svg'"></td>
-        <td><span style="font-family:monospace;font-size:10px;font-weight:bold">${esc(p.codigo)}</span><br><small style="color:#888">${esc(p.codigoOEM||'—')}</small></td>
-        <td><b>${esc(p.nombre)}</b><br><small style="color:#666">${esc(p.marca||'Genérica')} · ${esc(p.unidad||'Unidad')}</small></td>
-        <td>${esc(p.categoria)}</td>
-        <td style="color:#874d00">${money(p.costo)}</td>
-        <td><b style="color:#0b4f85">${money(p.precio)}</b></td>
-        <td style="color:#555">${p.precioTaller?money(p.precioTaller):money(p.precio*0.9)}</td>
-        <td style="color:#555">${p.precioMayor?money(p.precioMayor):money(p.precio*0.82)}</td>
-        <td class="num"><b>${p.stock}</b></td>
-        <td class="num">${p.min} / ${p.reorderPoint||(p.min*2)}</td>
-        <td><span class="badge ${p.stock<=p.min?'warn':'ok'}">${p.stock<=p.min?'Stock bajo':'Disponible'}</span></td>
-        <td style="text-align:right"><button class="btn" onclick="openProduct('${p.id}')">Editar</button></td>
-      </tr>`).join('')}</tbody>
-    </table></div></div>`
+    `<div class="cards">
+      <div class="card">Ítems inventariados<b>${inventario.length}</b><span>productos + repuestos</span></div>
+      <div class="card">Existencias<b>${totalUnidades}</b><span>unidades registradas</span></div>
+      <div class="card">Stock bajo<b>${bajos}</b><span>requieren reposición</span></div>
+    </div>
+    <div class="searchbar"><input placeholder="🔍 Buscar por nombre, SKU, OEM, marca, categoría o ubicación..." oninput="filterTable(this,'unifiedInventoryTable')"></div>
+    <div class="panel"><div class="panelhead">Inventario real de SIFER — no incluye referencias solamente consultadas del Catálogo Máster</div>
+      <div class="panelbody" style="padding:0;overflow:auto">
+        <table id="unifiedInventoryTable">
+          <thead><tr>
+            <th>Origen</th><th>SKU / Código</th><th>Producto / Repuesto</th><th>Categoría</th><th>Marca</th><th>Ubicación</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acción</th>
+          </tr></thead>
+          <tbody>
+            ${inventario.map(p=>`<tr>
+              <td><span class="badge ${p._source==='Repuesto'?'ok':''}">${p._source}</span></td>
+              <td><b style="font-family:monospace;font-size:10px">${esc(p.codigo||p.sku||p.id)}</b><br><small>${esc(p.codigoOEM||'—')}</small></td>
+              <td><b>${esc(p.nombre)}</b><br><small>${esc(p.unidad||'Unidad')}</small></td>
+              <td>${esc(p.categoria||'—')}</td>
+              <td>${esc(p.marca||'Genérica')}</td>
+              <td>${esc(p.ubicacion||'Almacén')}</td>
+              <td>${money(p.costo)}</td>
+              <td><b>${money(p.precio)}</b></td>
+              <td class="num"><b>${Number(p.stock||0)}</b></td>
+              <td><span class="badge ${Number(p.stock||0)<=Number(p.min||0)?'warn':'ok'}">${Number(p.stock||0)<=Number(p.min||0)?'Stock bajo':'Disponible'}</span></td>
+              <td>${p._source==='Repuesto'
+                ? `<button class="btn" onclick="openRepuestoModal('${p._sourceId}')">Editar</button>`
+                : `<button class="btn" onclick="openProduct('${p._sourceId}')">Editar</button>`}
+              </td>
+            </tr>`).join('')||'<tr><td colspan="11" style="text-align:center;padding:20px">No hay productos ni repuestos registrados.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`
   );
 }
 function viewProductPhotoZoom(pid){
