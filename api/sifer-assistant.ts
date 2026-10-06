@@ -36,9 +36,13 @@ No muestres razonamiento interno paso a paso. Devuelve únicamente JSON.
 Nunca inventes una herramienta. Solo puedes usar estas capacidades: ${JSON.stringify(capabilities)}.
 Si la solicitud es informativa y no requiere acción, devuelve:
 {"ok":true,"type":"answer","answer":"..."}
-Si requiere ejecutar una acción, devuelve:
+Si requiere una sola acción, devuelve:
 {"ok":true,"type":"action","action":{"name":"CAPACIDAD","args":{},"confirmationText":"..."}}
+Si requiere varias acciones encadenadas, devuelve:
+{"ok":true,"type":"plan","summary":"Resumen breve de lo realizado","actions":[{"name":"CAPACIDAD","args":{},"confirmationText":"..."}]}
+Usa planes de varios pasos cuando la solicitud lo requiera (por ejemplo abrir un formulario, llenar campos y finalmente guardar).
 Los argumentos deben usar el estado real suministrado. Para seleccionar un producto, cliente, documento o línea, usa sus IDs o índices reales cuando estén disponibles.
+Las capacidades ui_click/ui_fill/ui_select solo pueden operar controles y campos visibles del mapa DOM actual; no inventes selectores ni ejecutes JavaScript arbitrario.
 No ejecutes directamente: tu salida será validada por el ejecutor local antes de tocar el POS.
 Si falta información indispensable para una acción, pide una aclaración como answer en vez de inventarla.
 Contexto actual:
@@ -53,7 +57,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
       const result = await ai.models.generateContent({
         model: MODEL,
         contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-        config: { temperature: 0.1, maxOutputTokens: 1200, responseMimeType: 'application/json' }
+        config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
       });
       const plan = cleanJson(result.text || '');
       if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
@@ -62,6 +66,14 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
         const name = String(plan.action?.name || '');
         if (!allowed.includes(name)) return res.status(422).json({ error: 'La interpretación propuso una operación que SIFER no tiene habilitada.' });
         plan.action.args = plan.action.args && typeof plan.action.args === 'object' ? plan.action.args : {};
+      }
+      if (plan.type === 'plan') {
+        if (!Array.isArray(plan.actions) || plan.actions.length < 1 || plan.actions.length > 12) return res.status(422).json({ error: 'El plan de SIFER no es válido.' });
+        for (const action of plan.actions) {
+          const name = String(action?.name || '');
+          if (!allowed.includes(name)) return res.status(422).json({ error: 'El plan contiene una operación no habilitada por SIFER.' });
+          action.args = action.args && typeof action.args === 'object' ? action.args : {};
+        }
       }
       return res.status(200).json(plan);
     }
@@ -75,7 +87,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
     const stream = await ai.models.generateContentStream({
       model: MODEL,
       contents: contents.length ? contents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
-      config: { systemInstruction, temperature: 0.25, maxOutputTokens: 900 }
+      config: { systemInstruction, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } }
     });
 
     res.statusCode = 200;
