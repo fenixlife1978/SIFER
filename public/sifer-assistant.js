@@ -37,10 +37,30 @@
       <form class="sifer-ai-form" id="sifer-ai-form"><textarea class="sifer-ai-input" id="sifer-ai-input" placeholder="Dile a SIFER qué necesitas…" rows="1"></textarea><button class="sifer-ai-send" id="sifer-ai-send" type="submit">➤</button></form>
     </section>`;
   document.body.appendChild(root);
+  // Blindaje de la esfera: ningún módulo del POS puede ocultar/eliminar el contenedor de SIFER.
+  function keepOrbAlive(){
+    if(!document.body.contains(root)) document.body.appendChild(root);
+    root.style.setProperty('display','block','important');
+    root.style.setProperty('visibility','visible','important');
+    root.style.setProperty('opacity','1','important');
+    root.style.setProperty('pointer-events','none','important');
+    root.style.setProperty('position','fixed','important');
+    root.style.setProperty('z-index','2147483647','important');
+    orb.style.setProperty('display','block','important');
+    orb.style.setProperty('visibility','visible','important');
+    orb.style.setProperty('opacity','1','important');
+    orb.style.setProperty('pointer-events','auto','important');
+    orb.style.setProperty('position','absolute','important');
+    orb.style.setProperty('z-index','2147483647','important');
+  }
   root.setAttribute('data-sifer-mounted','true');
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
+  keepOrbAlive();
+  const siferOrbObserver=new MutationObserver(()=>keepOrbAlive());
+  siferOrbObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','hidden']});
+  setInterval(keepOrbAlive,1000);
   orb.style.display='block';
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
