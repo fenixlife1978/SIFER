@@ -79,6 +79,10 @@
       stopVoice();
     }
   }
+  window.SIFER_OPEN=()=>toggle(true);
+  window.SIFER_CLOSE=()=>toggle(false);
+  document.addEventListener('sifer:open',()=>toggle(true));
+  document.addEventListener('sifer:close',()=>toggle(false));
   orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(true);});
   root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(false);});
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
