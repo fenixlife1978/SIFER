@@ -122,6 +122,10 @@
       const sale=state.ventas[state.ventas.length-1];
       await enqueue('sale-created',{sale:clone(sale),at:new Date().toISOString()});
     }
+    if(reason==='purchase-created' && state?.compras?.length){
+      const purchase=state.compras[state.compras.length-1];
+      if(purchase) await enqueue('purchase-created',{purchase:clone(purchase),at:new Date().toISOString()});
+    }
     updateStatus();
     if(navigator.onLine) { await syncPending(); await pullProductsInventory(); }
   }
