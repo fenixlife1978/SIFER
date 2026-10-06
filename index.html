@@ -994,6 +994,6 @@ document.addEventListener('fullscreenchange',()=>{
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
-<script src="/sifer-assistant.js"></script>
+<script src="/sifer-assistant.js?v=20261005"></script>
 </body>
 </html>
