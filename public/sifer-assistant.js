@@ -79,7 +79,7 @@
     open=force===undefined?!open:force;
     panel.classList.toggle('show',open);
     if(open && !messages.length){
-      add('assistant','Hola. Soy SIFER. Estoy conectado a la interfaz del POS y listo para aprender a trabajar contigo.\n\nPor ahora estoy en fase inicial: conversación y razonamiento. Las acciones reales sobre ventas, inventario, caja y devoluciones se habilitarán de forma controlada en la siguiente etapa.');
+      add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
       input.focus();
     }
   }
@@ -202,6 +202,14 @@
     open_cash:{description:'Abrir la caja actual',mutating:true,confirm:true},
     open_checkout:{description:'Abrir la ventana de cobro de la venta actual',mutating:false},
     open_purchase:{description:'Abrir el formulario de nueva compra',mutating:false},
+    open_quote:{description:'Abrir el formulario de nuevo presupuesto',mutating:false},
+    open_bcv:{description:'Mostrar la tasa BCV y sus acciones disponibles',mutating:false},
+    open_account_payment:{description:'Abrir el formulario para cobrar CxC o pagar CxP',mutating:false},
+    select_customer:{description:'Seleccionar un cliente existente para la venta actual',mutating:true,confirm:false},
+    edit_cart_line:{description:'Modificar cantidad, precio o descuento de una línea del carrito',mutating:true,confirm:true},
+    set_discount:{description:'Aplicar un descuento a una línea del carrito',mutating:true,confirm:true},
+    mark_return:{description:'Marcar una línea del carrito como devolución',mutating:true,confirm:true},
+    open_item_search:{description:'Abrir la búsqueda de artículos del POS',mutating:false},
     open_customer:{description:'Abrir el formulario de cliente',mutating:false},
     open_supplier:{description:'Abrir el formulario de proveedor',mutating:false},
     new_order:{description:'Abrir el formulario de nuevo pedido',mutating:false},
@@ -234,7 +242,45 @@
       case 'cancel_sale': if(typeof cancelSale!=='function') throw new Error('Cancelación no disponible'); cancelSale(); return {ok:true,message:'Venta cancelada'};
       case 'open_cash': if(typeof toggleCaja!=='function') throw new Error('Caja no disponible'); if(!currentActionState().cajaAbierta) toggleCaja(); return {ok:true,message:'Caja abierta'};
       case 'open_checkout': if(typeof checkout!=='function') throw new Error('Cobro no disponible'); checkout(); return {ok:true,message:'Cobro abierto'};
-      case 'open_purchase': if(typeof openPurchase!=='function') throw new Error('Compras no disponible'); openPurchase(); return {ok:true,message:'Compras abierto'};
+      case 'open_purchase': if(typeof openPurchase!=='function') throw new Error('Compras no disponible'); openPurchase(); return {ok:true,message:'Formulario de compra abierto'};
+      case 'open_quote': if(typeof openQuote!=='function') throw new Error('Presupuestos no disponible'); openQuote(); return {ok:true,message:'Formulario de presupuesto abierto'};
+      case 'open_bcv': if(typeof openBCV!=='function') throw new Error('Tasa BCV no disponible'); openBCV(); return {ok:true,message:'Tasa BCV mostrada'};
+      case 'open_account_payment': {
+        const type=args.type==='cxp'?'cxp':'cxc', list=type==='cxc'?(typeof db!=='undefined'?db.cxc:[]):(typeof db!=='undefined'?db.cxp:[]);
+        const query=normalizeLocal(args.query||'');
+        const item=list.find(x=>normalizeLocal([x.id,x.documento,x.cliente,x.proveedor].filter(Boolean).join(' ')).includes(query));
+        if(!item) throw new Error('No encontré el documento de cuenta indicado');
+        if(typeof payAccount!=='function') throw new Error('Pago de cuenta no disponible');
+        payAccount(type,item.id); return {ok:true,message:type==='cxc'?'Cobro CxC preparado':'Pago CxP preparado'};
+      }
+      case 'select_customer': {
+        const query=normalizeLocal(args.query||'');
+        const list=(typeof db!=='undefined'&&Array.isArray(db.clientes))?db.clientes:[];
+        const c=list.find(x=>normalizeLocal([x.id,x.nombre,x.documento,x.telefono].filter(Boolean).join(' ')).includes(query));
+        if(!c) throw new Error('No encontré ese cliente');
+        saleCustomer=c.id; if(typeof renderView==='function') renderView(); return {ok:true,message:'Cliente seleccionado: '+c.nombre};
+      }
+      case 'edit_cart_line': {
+        const idx=Number(args.index); if(!Number.isInteger(idx)||!Array.isArray(cart)||!cart[idx]) throw new Error('Línea de carrito no encontrada');
+        const l=cart[idx],qty=args.qty===undefined?l.qty:Number(args.qty),price=args.price===undefined?l.price:Number(args.price),disc=args.discount===undefined?l.disc:Number(args.discount);
+        if(qty<=0||price<0||disc<0) throw new Error('Cantidad, precio o descuento inválido');
+        const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+        if(!p) throw new Error('Artículo no encontrado');
+        if(qty>Number(p.stock||0)&&l.qty>0) throw new Error('La cantidad supera la existencia disponible');
+        if(disc>qty*price) throw new Error('El descuento no puede superar el importe de la línea');
+        l.qty=qty;l.price=price;l.disc=disc;selected=null;renderView();return {ok:true,message:'Línea actualizada'};
+      }
+      case 'set_discount': {
+        const idx=args.index===undefined?(Array.isArray(cart)?cart.length-1:-1):Number(args.index), l=cart?.[idx];
+        if(!l) throw new Error('No hay una línea de carrito seleccionada');
+        const disc=Math.max(0,Number(args.discount)); if(!Number.isFinite(disc)||disc>Number(l.qty||0)*Number(l.price||0)) throw new Error('Descuento inválido');
+        l.disc=disc;selected=null;renderView();return {ok:true,message:'Descuento aplicado: '+disc};
+      }
+      case 'mark_return': {
+        const idx=args.index===undefined?(Array.isArray(cart)?cart.length-1:-1):Number(args.index); if(!cart?.[idx]) throw new Error('No hay una línea de carrito seleccionada');
+        selected=idx; if(typeof returnCart!=='function') throw new Error('Devolución no disponible'); returnCart(); return {ok:true,message:'Artículo marcado para devolución. Debe indicar la venta original al cobrar.'};
+      }
+      case 'open_item_search': if(typeof openItemSearch!=='function') throw new Error('Búsqueda de artículos no disponible'); openItemSearch(); return {ok:true,message:'Búsqueda de artículos abierta'};
       case 'open_customer': if(typeof openClient!=='function') throw new Error('Clientes no disponible'); openClient(args.id||undefined); return {ok:true,message:'Clientes abierto'};
       case 'open_supplier': if(typeof openSupplier!=='function') throw new Error('Proveedores no disponible'); openSupplier(args.id||undefined); return {ok:true,message:'Proveedores abierto'};
       case 'new_order': if(typeof nuevoPedido!=='function') throw new Error('Pedidos no disponible'); nuevoPedido(); return {ok:true,message:'Nuevo pedido abierto'};
@@ -280,6 +326,14 @@
     if(/nuevo (cliente|clientes)|crear (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
     if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
     if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
+    if(/nuevo presupuesto|nuevo presupuesto|crear presupuesto|nueva cotizacion|crear cotizacion/.test(q)) return {name:'open_quote',args:{}};
+    if(/tasa bcv|tipo de cambio|cotizacion bcv|dolar bcv/.test(q)) return {name:'open_bcv',args:{}};
+    if(/(cobro|pago).*(cxc|cuenta por cobrar|cliente)/.test(q)) { const m=q.match(/(?:cobro|pago).*?(?:cxc|cuenta por cobrar|cliente)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxc',query:(m?.[1]||'').trim()}}; }
+    if(/(pago|pagar).*(cxp|cuenta por pagar|proveedor)/.test(q)) { const m=q.match(/(?:pago|pagar).*?(?:cxp|cuenta por pagar|proveedor)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxp',query:(m?.[1]||'').trim()}}; }
+    if(/selecciona|seleccionar|usa|usar|asigna.*cliente/.test(q)) { const m=q.match(/(?:selecciona|seleccionar|usa|usar|asigna.*cliente)\s+(?:el\s+cliente\s+)?(.+)$/); if(m?.[1]) return {name:'select_customer',args:{query:m[1]}}; }
+    if(/descuento/.test(q)&&/carrito|articulo|linea|producto/.test(q)) { const m=q.match(/(\d+(?:\.\d+)?)\s*%/); if(m) return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'}; }
+    if(/(devolucion|devolución|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
+    if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
     if(/corte x/.test(q)) return {name:'show_x',args:{}};
@@ -310,7 +364,7 @@
     try{
       const localAction=localActionFromCommand(command);
       if(isTodaySalesQuery(command)){
-        messages.push({role:'assistant',text:answerTodaySales()}); render();
+        messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }else if(localAction){
         const execution=await executeSiferAction(localAction);
         if(execution?.cancelled){
@@ -318,7 +372,7 @@
         }else{
           messages.push({role:'assistant',text:execution?.message||'Acción ejecutada por SIFER.'});
         }
-        render();
+        render(); return;
       }
       const readOnlyData=buildReadOnlyData();
       const systemMap=buildSystemMap();
