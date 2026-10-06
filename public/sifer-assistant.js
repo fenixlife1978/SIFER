@@ -92,7 +92,30 @@
       const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
       const safeArray=(v,max=200)=>Array.isArray(v)?v.slice(0,max):[];
       const pick=(obj,keys)=>{const out={}; if(!obj||typeof obj!=='object')return out; keys.forEach(k=>{if(obj[k]!==undefined)out[k]=obj[k]}); return out;};
+      const now = new Date();
+      const todayKey = now.toLocaleDateString('es-ES');
+      const isToday = (value) => {
+        if(!value) return false;
+        const text=String(value);
+        const direct=text.split(',')[0].trim();
+        if(direct===todayKey) return true;
+        const parsed=new Date(value);
+        return !Number.isNaN(parsed.getTime()) && parsed.toLocaleDateString('es-ES')===todayKey;
+      };
+      const ventasHoy=safeArray(db.ventas).filter(v=>isToday(v.fecha));
+      const ventasHoyValidas=ventasHoy.filter(v=>String(v.estado||'').toLowerCase()!=='anulada');
+      const totalVentasHoy=ventasHoyValidas.reduce((s,v)=>s+Number(v.total||0),0);
+      const contadoHoy=ventasHoyValidas.filter(v=>String(v.tipo||'').toLowerCase()==='contado').reduce((s,v)=>s+Number(v.total||0),0);
+      const creditoHoy=ventasHoyValidas.filter(v=>String(v.tipo||'').toLowerCase()==='credito').reduce((s,v)=>s+Number(v.total||0),0);
+
       return {
+        fechaActual:todayKey,
+        resumenHoy:{
+          ventasRegistradas:ventasHoyValidas.length,
+          totalVentas:totalVentasHoy,
+          ventasContado:contadoHoy,
+          ventasCredito:creditoHoy
+        },
         config:pick(db.config,['empresa','moneda','impuesto','bcv']),
         productos:safeArray(db.productos).map(x=>pick(x,['id','codigo','nombre','categoria','marca','unidad','costo','precio','stock','min'])),
         clientes:safeArray(db.clientes).map(x=>pick(x,['id','nombre','cedula','telefono','email','tipo','saldo','limiteCredito'])),
@@ -113,7 +136,8 @@
     const userMsg={role:'user',text}; messages.push(userMsg); render();
     const aiIndex=messages.push({role:'assistant',text:''})-1; render();
     try{
-      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData:buildReadOnlyData()};
+      const readOnlyData=buildReadOnlyData();
+      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData};
       const history=messages.filter((_,i)=>i!==aiIndex).slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
       const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,context})});
       if(!r.ok){let e='No pude conectar con el núcleo de inteligencia de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
