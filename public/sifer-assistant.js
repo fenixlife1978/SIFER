@@ -149,6 +149,35 @@
     catch{return (Number(value)||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+code;}
   }
 
+  function isInventoryQuery(text){
+    const q=normalizeLocal(text);
+    return /(cuantos|cuantas|cuanto).*(producto|productos|articulo|articulos|repuesto|repuestos).*(inventario|stock|existencia|existencias)/.test(q)
+      || /(inventario|stock|existencias).*(cuantos|cuantas|productos|articulos|repuestos)/.test(q)
+      || /cuantos productos tenemos/.test(q);
+  }
+
+  function answerInventoryQuery(){
+    try{
+      const raw=localStorage.getItem('sifer360_v1');
+      const db=raw?JSON.parse(raw):{};
+      const productos=Array.isArray(db.productos)?db.productos:[];
+      const repuestos=typeof getRepuestos==='function'?(getRepuestos()||[]):[];
+      const all=[...productos,...repuestos];
+      const seen=new Set();
+      const unique=all.filter(p=>{
+        const key=String(p.id||p.codigo||p.sku||p.nombre||Math.random());
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      const conExistencia=unique.filter(p=>Number(p.stock||0)>0);
+      const unidades=conExistencia.reduce((s,p)=>s+Number(p.stock||0),0);
+      const sinExistencia=unique.length-conExistencia.length;
+      return 'En el inventario hay '+unique.length+' artículos registrados. '+conExistencia.length+' tienen existencia disponible, con '+unidades+' unidades en total. '+sinExistencia+' están sin existencia.';
+    }catch{
+      return 'No pude consultar el inventario real del POS en este momento.';
+    }
+  }
+
   function isTodaySalesQuery(text){
     const value=String(text||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     return /(cuanto.*vend|vendimos|ventas.*hoy|venta.*hoy|vendido.*hoy|total.*ventas.*hoy|total.*vendido)/i.test(value);
@@ -458,7 +487,7 @@
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
-      if(isTodaySalesQuery(command)){
+      if(isInventoryQuery(command)){\n        messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;\n      }\n      if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
       let action=localActionFromCommand(command);
