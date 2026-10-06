@@ -993,6 +993,29 @@ document.addEventListener('fullscreenchange',()=>{
 });
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
+<style id="sifer-emergency-style">
+#sifer-emergency-orb{position:fixed;right:16px;bottom:16px;width:82px;height:82px;border:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 5%,#48d9ff 8%,#0878bd 28%,#03182a 58%,transparent 62%);box-shadow:0 0 10px #fff,0 0 28px #27cfff,0 0 55px #0878bd;z-index:2147483647;cursor:pointer;animation:siferEmergencyPulse 2.4s ease-in-out infinite}
+#sifer-emergency-orb:before,#sifer-emergency-orb:after{content:"";position:absolute;left:50%;top:50%;width:76px;height:28px;border:1px solid rgba(74,218,255,.75);border-radius:50%;transform:translate(-50%,-50%) rotate(18deg)}
+#sifer-emergency-orb:after{transform:translate(-50%,-50%) rotate(-38deg);width:62px;height:22px}
+@keyframes siferEmergencyPulse{50%{filter:brightness(1.3);transform:scale(1.04)}}
+@media(max-width:700px){#sifer-emergency-orb{right:5px;bottom:8px}}
+</style>
+<button id="sifer-emergency-orb" type="button" aria-label="Abrir SIFER" title="SIFER"></button>
+<script>
+(function(){
+ const b=document.getElementById('sifer-emergency-orb');
+ function sync(){const real=document.getElementById('sifer-ai-root');if(real)b.remove();}
+ window.addEventListener('sifer:mounted',sync);
+ b.addEventListener('click',function(){
+   const real=document.getElementById('sifer-ai-orb');
+   if(real){real.click();return;}
+   if(!document.querySelector('script[data-sifer-emergency-loader]')){
+     const s=document.createElement('script');s.src='/sifer-assistant.js?v=20261006-emergency';s.dataset.siferEmergencyLoader='1';document.body.appendChild(s);
+   }
+ });
+ sync();
+})();
+</script>
 <script src="/sifer-assistant.js?v=20261006-zero" defer></script>
 </body>
 </html>
