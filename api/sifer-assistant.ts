@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const mode = body.mode === 'plan' ? 'plan' : 'chat';
+    const mode = body.mode === 'plan' || body.mode === 'transcribe' ? body.mode : 'chat';
     const command = String(body.command || '').slice(0, 4000);
     const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
     const context = body.context || {};
@@ -28,30 +28,69 @@ export default async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
+    if (mode === 'transcribe') {
+      const audioBase64 = String(body.audioBase64 || '');
+      const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
+      if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
+      if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
+      if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
+      const result = await ai.models.generateContent({
+        model: MODEL,
+        contents: [{ role: 'user', parts: [
+          { text: 'Transcribe exactamente lo que dice el usuario en este audio. Devuelve SOLO la transcripción en español, sin explicación. Conserva nombres, números, productos, cantidades y expresiones coloquiales venezolanas.' },
+          { inlineData: { mimeType, data: audioBase64 } }
+        ] }],
+        config: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: 'low' } }
+      });
+      return res.status(200).json({ text: String(result.text || '').trim() });
+    }
+
     if (mode === 'plan') {
       const allowed = capabilities.map(x => x.name).filter(Boolean);
-      const plannerPrompt = `Eres el motor de interpretación y planificación de SIFER, un POS automotriz venezolano. Tu trabajo es ENTENDER la intención del usuario, interpretar lenguaje natural, contexto y errores ortográficos, decidir qué operación corresponde y devolver un plan ejecutable.
+      const plannerPrompt = `Eres el CEREBRO de SIFER, un asistente inteligente integrado a un POS automotriz venezolano. Tu función no es hacer coincidencia de palabras: debes comprender la intención humana, usar el contexto disponible, razonar qué quiere conseguir el usuario y convertirlo en una operación segura y ejecutable.
 
-No muestres razonamiento interno paso a paso. Devuelve únicamente JSON.
-Nunca inventes una herramienta. Solo puedes usar estas capacidades: ${JSON.stringify(capabilities)}.
-Si la solicitud es informativa y no requiere acción, devuelve:
-{"ok":true,"type":"answer","answer":"..."}
-Si requiere una sola acción, devuelve:
+INTERPRETACIÓN HUMANA:
+- Comprende español natural, coloquial, abreviaturas, errores ortográficos, frases incompletas y sinónimos.
+- Interpreta expresiones venezolanas de trabajo de mostrador cuando el significado sea claro.
+- No exijas que el usuario use los nombres exactos de los botones o módulos.
+- "quiero vender", "vamos a facturar", "ponme en ventas", "llévame al punto", "abre el POS" pueden expresar la misma intención.
+- "dime cuánto hicimos", "qué vendimos hoy", "cuánto se ha vendido" son consultas de negocio; usa únicamente los datos reales suministrados.
+- Mantén el contexto: referencias como "ese cliente", "el segundo", "agrégale dos" deben resolverse con historial y estado actual cuando sea posible.
+- Corrige mentalmente errores evidentes de escritura sin obligar al usuario a repetir la orden.
+
+RAZONAMIENTO:
+1. Determina qué resultado quiere realmente el usuario.
+2. Comprueba el estado real del POS suministrado.
+3. Elige la capacidad adecuada.
+4. Si hacen falta varios pasos, ordénalos lógicamente.
+5. Nunca inventes IDs, productos, clientes, precios, existencias, documentos o resultados.
+6. Si falta un dato indispensable y no puede inferirse con seguridad, devuelve una pregunta breve como answer.
+7. Las operaciones sensibles deben incluir confirmationText claro.
+8. No ejecutes SQL, JavaScript arbitrario ni selectores inventados.
+9. No afirmes que una acción fue realizada: solo propón acciones; el ejecutor local informará el resultado real.
+
+DEVUELVE SOLO JSON VÁLIDO. No muestres razonamiento interno paso a paso.
+Nunca inventes una herramienta. Solo puedes usar estas capacidades:
+${JSON.stringify(capabilities)}
+
+Informativa:
+{"ok":true,"type":"answer","answer":"respuesta basada únicamente en el contexto real"}
+
+Una acción:
 {"ok":true,"type":"action","action":{"name":"CAPACIDAD","args":{},"confirmationText":"..."}}
-Si requiere varias acciones encadenadas, devuelve:
-{"ok":true,"type":"plan","summary":"Resumen breve de lo realizado","actions":[{"name":"CAPACIDAD","args":{},"confirmationText":"..."}]}
-Usa planes de varios pasos cuando la solicitud lo requiera (por ejemplo abrir un formulario, llenar campos y finalmente guardar).
-Los argumentos deben usar el estado real suministrado. Para seleccionar un producto, cliente, documento o línea, usa sus IDs o índices reales cuando estén disponibles.
-Las capacidades ui_click/ui_fill/ui_select solo pueden operar controles y campos visibles del mapa DOM actual; no inventes selectores ni ejecutes JavaScript arbitrario.
-No ejecutes directamente: tu salida será validada por el ejecutor local antes de tocar el POS.
-Si falta información indispensable para una acción, pide una aclaración como answer en vez de inventarla.
-Contexto actual:
+
+Varias acciones:
+{"ok":true,"type":"plan","summary":"resultado esperado","actions":[{"name":"CAPACIDAD","args":{},"confirmationText":"..."}]}
+
+Las capacidades ui_click/ui_fill/ui_select solo pueden usar controles visibles descritos en systemMap. Si una navegación cambia de módulo, no inventes los campos del módulo destino que no aparecen en el mapa actual. Usa una capacidad específica si existe o solicita el dato faltante.
+
+CONTEXTO REAL DEL POS:
 ${JSON.stringify(context).slice(0, 50000)}
 
-Solicitud del usuario:
+SOLICITUD DEL USUARIO:
 ${command}
 
-Historial reciente:
+HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
       const result = await ai.models.generateContent({
