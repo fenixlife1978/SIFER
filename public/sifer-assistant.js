@@ -178,6 +178,22 @@
     }
   }
 
+  function buildSystemMap(){
+    try{
+      const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\\s+/g,' ').trim();
+      return {
+        generatedAt:new Date().toISOString(),
+        pageTitle:document.title,
+        currentModule:txt(document.getElementById('windowTitle'))||'Inicio',
+        buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',onclick:el.getAttribute('onclick')||''})).filter(x=>x.text||x.id||x.onclick).slice(0,700),
+        fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||''})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),
+        dialogs:[...document.querySelectorAll('.modal,[role="dialog"]')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,500)})).filter(x=>x.id||x.text).slice(0,120),
+        scripts:[...document.scripts].map(s=>s.src||'inline').slice(0,100),
+        principles:['SIFER360 es un POS automotriz, no un ERP.','Las operaciones sensibles deben pedir confirmación antes de modificar datos.','Turso es la fuente remota operativa; el POS debe conservar operación offline.']
+      };
+    }catch{return {error:'No se pudo construir el mapa operativo actual.'};}
+  }
+
   async function ask(text){
     const command=extractWakeWord(text);
     if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
@@ -194,7 +210,8 @@
     const aiIndex=messages.push({role:'assistant',text:''})-1; render();
     try{
       const readOnlyData=buildReadOnlyData();
-      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData};
+      const systemMap=buildSystemMap();
+      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap};
       const history=messages.filter((_,i)=>i!==aiIndex).slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
       const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,context})});
       if(!r.ok){let e='No pude conectar con el núcleo de inteligencia de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
