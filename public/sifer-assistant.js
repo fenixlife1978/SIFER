@@ -312,18 +312,21 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    const actionPrefix='(?:.*?)(?:abre|abrir|ir|ve|vamos|lleva|llevame|llévame|entra|quiero ver|quiero ir|muestra|muéstrame|muestrame|mostrar|muestr)';
-    if(new RegExp(actionPrefix+'.*(pos|punto de venta|ventas)').test(q)) return {name:'navigate',args:{view:'pos'}};
-    if(new RegExp(actionPrefix+'.*(inventario|productos|product|inventarii)').test(q)) return {name:'navigate',args:{view:'productos'}};
-    if(new RegExp(actionPrefix+'.*(compras|compra)').test(q)) return {name:'navigate',args:{view:'compras'}};
-    if(new RegExp(actionPrefix+'.*(clientes|cliente)').test(q)) return {name:'navigate',args:{view:'clientes'}};
-    if(new RegExp(actionPrefix+'.*(proveedores|proveedor)').test(q)) return {name:'navigate',args:{view:'proveedores'}};
-    if(new RegExp(actionPrefix+'.*(cuentas por cobrar|cxc)').test(q)) return {name:'navigate',args:{view:'cxc'}};
-    if(new RegExp(actionPrefix+'.*(cuentas por pagar|cxp)').test(q)) return {name:'navigate',args:{view:'cxp'}};
-    if(new RegExp(actionPrefix+'.*(caja|cortes|corte)').test(q)) return {name:'navigate',args:{view:'caja'}};
-    if(new RegExp(actionPrefix+'.*(pedidos|pedido)').test(q)) return {name:'navigate',args:{view:'pedidos'}};
-    if(new RegExp(actionPrefix+'.*(presupuesto|cotizacion)').test(q)) return {name:'navigate',args:{view:'presupuestos'}};
-    if(new RegExp(actionPrefix+'.*(configuracion|config)').test(q)) return {name:'navigate',args:{view:'config'}};
+    // Navegación básica: se resuelve localmente para no depender de Gemini ni de red.
+    // El usuario puede expresarlo con cualquier verbo habitual: abre, muestra, ve, lleva,
+    // quiero ver, quiero ir, entra, llévame, etc. El sustantivo del módulo es la señal principal.
+    const navigationIntent=/(abre|abrir|ir|ve|vamos|lleva|llevame|entra|quiero|muestra|mostrar|ver|entra|ir al|ir a)/.test(q);
+    if(navigationIntent && /(\bpos\b|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
+    if(navigationIntent && /(inventario|productos|producto|product|inventarii|repuestos|repuesto|aceites|lubricantes)/.test(q)) return {name:'navigate',args:{view:'productos'}};
+    if(navigationIntent && /(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
+    if(navigationIntent && /(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
+    if(navigationIntent && /(proveedores|proveedor)/.test(q)) return {name:'navigate',args:{view:'proveedores'}};
+    if(navigationIntent && /(cuentas por cobrar|cuentas cobrar|cxc)/.test(q)) return {name:'navigate',args:{view:'cxc'}};
+    if(navigationIntent && /(cuentas por pagar|cuentas pagar|cxp)/.test(q)) return {name:'navigate',args:{view:'cxp'}};
+    if(navigationIntent && /(caja|cortes|corte)/.test(q)) return {name:'navigate',args:{view:'caja'}};
+    if(navigationIntent && /(pedidos|pedido)/.test(q)) return {name:'navigate',args:{view:'pedidos'}};
+    if(navigationIntent && /(presupuesto|presupuestos|cotizacion|cotizaciones)/.test(q)) return {name:'navigate',args:{view:'presupuestos'}};
+    if(navigationIntent && /(configuracion|configuracion general|config)/.test(q)) return {name:'navigate',args:{view:'config'}};
     if(/nuevo (cliente|clientes)|crear (cliente|clientes)|abre(r)? (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
     if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)|abre(r)? (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
     if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
