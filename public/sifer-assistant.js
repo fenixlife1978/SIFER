@@ -312,7 +312,7 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    if(/^(abre|abrir|ir|ve|vamos|lleva|entra|muestr.*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
+    if(/^(abre|abrir|ir|ve|vamos|lleva|entra|muestr).*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(inventario|productos)/.test(q)) return {name:'navigate',args:{view:'productos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
     if(/^(abre|ir|ve|vamos|muestr).*(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
