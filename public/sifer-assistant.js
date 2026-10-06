@@ -186,7 +186,7 @@
         pageTitle:document.title,
         currentModule:txt(document.getElementById('windowTitle'))||'Inicio',
         buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',onclick:el.getAttribute('onclick')||''})).filter(x=>x.text||x.id||x.onclick).slice(0,700),
-        fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||''})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),
+        fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||'',value:el.value||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,80).map(o=>({value:o.value,text:txt(o)}):null})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),
         dialogs:[...document.querySelectorAll('.modal,[role="dialog"]')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,500)})).filter(x=>x.id||x.text).slice(0,120),
         scripts:[...document.scripts].map(s=>s.src||'inline').slice(0,100),
         principles:['SIFER360 es un POS automotriz, no un ERP.','Las operaciones sensibles deben pedir confirmación antes de modificar datos.','Turso es la fuente remota operativa; el POS debe conservar operación offline.']
@@ -217,7 +217,10 @@
     show_z:{description:'Mostrar el diálogo de Corte Z',mutating:false},
     execute_z:{description:'Ejecutar y cerrar el Corte Z',mutating:true,confirm:true},
     refresh:{description:'Actualizar el módulo actual',mutating:false},
-    print:{description:'Imprimir la vista actual',mutating:false}
+    print:{description:'Imprimir la vista actual',mutating:false},
+    ui_click:{description:'Pulsar un botón o control visible del módulo actual identificado por su texto, título o id',mutating:false},
+    ui_fill:{description:'Escribir un valor en un campo visible identificado por id, nombre, etiqueta o placeholder',mutating:false},
+    ui_select:{description:'Seleccionar una opción en un selector visible del módulo actual',mutating:false}
   };
   function buildCapabilities(){ return Object.entries(SIFER_CAPABILITIES).map(([name,x])=>({name,...x})); }
   function currentActionState(){
@@ -226,6 +229,30 @@
       const box=(d.cajas||[]).find(x=>x.id===d.terminalId);
       return {cajaId:d.terminalId||null,cajaAbierta:Boolean(box?.abierta),cart:typeof cart!=='undefined'&&Array.isArray(cart)?cart.map((x,i)=>({index:i,id:x.id,nombre:x.nombre,qty:x.qty,price:x.price})):[],currentModule:document.getElementById('windowTitle')?.textContent||'Inicio'};
     }catch{return {};}
+  }
+  function siferUiText(el){ return normalizeLocal(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||el?.id||''); }
+  function siferVisible(el){ if(!el) return false; const r=el.getBoundingClientRect?.(); const st=getComputedStyle(el); return !!r && r.width>0 && r.height>0 && st.visibility!=='hidden' && st.display!=='none'; }
+  function siferFindButton(target){
+    const q=normalizeLocal(target); if(!q) return null;
+    const els=[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].filter(siferVisible);
+    return els.find(el=>siferUiText(el)===q)||els.find(el=>siferUiText(el).includes(q))||null;
+  }
+  function siferFieldLabel(el){
+    if(!el) return '';
+    const aria=el.getAttribute('aria-label')||'', ph=el.getAttribute('placeholder')||'';
+    let label=aria||ph;
+    if(!label && el.id){ const l=document.querySelector('label[for="'+CSS.escape(el.id)+'"]'); if(l) label=l.innerText; }
+    if(!label) label=el.closest('.field')?.querySelector('label')?.innerText||'';
+    return normalizeLocal(label);
+  }
+  function siferFindField(target){
+    const q=normalizeLocal(target); if(!q) return null;
+    const els=[...document.querySelectorAll('input,select,textarea')].filter(siferVisible);
+    return els.find(el=>normalizeLocal(el.id)===q||normalizeLocal(el.name)===q)||els.find(el=>siferFieldLabel(el)===q)||els.find(el=>siferFieldLabel(el).includes(q))||els.find(el=>normalizeLocal(el.placeholder).includes(q))||null;
+  }
+  function siferSensitiveClick(el){
+    const t=siferUiText(el);
+    return /(guardar|crear|registrar|finalizar|cobrar|pagar|eliminar|borrar|anular|cancelar|devolver|ejecutar|cerrar|actualizar|confirmar|aplicar|convertir|reset|restablecer)/.test(t);
   }
   async function executeSiferAction(action){
     const name=String(action?.name||'').trim(),args=action?.args&&typeof action.args==='object'?action.args:{},cap=SIFER_CAPABILITIES[name];
@@ -246,7 +273,7 @@
       case 'open_quote': if(typeof openQuote!=='function') throw new Error('Presupuestos no disponible'); openQuote(); return {ok:true,message:'Formulario de presupuesto abierto'};
       case 'open_bcv': if(typeof openBCV!=='function') throw new Error('Tasa BCV no disponible'); openBCV(); return {ok:true,message:'Tasa BCV mostrada'};
       case 'open_account_payment': {
-        const type=args.type==='cxp'?'cxp':'cxc', list=type==='cxc'?(typeof db!=='undefined'?db.cxc:[]):(typeof db!=='undefined'?db.cxp:[]);
+        const type=args.type==='cxp'?'cxp':'cxc', raw=localStorage.getItem('sifer360_v1'), liveDb=raw?JSON.parse(raw):{}, list=type==='cxc'?(Array.isArray(liveDb.cxc)?liveDb.cxc:[]):(Array.isArray(liveDb.cxp)?liveDb.cxp:[]);
         const query=normalizeLocal(args.query||'');
         const item=list.find(x=>normalizeLocal([x.id,x.documento,x.cliente,x.proveedor].filter(Boolean).join(' ')).includes(query));
         if(!item) throw new Error('No encontré el documento de cuenta indicado');
@@ -255,7 +282,7 @@
       }
       case 'select_customer': {
         const query=normalizeLocal(args.query||'');
-        const list=(typeof db!=='undefined'&&Array.isArray(db.clientes))?db.clientes:[];
+        const raw=localStorage.getItem('sifer360_v1'), liveDb=raw?JSON.parse(raw):{}, list=Array.isArray(liveDb.clientes)?liveDb.clientes:[];
         const c=list.find(x=>normalizeLocal([x.id,x.nombre,x.documento,x.telefono].filter(Boolean).join(' ')).includes(query));
         if(!c) throw new Error('No encontré ese cliente');
         saleCustomer=c.id; if(typeof renderView==='function') renderView(); return {ok:true,message:'Cliente seleccionado: '+c.nombre};
@@ -264,7 +291,7 @@
         const idx=Number(args.index); if(!Number.isInteger(idx)||!Array.isArray(cart)||!cart[idx]) throw new Error('Línea de carrito no encontrada');
         const l=cart[idx],qty=args.qty===undefined?l.qty:Number(args.qty),price=args.price===undefined?l.price:Number(args.price),disc=args.discount===undefined?l.disc:Number(args.discount);
         if(qty<=0||price<0||disc<0) throw new Error('Cantidad, precio o descuento inválido');
-        const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+        const rawDb=localStorage.getItem('sifer360_v1'), liveDb=rawDb?JSON.parse(rawDb):{}, p=(Array.isArray(liveDb.productos)?liveDb.productos:[]).find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
         if(!p) throw new Error('Artículo no encontrado');
         if(qty>Number(p.stock||0)&&l.qty>0) throw new Error('La cantidad supera la existencia disponible');
         if(disc>qty*price) throw new Error('El descuento no puede superar el importe de la línea');
@@ -289,6 +316,23 @@
       case 'execute_z': if(typeof executeCorteZ!=='function') throw new Error('Corte Z no disponible'); await executeCorteZ(); return {ok:true,message:'Corte Z ejecutado'};
       case 'refresh': if(typeof refreshModuleData!=='function') throw new Error('Actualización no disponible'); refreshModuleData(); return {ok:true,message:'Módulo actualizado'};
       case 'print': if(typeof printView!=='function') throw new Error('Impresión no disponible'); printView(); return {ok:true,message:'Impresión solicitada'};
+      case 'ui_click': {
+        const el=siferFindButton(args.target||args.text||args.id); if(!el) throw new Error('No encontré el botón o control visible: '+String(args.target||args.text||args.id||''));
+        if(siferSensitiveClick(el) && !window.confirm('SIFER solicita confirmación\\n\\n'+String(action.confirmationText||el.innerText||el.value||'Ejecutar esta operación')+'\\n\\n¿Deseas continuar?')) return {cancelled:true};
+        el.click(); return {ok:true,message:'Control ejecutado: '+(el.innerText||el.value||el.title||el.id)};
+      }
+      case 'ui_fill': {
+        const el=siferFindField(args.field||args.target||args.id); if(!el) throw new Error('No encontré el campo visible: '+String(args.field||args.target||args.id||''));
+        if(el.tagName.toLowerCase()==='select') throw new Error('Para un selector utiliza ui_select');
+        const value=String(args.value??''); const proto=el.tagName.toLowerCase()==='textarea'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
+        const setter=Object.getOwnPropertyDescriptor(proto,'value')?.set; if(setter) setter.call(el,value); else el.value=value;
+        el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true,message:'Campo actualizado: '+(args.field||args.target||args.id)};
+      }
+      case 'ui_select': {
+        const el=siferFindField(args.field||args.target||args.id); if(!el||el.tagName.toLowerCase()!=='select') throw new Error('No encontré el selector visible: '+String(args.field||args.target||args.id||''));
+        const wanted=normalizeLocal(args.value??args.option??''); const opt=[...el.options].find(o=>normalizeLocal(o.value)===wanted||normalizeLocal(o.textContent)===wanted||normalizeLocal(o.textContent).includes(wanted));
+        if(!opt) throw new Error('No encontré la opción solicitada en el selector'); el.value=opt.value; el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true,message:'Opción seleccionada: '+opt.textContent.trim()};
+      }
       default: throw new Error('Acción no implementada');
     }
   }
@@ -416,6 +460,16 @@
         const plan=await planWithSifer(command);
         if(plan.type==='answer'){
           messages.push({role:'assistant',text:plan.answer||'Entendido.'}); render(); return;
+        }
+        if(plan.type==='plan'&&Array.isArray(plan.actions)){
+          for(const step of plan.actions){
+            status.textContent='SIFER está ejecutando el siguiente paso…';
+            const execution=await executeSiferAction(step);
+            if(execution?.cancelled){ messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'}); render(); return; }
+            if(execution?.message) messages.push({role:'assistant',text:execution.message});
+            await new Promise(r=>setTimeout(r,80));
+          }
+          messages.push({role:'assistant',text:plan.summary||'Solicitud ejecutada por SIFER.'}); render(); return;
         }
         if(plan.type!=='action'||!plan.action) throw new Error('No encontré una acción segura para esa solicitud.');
         action=plan.action;
