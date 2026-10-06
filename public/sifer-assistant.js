@@ -119,8 +119,28 @@
   function monitorSilence(){const a=voice.analyser;if(!a||!voice.recorder)return;const data=new Uint8Array(a.fftSize);a.getByteTimeDomainData(data);let sum=0;for(const n of data){const v=(n-128)/128;sum+=v*v}const rms=Math.sqrt(sum/data.length),elapsed=Date.now()-voice.startedAt;if(elapsed>700&&rms<0.018){clearTimeout(voice.timer);voice.timer=setTimeout(()=>{if(voice.recorder?.state==='recording')voice.recorder.stop()},750)}else clearTimeout(voice.timer);if(voice.recorder?.state==='recording')requestAnimationFrame(monitorSilence)}
   async function transcribeVoice(blob){voice.processing=true;setVoice('processing','Transcribiendo…');try{const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const audioBase64=btoa(binary);const r=await fetch('/api/sifer-assistant?mode=transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'transcribe',audioBase64,mimeType:blob.type||'audio/webm'})});const data=await r.json();if(!r.ok)throw new Error(data?.error||'No pude transcribir la frase');const text=String(data?.text||'').trim();if(!text)throw new Error('No pude entenderte.');await ask(text);const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}catch(e){speak(e?.message||'No pude entenderte.')}finally{voice.processing=false}}
   function stopVoice(){voice.session++;clearTimeout(voice.timer);clearTimeout(voice.restartTimer);try{voice.recognition?.stop()}catch{}try{voice.recorder?.stop()}catch{}voice.recognition=null;voice.recorder=null;voice.listening=false;voice.processing=false;if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null}try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;setVoice('off','Micrófono inactivo')}
-  function toggle(force){open=force===undefined?!open:force;panel.classList.toggle('show',open);if(open){if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');startVoice();setTimeout(()=>input.focus(),60)}else stopVoice()}
-  orb.addEventListener('click',()=>toggle());
+  function toggle(force){
+    open=force===undefined?!open:force;
+    if(open){
+      panel.classList.add('show');
+      panel.style.setProperty('display','flex','important');
+      panel.style.setProperty('visibility','visible','important');
+      panel.style.setProperty('opacity','1','important');
+      if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
+      startVoice();
+      setTimeout(()=>input.focus(),60);
+    }else{
+      panel.classList.remove('show');
+      panel.style.removeProperty('display');
+      stopVoice();
+    }
+  }
+  function openPanelFromUserGesture(e){
+    if(e){e.preventDefault();e.stopPropagation();}
+    toggle(true);
+  }
+  orb.addEventListener('pointerdown',openPanelFromUserGesture,{passive:false});
+  orb.addEventListener('click',openPanelFromUserGesture);
   root.querySelector('.sifer-ai-close').addEventListener('click',()=>toggle(false));
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
