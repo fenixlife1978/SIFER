@@ -1026,12 +1026,25 @@ ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orien
         if(!command)return;
         chat.insertAdjacentHTML('beforeend','<div class="sifer-w-msg user">'+command.replace(/[&<>"]/g,function(x){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x];})+'</div>');
         input.value='';
-        var pending=document.createElement('div');pending.className='sifer-w-msg ai';pending.textContent='SIFER está pensando…';chat.appendChild(pending);chat.scrollTop=chat.scrollHeight;
+        var pending=document.createElement('div');pending.className='sifer-w-msg ai';pending.textContent='SIFER está interpretando…';chat.appendChild(pending);chat.scrollTop=chat.scrollHeight;
         try{
-          var response=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'chat',messages:[{role:'user',content:command}],context:{module:'POS',readOnlyData:{},systemMap:{},capabilities:[]}})});
-          var text=await response.text();
-          pending.textContent=response.ok?(text||'No recibí una respuesta.'):(function(){try{return JSON.parse(text).error||'No pude procesar la solicitud.'}catch(_){return 'No pude procesar la solicitud.'}})();
-        }catch(_){pending.textContent='No pude conectar con SIFER en este momento.'}
+          var clean=command.replace(/^sifer\\s*[,;:. -]?\\s*/i,'').trim();
+          var lower=clean.toLowerCase();
+          if(/^(cu[aá]nto|cu[aá]nto|cu[aá]ndo|cu[aá]nto se)?\\s*(vendimos|vend[ií]o|ventas).*(hoy|este d[ií]a)?$/.test(lower) || /ventas.*hoy/.test(lower) || /vend[ií]mos.*hoy/.test(lower)){
+            var raw=localStorage.getItem('sifer360_v1');var db=raw?JSON.parse(raw):{};var ventas=Array.isArray(db.ventas)?db.ventas:[];var now=new Date();var day=now.toLocaleDateString('es-ES');
+            var valid=ventas.filter(function(v){if(String(v.estado||'').toLowerCase()==='anulada')return false;var d=String(v.fecha||'');var p=new Date(v.fecha);return d.split(',')[0].trim()===day||(!isNaN(p.getTime())&&p.toLocaleDateString('es-ES')===day);});
+            var total=valid.reduce(function(s,v){return s+Number(v.total||0)},0);
+            pending.textContent=valid.length?'Hoy se han registrado '+valid.length+' venta'+(valid.length===1?'':'s')+' por un total de '+total.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+'.':'Hoy no se han registrado ventas hasta el momento.';
+          }else if(/(ll[eé]vame|lleva|ir|entra|entrar|abre|abrir|muestra|mostrar).*(pos|venta|ventas)/.test(lower) || /pos.*(venta|ventas)/.test(lower)){
+            var buttons=[].slice.call(document.querySelectorAll('button,[role="button"],a'));
+            var target=buttons.find(function(el){var t=String(el.innerText||el.getAttribute('aria-label')||el.title||'').toLowerCase().trim();return /^(pos|ventas|punto de venta)$/.test(t)||t.includes('punto de venta')||t==='venta';});
+            if(target){target.click();pending.textContent='Listo. Te llevé al POS de venta.';}else{pending.textContent='No encontré el acceso al POS de venta en esta pantalla.';}
+          }else{
+            var response=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'chat',messages:[{role:'user',content:command}],context:{module:'POS',readOnlyData:{},systemMap:{},capabilities:[]}})});
+            var text=await response.text();
+            pending.textContent=response.ok?(text||'No recibí una respuesta.'):(function(){try{return JSON.parse(text).error||'SIFER no pudo procesar la solicitud.'}catch(_){return 'SIFER no pudo procesar la solicitud.'}})();
+          }
+        }catch(err){pending.textContent='SIFER tuvo un error al procesar la solicitud. Las operaciones básicas siguen disponibles.';}
         chat.scrollTop=chat.scrollHeight;
       });
       input.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();root.querySelector('#sifer-w-form').requestSubmit();}});
