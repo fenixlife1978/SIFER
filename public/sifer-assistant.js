@@ -133,9 +133,9 @@
 
   function extractWakeWord(text){
     const value=String(text||'').trim();
-    const match=value.match(/\\bsifer\\b/i);
+    const match=value.match(/\bsifer\b/i);
     if(!match)return null;
-    return value.slice(match.index+match[0].length).replace(/^\\s*[,;:.-]?\\s*/,'').trim();
+    return value.slice(match.index+match[0].length).replace(/^\s*[,;:.-]?\s*/,'').trim();
   }
 
   async function ask(text){
