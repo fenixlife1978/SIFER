@@ -41,6 +41,7 @@
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
+  orb.style.display='none';
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
   const form=root.querySelector('#sifer-ai-form');
@@ -69,6 +70,8 @@
   function stopVoice(){voice.session++;clearTimeout(voice.timer);clearTimeout(voice.restartTimer);try{voice.recognition?.stop()}catch{}try{voice.recorder?.stop()}catch{}voice.recognition=null;voice.recorder=null;voice.listening=false;voice.processing=false;if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null}try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;setVoice('off','Micrófono inactivo')}
   function toggle(force){
     const next=force===undefined?!open:Boolean(force);
+    const emergency=document.getElementById('sifer-emergency-shell');
+    if(next && emergency) emergency.removeAttribute('open');
     open=next;
     panel.classList.toggle('show',open);
     panel.setAttribute('aria-hidden',open?'false':'true');
