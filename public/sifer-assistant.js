@@ -308,44 +308,73 @@
     }catch{return null;}
   }
   function normalizeLocal(s){
-    return String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9.%-]+/g,' ').trim();
+    return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9.%-]+/g,' ').trim();
+  }
+
+  const SIFER_INTENTS = [
+    {patterns:['punto de venta','pos','ventas','venta'], view:'pos', action:'navigate'},
+    {patterns:['inventario','productos','producto','repuestos','repuesto','aceites','lubricantes','catalogo','existencias','stock'], view:'productos', action:'navigate'},
+    {patterns:['compras','compra'], view:'compras', action:'navigate'},
+    {patterns:['clientes','cliente'], view:'clientes', action:'navigate'},
+    {patterns:['proveedores','proveedor'], view:'proveedores', action:'navigate'},
+    {patterns:['cuentas por cobrar','cuentas cobrar','cxc','cobros'], view:'cxc', action:'navigate'},
+    {patterns:['cuentas por pagar','cuentas pagar','cxp','pagos a proveedores'], view:'cxp', action:'navigate'},
+    {patterns:['caja','cajas','cortes'], view:'caja', action:'navigate'},
+    {patterns:['pedidos','pedido','ordenes','ordenes de venta'], view:'pedidos', action:'navigate'},
+    {patterns:['presupuesto','presupuestos','cotizacion','cotizaciones'], view:'presupuestos', action:'navigate'},
+    {patterns:['configuracion','configuracion general','ajustes'], view:'config', action:'navigate'},
+    {patterns:['usuarios','usuario'], view:'usuarios', action:'navigate'},
+    {patterns:['reportes','reportes de ventas'], view:'reportes', action:'navigate'}
+  ];
+
+  function hasAny(q,words){ return words.some(w=>q.includes(w)); }
+  function hasNavigationVerb(q){
+    return /(^|\s)(abre|abrir|muestra|mostrar|ver|ve|quiero|lleva|llevame|entra|entrar|ir|vamos|ponme|mandame|mandame|accede|acceder|navega|navegar)(\s|$)/.test(q);
+  }
+  function resolveNavigationIntent(q){
+    const direct=SIFER_INTENTS.find(x=>hasAny(q,x.patterns));
+    if(!direct)return null;
+    if(!hasNavigationVerb(q) && !/(donde esta|donde estan|quiero|necesito|ir al|ir a)/.test(q))return null;
+    return {name:'navigate',args:{view:direct.view}};
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    // Navegación básica: se resuelve localmente para no depender de Gemini ni de red.
-    // El usuario puede expresarlo con cualquier verbo habitual: abre, muestra, ve, lleva,
-    // quiero ver, quiero ir, entra, llévame, etc. El sustantivo del módulo es la señal principal.
-    const navigationIntent=/(abre|abrir|ir|ve|vamos|lleva|llevame|entra|quiero|muestra|mostrar|ver|entra|ir al|ir a)/.test(q);
-    if(navigationIntent && /(\bpos\b|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
-    if(navigationIntent && /(inventario|productos|producto|product|inventarii|repuestos|repuesto|aceites|lubricantes)/.test(q)) return {name:'navigate',args:{view:'productos'}};
-    if(navigationIntent && /(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
-    if(navigationIntent && /(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
-    if(navigationIntent && /(proveedores|proveedor)/.test(q)) return {name:'navigate',args:{view:'proveedores'}};
-    if(navigationIntent && /(cuentas por cobrar|cuentas cobrar|cxc)/.test(q)) return {name:'navigate',args:{view:'cxc'}};
-    if(navigationIntent && /(cuentas por pagar|cuentas pagar|cxp)/.test(q)) return {name:'navigate',args:{view:'cxp'}};
-    if(navigationIntent && /(caja|cortes|corte)/.test(q)) return {name:'navigate',args:{view:'caja'}};
-    if(navigationIntent && /(pedidos|pedido)/.test(q)) return {name:'navigate',args:{view:'pedidos'}};
-    if(navigationIntent && /(presupuesto|presupuestos|cotizacion|cotizaciones)/.test(q)) return {name:'navigate',args:{view:'presupuestos'}};
-    if(navigationIntent && /(configuracion|configuracion general|config)/.test(q)) return {name:'navigate',args:{view:'config'}};
-    if(/nuevo (cliente|clientes)|crear (cliente|clientes)|abre(r)? (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
-    if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)|abre(r)? (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
-    if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
+
+    const navigation=resolveNavigationIntent(q);
+    if(navigation)return navigation;
+
+    if(/nuevo (cliente|clientes)|crear (cliente|clientes)|registrar (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
+    if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)|registrar (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
+    if(/nuevo pedido|crear pedido|registrar pedido/.test(q)) return {name:'new_order',args:{}};
     if(/nuevo presupuesto|crear presupuesto|nueva cotizacion|crear cotizacion/.test(q)) return {name:'open_quote',args:{}};
     if(/tasa bcv|tipo de cambio|cotizacion bcv|dolar bcv/.test(q)) return {name:'open_bcv',args:{}};
-    if(/(cobro|pago).*(cxc|cuenta por cobrar|cliente)/.test(q)) { const m=q.match(/(?:cobro|pago).*?(?:cxc|cuenta por cobrar|cliente)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxc',query:(m?.[1]||'').trim()}}; }
-    if(/(pago|pagar).*(cxp|cuenta por pagar|proveedor)/.test(q)) { const m=q.match(/(?:pago|pagar).*?(?:cxp|cuenta por pagar|proveedor)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxp',query:(m?.[1]||'').trim()}}; }
-    if(/selecciona|seleccionar|usa|usar|asigna.*cliente/.test(q)) { const m=q.match(/(?:selecciona|seleccionar|usa|usar|asigna.*cliente)\s+(?:el\s+cliente\s+)?(.+)$/); if(m?.[1]) return {name:'select_customer',args:{query:m[1]}}; }
-    if(/descuento/.test(q)&&/carrito|articulo|linea|producto/.test(q)) { const m=q.match(/(\d+(?:\.\d+)?)\s*%/); if(m) return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'}; }
+
+    if(/(cobro|cobrar).*(cxc|cuenta por cobrar|cliente)/.test(q)){
+      const m=q.match(/(?:cobro|cobrar).*?(?:cxc|cuenta por cobrar|cliente)\s*(.*)$/);
+      return {name:'open_account_payment',args:{type:'cxc',query:(m?.[1]||'').trim()}};
+    }
+    if(/(pago|pagar).*(cxp|cuenta por pagar|proveedor)/.test(q)){
+      const m=q.match(/(?:pago|pagar).*?(?:cxp|cuenta por pagar|proveedor)\s*(.*)$/);
+      return {name:'open_account_payment',args:{type:'cxp',query:(m?.[1]||'').trim()}};
+    }
+    if(/selecciona|seleccionar|usa|usar|asigna.*cliente/.test(q)){
+      const m=q.match(/(?:selecciona|seleccionar|usa|usar|asigna.*cliente)\s+(?:el\s+cliente\s+)?(.+)$/);
+      if(m?.[1])return {name:'select_customer',args:{query:m[1]}};
+    }
+    if(/descuento/.test(q)&&/carrito|articulo|linea|producto/.test(q)){
+      const m=q.match(/(\d+(?:\.\d+)?)\s*%/);
+      if(m)return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'};
+    }
     if(/(devolucion|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
-    if(/(abrir|abre).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
+    if(/(abrir|abre|apertura|abrir la).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
     if(/corte x/.test(q)) return {name:'show_x',args:{}};
-    if(/(prepara|mostrar|ver|abre).*(corte z)/.test(q)) return {name:'show_z',args:{}};
-    if(/(ejecuta|haz|realiza|cierra).*(corte z)/.test(q)) return {name:'execute_z',args:{},confirmationText:'Ejecutar el Corte Z y cerrar la caja actual.'};
-    if(/(cancela|cancelar).*(venta)/.test(q)) return {name:'cancel_sale',args:{},confirmationText:'Cancelar la venta actual sin registrarla.'};
+    if(/(prepara|mostrar|ver|abre|abrir).*(corte z)/.test(q)) return {name:'show_z',args:{}};
+    if(/(ejecuta|haz|realiza|cierra|finaliza).*(corte z)/.test(q)) return {name:'execute_z',args:{},confirmationText:'Ejecutar el Corte Z y cerrar la caja actual.'};
+    if(/(cancela|cancelar|anula|anular).*(venta)/.test(q)) return {name:'cancel_sale',args:{},confirmationText:'Cancelar la venta actual sin registrarla.'};
     if(/(elimina|quita|borra).*(linea|articulo|producto).*(carrito)/.test(q)){
-      const state=currentActionState(); const idx=state.cart.length?state.cart.length-1:null;
+      const state=currentActionState(),idx=state.cart.length?state.cart.length-1:null;
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
