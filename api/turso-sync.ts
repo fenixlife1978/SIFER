@@ -85,8 +85,53 @@ export default async function handler(req:any,res:any){
       }
     }
     if(type==='purchase-created'){
-      // Las compras se conservan como operación de sincronización hasta completar
-      // el esquema de CxP/proveedores; no se aplica aún para evitar doble entrada.
+      const purchase=body.payload?.purchase;
+      const lines=Array.isArray(purchase?.lineas)?purchase.lineas:[];
+      if(purchase?.numero){
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchases (
+          numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,proveedor_id TEXT,proveedor TEXT,total REAL NOT NULL DEFAULT 0,
+          pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,created_at TEXT NOT NULL
+        )`,args:[]});
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchase_lines (
+          purchase_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,cost REAL NOT NULL,
+          PRIMARY KEY(purchase_number,product_id),FOREIGN KEY(purchase_number) REFERENCES sifer_purchases(numero)
+        )`,args:[]});
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable (
+          id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,
+          total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,
+          estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL
+        )`,args:[]});
+        await db.execute({sql:`INSERT OR IGNORE INTO sifer_purchases(numero,fecha,proveedor_id,proveedor,total,pagado,saldo,tipo,created_at)
+          VALUES(?,?,?,?,?,?,?,?,?)`,args:[
+          String(purchase.numero),String(purchase.fecha||''),purchase.proveedorId??null,purchase.proveedor??'',
+          Number(purchase.total)||0,Number(purchase.pagado)||0,Number(purchase.saldo)||0,purchase.tipo??'',new Date().toISOString()
+        ]});
+        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({sql:`INSERT OR IGNORE INTO sifer_purchase_lines(purchase_number,product_id,qty,cost)
+          VALUES(?,?,?,?)`,args:[String(purchase.numero),String(l.id),Number(l.qty)||0,Number(l.costo)||0]}));
+        if(stmts.length)await db.batch(stmts,'write');
+
+        await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory_ledger (
+          operation_id TEXT NOT NULL,documento TEXT NOT NULL,product_id TEXT NOT NULL,qty_delta REAL NOT NULL,
+          reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id)
+        )`,args:[]});
+        const now=new Date().toISOString();
+        for(const l of lines.filter((x:any)=>x?.id)){
+          const pid=String(l.id),delta=Math.max(0,Number(l.qty)||0);
+          const inserted=await db.execute({sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at)
+            VALUES(?,?,?,?,?,?)`,args:[operationId,String(purchase.numero),pid,delta,'purchase',now]});
+          if(!inserted.rowsAffected)continue;
+          await db.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+            VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
+            args:[pid,delta,now]});
+        }
+        if(Number(purchase.saldo)>0){
+          await db.execute({sql:`INSERT OR IGNORE INTO sifer_accounts_payable(id,documento,proveedor_id,proveedor,total,saldo,fecha,estado,created_at)
+            VALUES(?,?,?,?,?,?,?,?,?)`,args:[
+            'CXP-'+String(purchase.numero),String(purchase.numero),purchase.proveedorId??null,purchase.proveedor??'',
+            Number(purchase.total)||0,Number(purchase.saldo)||0,String(purchase.fecha||''),'Pendiente',now
+          ]});
+        }
+      }
     }
     if(type==='sale-created'){
       const sale=body.payload?.sale;
