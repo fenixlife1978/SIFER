@@ -8,17 +8,13 @@
   let busy = false;
 
   const css = `
-  #sifer-ai-root{position:fixed!important;right:12px!important;bottom:20px!important;left:auto!important;top:auto!important;width:104px!important;height:104px!important;z-index:2147483647!important;font-family:Arial,Helvetica,sans-serif;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;overflow:visible!important;transform:none!important;contain:none!important}
+  #sifer-ai-root{position:fixed;right:12px;bottom:20px;z-index:9999;font-family:Arial,Helvetica,sans-serif}
   /* SIFER holographic core: transparent field only, no circular container. */
-  #sifer-ai-orb{width:104px!important;height:104px!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;position:relative!important;overflow:visible!important;display:block!important;color:transparent!important;appearance:none;-webkit-appearance:none;outline:none!important;visibility:visible!important;opacity:1!important}
+  #sifer-ai-orb{width:104px;height:104px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;cursor:pointer;position:relative;overflow:visible;display:block;color:transparent;appearance:none;-webkit-appearance:none;outline:none}
   #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:30px;margin:-15px 0 0 -43px;border:1px solid rgba(67,202,255,.22);border-radius:50%;filter:blur(.2px);animation:siferOrbit 4.8s linear infinite;transform-origin:center}
   #sifer-ai-orb:after{width:58px;height:20px;margin:-10px 0 0 -29px;border-color:rgba(150,238,255,.18);animation-duration:3.1s;animation-direction:reverse}
   #sifer-ai-orb .sifer-core{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#e9fdff;box-shadow:0 0 5px #fff,0 0 13px #54dcff,0 0 28px rgba(0,148,255,.95);z-index:5;animation:siferPulse 1.6s ease-in-out infinite}
-  #sifer-ai-orb .sifer-p{position:absolute;width:2px;height:2px;border-radius:50%;background:#a7efff;box-shadow:0 0 5px #2acbff,0 0 9px rgba(30,171,255,.65);animation:siferFloat 2.4s ease-in-out infinite;pointer-events:none}
-  #sifer-ai-orb .sifer-auto{width:2.5px;height:2.5px;left:calc(50% + var(--x));top:calc(50% + var(--y));opacity:var(--o);transform:scale(var(--s));animation-duration:var(--d);animation-delay:var(--delay)}
-  #sifer-ai-orb .sifer-auto:nth-child(3n){width:1.5px;height:1.5px}
-  #sifer-ai-orb .sifer-auto:nth-child(5n){width:3px;height:3px;box-shadow:0 0 7px #2acbff,0 0 13px rgba(30,171,255,.8)}
-  #sifer-ai-orb .sifer-auto{z-index:2}
+  #sifer-ai-orb .sifer-p{position:absolute;width:2px;height:2px;border-radius:50%;background:#a7efff;box-shadow:0 0 5px #2acbff,0 0 9px rgba(30,171,255,.65);animation:siferFloat 2.4s ease-in-out infinite}
   #sifer-ai-orb .p1{left:18px;top:48px}.p2{left:29px;top:27px;animation-delay:.3s}.p3{right:18px;top:39px;animation-delay:.7s}.p4{right:27px;bottom:24px;animation-delay:1s}.p5{left:45px;top:10px;animation-delay:1.4s}
   #sifer-ai-orb.active:before{border-color:rgba(100,225,255,.55);box-shadow:0 0 12px rgba(0,177,255,.35)}
   #sifer-ai-orb.active .sifer-core{animation:siferPulse .65s ease-in-out infinite}
@@ -64,32 +60,9 @@
     <button id="sifer-ai-orb" title="Abrir SIFER">
       <i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i><i class="sifer-p p4"></i><i class="sifer-p p5"></i>
     </button>`;
-  // Portal de nivel raíz: evita que el layout del POS, overflow o transformaciones oculten la esfera.
-  (document.documentElement || document.body).appendChild(root);
-  root.setAttribute('data-sifer-mounted','true');
+  document.body.appendChild(root);
 
-  // Genera una nube de partículas independiente del contenedor visual.
-  // El botón solo conserva el área táctil transparente.
   const orb=root.querySelector('#sifer-ai-orb');
-  const particleFrag=document.createDocumentFragment();
-  for(let i=0;i<56;i++){
-    const p=document.createElement('i');
-    p.className='sifer-p sifer-auto';
-    const a=Math.random()*Math.PI*2;
-    const r=12+Math.random()*39;
-    const vertical=(Math.random()*2-1)*Math.sqrt(Math.max(1-(r/52)*(r/52),.08))*42;
-    const x=Math.cos(a)*r;
-    const y=Math.sin(a)*r*.72+vertical*.34;
-    const depth=.65+Math.random()*.7;
-    p.style.setProperty('--x',x.toFixed(1)+'px');
-    p.style.setProperty('--y',y.toFixed(1)+'px');
-    p.style.setProperty('--o',(0.32+Math.random()*.68).toFixed(2));
-    p.style.setProperty('--s',depth.toFixed(2));
-    p.style.setProperty('--d',(1.8+Math.random()*2.8).toFixed(2)+'s');
-    p.style.setProperty('--delay',(-Math.random()*3.5).toFixed(2)+'s');
-    particleFrag.appendChild(p);
-  }
-  orb.appendChild(particleFrag);
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
   const form=root.querySelector('#sifer-ai-form');
