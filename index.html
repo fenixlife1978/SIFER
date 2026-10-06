@@ -994,6 +994,37 @@ document.addEventListener('fullscreenchange',()=>{
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
+<script>
+(function(){
+  function ensureSiferVisible(){
+    var root=document.getElementById('sifer-ai-root');
+    if(!root){
+      root=document.createElement('div');
+      root.id='sifer-ai-root';
+      root.setAttribute('data-sifer-watchdog','true');
+      root.innerHTML='<button id="sifer-ai-orb" title="Abrir SIFER" aria-label="Abrir SIFER"><i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i><i class="sifer-p p4"></i><i class="sifer-p p5"></i></button>';
+      document.body.appendChild(root);
+    }
+    root.style.setProperty('position','fixed','important');
+    root.style.setProperty('right','12px','important');
+    root.style.setProperty('bottom','20px','important');
+    root.style.setProperty('z-index','2147483647','important');
+    root.style.setProperty('display','block','important');
+    root.style.setProperty('visibility','visible','important');
+    root.style.setProperty('opacity','1','important');
+    var orb=root.querySelector('#sifer-ai-orb');
+    if(orb){
+      orb.style.setProperty('display','block','important');
+      orb.style.setProperty('visibility','visible','important');
+      orb.style.setProperty('opacity','1','important');
+    }
+  }
+  window.addEventListener('error',function(e){
+    if(String(e.filename||'').indexOf('sifer-assistant.js')!==-1) setTimeout(ensureSiferVisible,0);
+  });
+  setTimeout(ensureSiferVisible,1200);
+})();
+</script>
 <script src="/sifer-assistant.js?v=20261005f"></script>
 </body>
 </html>
