@@ -329,7 +329,7 @@
 
   function hasAny(q,words){ return words.some(w=>q.includes(w)); }
   function hasNavigationVerb(q){
-    return /(^|\s)(abre|abrir|muestra|mostrar|ver|ve|quiero|lleva|llevame|entra|entrar|ir|vamos|ponme|mandame|mandame|accede|acceder|navega|navegar)(\s|$)/.test(q);
+    return /(^|\s)(abre|abrir|muestra|mostrar|ver|ve|quiero|lleva|llevame|entra|entrar|ir|vamos|ponme|mandame|accede|acceder|navega|navegar|prepara|preparar|inicia|iniciar)(\s|$)/.test(q);
   }
   function resolveNavigationIntent(q){
     const direct=SIFER_INTENTS.find(x=>hasAny(q,x.patterns));
