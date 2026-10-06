@@ -83,7 +83,9 @@
   window.SIFER_CLOSE=()=>toggle(false);
   document.addEventListener('sifer:open',()=>toggle(true));
   document.addEventListener('sifer:close',()=>toggle(false));
-  orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(true);});
+  const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setTimeout(()=>input.focus(),30);startVoice();};
+  document.addEventListener('click',e=>{const target=e.target?.closest?.('#sifer-ai-orb,#sifer-emergency-orb');if(!target)return;e.preventDefault();e.stopPropagation();forceOpen();},true);
+  orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceOpen();});
   root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(false);});
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
