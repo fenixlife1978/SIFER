@@ -61,45 +61,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 </div></div></div>
 <div class="modal-backdrop" id="modal"><div class="modal"><div class="modalhead"><span id="modalTitle"></span><button onclick="closeModal()">×</button></div><div class="modalbody" id="modalBody"></div><div class="modalfoot" id="modalFoot"></div></div></div>
 <div class="toast" id="toast"></div>
-<div id="thermal-print-area" style="display:none"></div><style id="sifer-boot-style">
-#sifer-boot-orb{position:fixed!important;right:14px!important;bottom:18px!important;width:104px!important;height:104px!important;z-index:2147483647!important;border:0!important;padding:0!important;margin:0!important;background:transparent!important;display:block!important;visibility:visible!important;opacity:1!important;cursor:pointer!important;pointer-events:auto!important}
-#sifer-boot-orb:before,#sifer-boot-orb:after{content:"";position:absolute;left:50%;top:50%;border:1px solid rgba(67,202,255,.45);border-radius:50%;filter:blur(.2px);transform:translate(-50%,-50%);animation:siferBootOrbit 4.8s linear infinite}
-#sifer-boot-orb:before{width:86px;height:30px}
-#sifer-boot-orb:after{width:58px;height:20px;border-color:rgba(150,238,255,.38);animation-duration:3.1s;animation-direction:reverse}
-#sifer-boot-orb i{position:absolute;display:block;border-radius:50%;background:#a7efff;box-shadow:0 0 6px #2acbff,0 0 13px rgba(30,171,255,.8)}
-#sifer-boot-orb .core{left:50%;top:50%;width:9px;height:9px;transform:translate(-50%,-50%);background:#e9fdff;box-shadow:0 0 6px #fff,0 0 15px #54dcff,0 0 30px rgba(0,148,255,.95);animation:siferBootPulse 1.5s ease-in-out infinite;z-index:3}
-#sifer-boot-orb .p1{left:17px;top:48px;width:3px;height:3px}.p2{left:30px;top:28px;width:2px;height:2px}.p3{right:17px;top:40px;width:3px;height:3px}.p4{right:28px;bottom:23px;width:2px;height:2px}.p5{left:45px;top:10px;width:2px;height:2px}
-@keyframes siferBootOrbit{to{transform:translate(-50%,-50%) rotate(360deg) scaleX(.72)}}
-@keyframes siferBootPulse{0%,100%{transform:translate(-50%,-50%) scale(.8);opacity:.85}50%{transform:translate(-50%,-50%) scale(1.2);opacity:1}}
-@media(max-width:700px){#sifer-boot-orb{right:3px!important;bottom:10px!important;width:86px!important;height:86px!important}}
-</style>
-<button id="sifer-boot-orb" type="button" aria-label="Abrir SIFER" title="Abrir SIFER">
-<i class="core"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i><i class="p4"></i><i class="p5"></i>
-</button>
-<script>
-(function(){
-  var boot=document.getElementById('sifer-boot-orb');
-  function openSifer(e){
-    if(e){e.preventDefault();e.stopPropagation();}
-    var real=document.getElementById('sifer-ai-orb');
-    if(real){real.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));return;}
-    var s=document.querySelector('script[data-sifer-main]');
-    if(!s){
-      s=document.createElement('script');
-      s.src='/sifer-assistant.js?v=20261006-voz-estable-final';
-      s.async=false;
-      s.dataset.siferMain='1';
-      document.body.appendChild(s);
-    }
-    setTimeout(function(){
-      var r=document.getElementById('sifer-ai-orb');
-      if(r) r.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
-    },300);
-  }
-  boot.addEventListener('click',openSifer);
-  window.addEventListener('sifer:mounted',function(){boot.style.display='none';});
-})();
-</script>
+<div id="thermal-print-area" style="display:none"></div>
 <script src="/repuestos.js"></script>
 <script src="/master_catalog.js"></script>
 <script>
@@ -1031,27 +993,6 @@ document.addEventListener('fullscreenchange',()=>{
 });
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
-<script>
-(function(){
-  // Un solo cargador del motor SIFER. Evita instancias duplicadas del asistente.
-  function loadSifer(){
-    if(document.getElementById('sifer-ai-root')) return true;
-    if(document.querySelector('script[data-sifer-main]')) return false;
-    var s=document.createElement('script');
-    s.src='/sifer-assistant.js?v=20261006-voz-estable-final';
-    s.async=false;
-    s.dataset.siferMain='1';
-    document.body.appendChild(s);
-    return false;
-  }
-  window.addEventListener('sifer:mounted',function(){
-    var boot=document.getElementById('sifer-boot-orb');
-    if(boot && document.getElementById('sifer-ai-orb')) boot.remove();
-  });
-  setTimeout(function(){loadSifer();},100);
-})();
-</script>
-<script src="/sifer-assistant.js?v=20261006-voz-estable-final" data-sifer-main="1"></script>
+<script src="/sifer-bootstrap.js?v=20261006-10-06" defer></script>
 </body>
 </html>
