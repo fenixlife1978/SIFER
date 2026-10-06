@@ -41,7 +41,7 @@
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
-  orb.style.display='none';
+  orb.style.display='block';
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
   const form=root.querySelector('#sifer-ai-form');
