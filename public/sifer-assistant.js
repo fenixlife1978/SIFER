@@ -194,33 +194,95 @@
     }catch{return {error:'No se pudo construir el mapa operativo actual.'};}
   }
 
+  function findProductForCommand(command){
+    try{
+      const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
+      const items=[...(Array.isArray(d.productos)?d.productos:[]),...(typeof getRepuestos==='function'?(getRepuestos()||[]):[])];
+      const q=normalizeLocal(command),tokens=q.split(/\\s+/).filter(x=>x.length>2);
+      if(!tokens.length)return null;
+      const scored=items.map(p=>{
+        const hay=normalizeLocal([p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM].filter(Boolean).join(' '));
+        const score=tokens.reduce((s,t)=>s+(hay.includes(t)?1:0),0);
+        return {p,score};
+      }).filter(x=>x.score===tokens.length).sort((a,b)=>a.p.nombre.length-b.p.nombre.length);
+      return scored[0]?.p||null;
+    }catch{return null;}
+  }
+  function normalizeLocal(s){
+    return String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9.%-]+/g,' ').trim();
+  }
+  function localActionFromCommand(command){
+    const q=normalizeLocal(command);
+    if(/^(abre|ir|ve|vamos|lleva|entra|muestr).*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(inventario|productos)/.test(q)) return {name:'navigate',args:{view:'productos'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(proveedores|proveedor)/.test(q)) return {name:'navigate',args:{view:'proveedores'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(cuentas por cobrar|cxc)/.test(q)) return {name:'navigate',args:{view:'cxc'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(cuentas por pagar|cxp)/.test(q)) return {name:'navigate',args:{view:'cxp'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(caja|cortes|corte)/.test(q)) return {name:'navigate',args:{view:'caja'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(pedidos|pedido)/.test(q)) return {name:'navigate',args:{view:'pedidos'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(presupuesto|cotizacion)/.test(q)) return {name:'navigate',args:{view:'presupuestos'}};
+    if(/^(abre|ir|ve|vamos|muestr).*(configuracion|configuracion)/.test(q)) return {name:'navigate',args:{view:'config'}};
+    if(/nuevo (cliente|clientes)|crear (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
+    if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
+    if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
+    if(/(abrir|abre).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
+    if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
+    if(/corte x/.test(q)) return {name:'show_x',args:{}};
+    if(/(prepara|mostrar|ver|abre).*(corte z)/.test(q)) return {name:'show_z',args:{}};
+    if(/(ejecuta|haz|realiza|cierra).*(corte z)/.test(q)) return {name:'execute_z',args:{},confirmationText:'Ejecutar el Corte Z y cerrar la caja actual.'};
+    if(/(cancela|cancelar).*(venta)/.test(q)) return {name:'cancel_sale',args:{},confirmationText:'Cancelar la venta actual sin registrarla.'};
+    if(/(elimina|quita|borra).*(linea|articulo|producto).*(carrito)/.test(q)){
+      const state=currentActionState(); const idx=state.cart.length?state.cart.length-1:null;
+      if(idx===null)return null;
+      return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
+    }
+    if(/(agrega|añade|mete|pon).*(al carrito|carrito)/.test(q)){
+      const clean=q.replace(/.*?(agrega|añade|mete|pon)\\s+/,'').replace(/\\s+(al carrito|carrito).*$/,'').trim();
+      const p=findProductForCommand(clean);
+      if(p)return {name:'add_to_cart',args:{id:p.id,type:(p.sku&&!p.codigo?'repuesto':'producto')}};
+    }
+    if(/(actualiza|refresca|sincroniza).*(modulo|pantalla|datos)/.test(q)) return {name:'refresh',args:{}};
+    if(/imprime|imprimir/.test(q)) return {name:'print',args:{}};
+    return null;
+  }
+
   async function ask(text){
     const command=extractWakeWord(text);
     if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
     if(!command){ status.textContent='Dime qué necesitas después de “SIFER”.'; setTimeout(()=>{if(!busy)status.textContent='';},2200); return; }
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
-    const userMsg={role:'user',text:'SIFER, '+command}; messages.push(userMsg); render();
-    if(isTodaySalesQuery(command)){
-      messages.push({role:'assistant',text:answerTodaySales()});
-      render();
-      busy=false; send.disabled=false; orb.classList.remove('active'); status.textContent=''; input.focus();
-      return;
-    }
-
-    const aiIndex=messages.push({role:'assistant',text:''})-1; render();
+    messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
+      const localAction=localActionFromCommand(command);
+      if(isTodaySalesQuery(command)){
+        messages.push({role:'assistant',text:answerTodaySales()}); render();
+      }else if(localAction){
+        const execution=await executeSiferAction(localAction);
+        if(execution?.cancelled){
+          messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'});
+        }else{
+          messages.push({role:'assistant',text:execution?.message||'Acción ejecutada por SIFER.'});
+        }
+        render();
+      }
       const readOnlyData=buildReadOnlyData();
       const systemMap=buildSystemMap();
-      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap};
-      const history=messages.filter((_,i)=>i!==aiIndex).slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
+      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState()};
+      const history=messages.slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
       const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,context})});
       if(!r.ok){let e='No pude conectar con el núcleo de inteligencia de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
       if(!r.body)throw new Error('El servidor no devolvió un flujo de respuesta.');
-      const reader=r.body.getReader(), decoder=new TextDecoder();
+      const aiIndex=messages.push({role:'assistant',text:''})-1; render();
+      const reader=r.body.getReader(),decoder=new TextDecoder();
       while(true){const {value,done}=await reader.read();if(done)break;messages[aiIndex].text+=decoder.decode(value,{stream:true});render();}
-      messages[aiIndex].text+=decoder.decode();
-    }catch(e){messages[aiIndex].text='No pude completar la respuesta: '+(e?.message||'error desconocido')+'\n\nLa interfaz del POS permanece intacta.';render();}
-    finally{busy=false;send.disabled=false;orb.classList.remove('active');status.textContent='';input.focus();}
+      messages[aiIndex].text+=decoder.decode(); render();
+    }catch(e){
+      messages.push({role:'assistant',text:'No pude completar la respuesta: '+(e?.message||'error desconocido')+'\\n\\nEl POS permanece intacto.'});render();
+    }finally{
+      busy=false;send.disabled=false;orb.classList.remove('active');status.textContent='';input.focus();
+    }
   }
   form.addEventListener('submit',e=>{e.preventDefault();const text=input.value.trim();if(!text||busy)return;input.value='';ask(text);});
 })();
