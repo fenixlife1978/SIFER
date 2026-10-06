@@ -235,7 +235,7 @@
       case 'navigate': {
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
         const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
-        if(typeof go!=='function') throw new Error('Navegación no disponible'); go(target); return {ok:true,message:'Punto de venta abierto'};
+        if(typeof go!=='function') throw new Error('Navegación no disponible'); go(target); return {ok:true,message:'Módulo abierto: '+target};
       }
       case 'add_to_cart': if(typeof addToCart!=='function') throw new Error('Carrito no disponible'); addToCart(String(args.id||''),args.type==='repuesto'?'repuesto':'producto'); return {ok:true,message:'Artículo agregado al carrito'};
       case 'remove_cart_line': if(typeof selected!=='undefined') selected=Number(args.index); if(typeof removeCart!=='function') throw new Error('Carrito no disponible'); removeCart(); return {ok:true,message:'Línea eliminada del carrito'};
@@ -312,7 +312,7 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    if(/^(abre|ir|ve|vamos|lleva|entra|muestr).*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
+    if(/^(abre|abrir|ir|ve|vamos|lleva|entra|muestr.*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(inventario|productos)/.test(q)) return {name:'navigate',args:{view:'productos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
     if(/^(abre|ir|ve|vamos|muestr).*(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
@@ -323,8 +323,8 @@
     if(/^(abre|ir|ve|vamos|muestr).*(pedidos|pedido)/.test(q)) return {name:'navigate',args:{view:'pedidos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(presupuesto|cotizacion)/.test(q)) return {name:'navigate',args:{view:'presupuestos'}};
     if(/^(abre|ir|ve|vamos|muestr).*(configuracion|configuracion)/.test(q)) return {name:'navigate',args:{view:'config'}};
-    if(/nuevo (cliente|clientes)|crear (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
-    if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
+    if(/nuevo (cliente|clientes)|crear (cliente|clientes)|abre(r)? (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
+    if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)|abre(r)? (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
     if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
     if(/nuevo presupuesto|nuevo presupuesto|crear presupuesto|nueva cotizacion|crear cotizacion/.test(q)) return {name:'open_quote',args:{}};
     if(/tasa bcv|tipo de cambio|cotizacion bcv|dolar bcv/.test(q)) return {name:'open_bcv',args:{}};
