@@ -194,6 +194,59 @@
     }catch{return {error:'No se pudo construir el mapa operativo actual.'};}
   }
 
+  const SIFER_CAPABILITIES = {
+    navigate:{description:'Cambiar al módulo solicitado',mutating:false},
+    add_to_cart:{description:'Agregar un producto o repuesto existente al carrito actual',mutating:false},
+    remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
+    cancel_sale:{description:'Cancelar la venta actual sin registrarla',mutating:true,confirm:true},
+    open_cash:{description:'Abrir la caja actual',mutating:true,confirm:true},
+    open_checkout:{description:'Abrir la ventana de cobro de la venta actual',mutating:false},
+    open_purchase:{description:'Abrir el formulario de nueva compra',mutating:false},
+    open_customer:{description:'Abrir el formulario de cliente',mutating:false},
+    open_supplier:{description:'Abrir el formulario de proveedor',mutating:false},
+    new_order:{description:'Abrir el formulario de nuevo pedido',mutating:false},
+    show_x:{description:'Mostrar Corte X de la caja',mutating:false},
+    show_z:{description:'Mostrar el diálogo de Corte Z',mutating:false},
+    execute_z:{description:'Ejecutar y cerrar el Corte Z',mutating:true,confirm:true},
+    refresh:{description:'Actualizar el módulo actual',mutating:false},
+    print:{description:'Imprimir la vista actual',mutating:false}
+  };
+  function buildCapabilities(){ return Object.entries(SIFER_CAPABILITIES).map(([name,x])=>({name,...x})); }
+  function currentActionState(){
+    try{
+      const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
+      const box=(d.cajas||[]).find(x=>x.id===d.terminalId);
+      return {cajaId:d.terminalId||null,cajaAbierta:Boolean(box?.abierta),cart:typeof cart!=='undefined'&&Array.isArray(cart)?cart.map((x,i)=>({index:i,id:x.id,nombre:x.nombre,qty:x.qty,price:x.price})):[],currentModule:document.getElementById('windowTitle')?.textContent||'Inicio'};
+    }catch{return {};}
+  }
+  async function executeSiferAction(action){
+    const name=String(action?.name||'').trim(),args=action?.args&&typeof action.args==='object'?action.args:{},cap=SIFER_CAPABILITIES[name];
+    if(!cap) throw new Error('Acción no permitida por SIFER: '+name);
+    if(cap.confirm && !window.confirm('SIFER solicita confirmación\\n\\n'+String(action.confirmationText||cap.description)+'\\n\\n¿Deseas ejecutar esta operación?')) return {cancelled:true};
+    switch(name){
+      case 'navigate': {
+        const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
+        const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
+        if(typeof go!=='function') throw new Error('Navegación no disponible'); go(target); return {ok:true,message:'Punto de venta abierto'};
+      }
+      case 'add_to_cart': if(typeof addToCart!=='function') throw new Error('Carrito no disponible'); addToCart(String(args.id||''),args.type==='repuesto'?'repuesto':'producto'); return {ok:true,message:'Artículo agregado al carrito'};
+      case 'remove_cart_line': if(typeof selected!=='undefined') selected=Number(args.index); if(typeof removeCart!=='function') throw new Error('Carrito no disponible'); removeCart(); return {ok:true,message:'Línea eliminada del carrito'};
+      case 'cancel_sale': if(typeof cancelSale!=='function') throw new Error('Cancelación no disponible'); cancelSale(); return {ok:true,message:'Venta cancelada'};
+      case 'open_cash': if(typeof toggleCaja!=='function') throw new Error('Caja no disponible'); if(!currentActionState().cajaAbierta) toggleCaja(); return {ok:true,message:'Caja abierta'};
+      case 'open_checkout': if(typeof checkout!=='function') throw new Error('Cobro no disponible'); checkout(); return {ok:true,message:'Cobro abierto'};
+      case 'open_purchase': if(typeof openPurchase!=='function') throw new Error('Compras no disponible'); openPurchase(); return {ok:true,message:'Compras abierto'};
+      case 'open_customer': if(typeof openClient!=='function') throw new Error('Clientes no disponible'); openClient(args.id||undefined); return {ok:true,message:'Clientes abierto'};
+      case 'open_supplier': if(typeof openSupplier!=='function') throw new Error('Proveedores no disponible'); openSupplier(args.id||undefined); return {ok:true,message:'Proveedores abierto'};
+      case 'new_order': if(typeof nuevoPedido!=='function') throw new Error('Pedidos no disponible'); nuevoPedido(); return {ok:true,message:'Nuevo pedido abierto'};
+      case 'show_x': if(typeof showCorteX!=='function') throw new Error('Corte X no disponible'); showCorteX(); return {ok:true,message:'Corte X mostrado'};
+      case 'show_z': if(typeof showCorteZ!=='function') throw new Error('Corte Z no disponible'); showCorteZ(); return {ok:true,message:'Corte Z preparado'};
+      case 'execute_z': if(typeof executeCorteZ!=='function') throw new Error('Corte Z no disponible'); await executeCorteZ(); return {ok:true,message:'Corte Z ejecutado'};
+      case 'refresh': if(typeof refreshModuleData!=='function') throw new Error('Actualización no disponible'); refreshModuleData(); return {ok:true,message:'Módulo actualizado'};
+      case 'print': if(typeof printView!=='function') throw new Error('Impresión no disponible'); printView(); return {ok:true,message:'Impresión solicitada'};
+      default: throw new Error('Acción no implementada');
+    }
+  }
+
   function findProductForCommand(command){
     try{
       const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
