@@ -446,9 +446,11 @@
   }
 
   async function ask(text){
-    const command=extractWakeWord(text);
-    if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
-    if(!command){ status.textContent='Dime qué necesitas después de “SIFER”.'; setTimeout(()=>{if(!busy)status.textContent='';},2200); return; }
+    const rawText=String(text||'').trim();
+    const awakened=extractWakeWord(rawText);
+    // Dentro del panel SIFER ya está activo: no obligamos al usuario a repetir su nombre.
+    const command=awakened===null ? rawText : awakened;
+    if(!command){ status.textContent='Dime qué necesitas.'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
