@@ -131,6 +131,13 @@
     }catch{return {error:'No se pudo leer el estado local de consulta.'};}
   }
 
+  function extractWakeWord(text){
+    const value=String(text||'').trim();
+    const match=value.match(/\\bsifer\\b/i);
+    if(!match)return null;
+    return value.slice(match.index+match[0].length).replace(/^\\s*[,;:.-]?\\s*/,'').trim();
+  }
+
   async function ask(text){
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
     const userMsg={role:'user',text}; messages.push(userMsg); render();

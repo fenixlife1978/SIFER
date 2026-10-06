@@ -1,6 +1,0 @@
-{
-  "name": "SIFER 360",
-  "description": "Sistema de gestión y punto de venta SIFER 360 con integración BCV.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
