@@ -312,7 +312,7 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    const actionPrefix='(?:.*?)(?:abre|abrir|ir|ve|vamos|lleva|entra|muestra|mostrar|muestr)';
+    const actionPrefix='(?:.*?)(?:abre|abrir|ir|ve|vamos|lleva|llevame|llévame|entra|quiero ver|quiero ir|muestra|muéstrame|muestrame|mostrar|muestr)';
     if(new RegExp(actionPrefix+'.*(pos|punto de venta|ventas)').test(q)) return {name:'navigate',args:{view:'pos'}};
     if(new RegExp(actionPrefix+'.*(inventario|productos|product|inventarii)').test(q)) return {name:'navigate',args:{view:'productos'}};
     if(new RegExp(actionPrefix+'.*(compras|compra)').test(q)) return {name:'navigate',args:{view:'compras'}};
