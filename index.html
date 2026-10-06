@@ -1011,9 +1011,16 @@ ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orien
 <script>
 (function(){
  const shell=document.getElementById('sifer-emergency-shell');
+ let syncTimer=null;
  function sync(){
    const real=document.getElementById('sifer-ai-root');
-   if(real){shell.remove();window.SIFER_OPEN?.();}
+   if(!real || typeof window.SIFER_OPEN!=='function'){
+     if(!syncTimer) syncTimer=setInterval(sync,50);
+     return;
+   }
+   if(syncTimer){clearInterval(syncTimer);syncTimer=null;}
+   shell.remove();
+   window.SIFER_OPEN();
  }
  window.addEventListener('sifer:mounted',sync);
  shell.addEventListener('toggle',function(){
