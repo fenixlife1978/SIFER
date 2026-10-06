@@ -10,97 +10,43 @@
   let busy = false;
 
   const css = `
-  #sifer-ai-root{position:fixed!important;right:12px!important;bottom:20px!important;left:auto!important;top:auto!important;width:104px!important;height:104px!important;z-index:2147483647!important;font-family:Arial,Helvetica,sans-serif;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;overflow:visible!important;transform:none!important;contain:none!important}
-  /* SIFER holographic core: transparent field only, no circular container. */
-  #sifer-ai-orb{width:104px!important;height:104px!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;position:relative!important;overflow:visible!important;display:block!important;color:transparent!important;appearance:none;-webkit-appearance:none;outline:none!important;visibility:visible!important;opacity:1!important}
-  #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:30px;margin:-15px 0 0 -43px;border:1px solid rgba(67,202,255,.22);border-radius:50%;filter:blur(.2px);animation:siferOrbit 4.8s linear infinite;transform-origin:center}
-  #sifer-ai-orb:after{width:58px;height:20px;margin:-10px 0 0 -29px;border-color:rgba(150,238,255,.18);animation-duration:3.1s;animation-direction:reverse}
-  #sifer-ai-orb .sifer-core{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#e9fdff;box-shadow:0 0 5px #fff,0 0 13px #54dcff,0 0 28px rgba(0,148,255,.95);z-index:5;animation:siferPulse 1.6s ease-in-out infinite}
-  #sifer-ai-orb .sifer-p{position:absolute;width:2px;height:2px;border-radius:50%;background:#a7efff;box-shadow:0 0 5px #2acbff,0 0 9px rgba(30,171,255,.65);animation:siferFloat 2.4s ease-in-out infinite;pointer-events:none}
-  #sifer-ai-orb .sifer-auto{width:2.5px;height:2.5px;left:calc(50% + var(--x));top:calc(50% + var(--y));opacity:var(--o);transform:scale(var(--s));animation-duration:var(--d);animation-delay:var(--delay)}
-  #sifer-ai-orb .sifer-auto:nth-child(3n){width:1.5px;height:1.5px}
-  #sifer-ai-orb .sifer-auto:nth-child(5n){width:3px;height:3px;box-shadow:0 0 7px #2acbff,0 0 13px rgba(30,171,255,.8)}
-  #sifer-ai-orb .sifer-auto{z-index:2}
-  #sifer-ai-orb .p1{left:18px;top:48px}.p2{left:29px;top:27px;animation-delay:.3s}.p3{right:18px;top:39px;animation-delay:.7s}.p4{right:27px;bottom:24px;animation-delay:1s}.p5{left:45px;top:10px;animation-delay:1.4s}
-  #sifer-ai-orb.active:before{border-color:rgba(100,225,255,.55);box-shadow:0 0 12px rgba(0,177,255,.35)}
-  #sifer-ai-orb.active .sifer-core{animation:siferPulse .65s ease-in-out infinite}
-  #sifer-ai-orb.active .sifer-p{animation-duration:1.15s;box-shadow:0 0 7px #39d8ff,0 0 15px rgba(30,171,255,.85)}
-  #sifer-ai-panel{position:fixed!important;right:12px!important;bottom:124px!important;z-index:2147483647!important;width:min(410px,calc(100vw - 28px));height:min(600px,calc(100vh - 120px));background:linear-gradient(145deg,rgba(4,18,34,.98),rgba(1,10,22,.98));border:1px solid rgba(55,184,255,.48);border-radius:14px;box-shadow:0 0 30px rgba(0,115,220,.32),0 18px 60px rgba(0,0,0,.48);display:none;overflow:hidden;color:#e8f8ff;backdrop-filter:blur(12px)}
-  #sifer-ai-panel.show{display:flex;flex-direction:column}
-  .sifer-ai-head{height:68px;display:flex;align-items:center;gap:11px;padding:10px 13px;border-bottom:1px solid rgba(83,185,255,.2);background:linear-gradient(90deg,rgba(0,92,170,.16),transparent)}
-  .sifer-ai-mini{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle,#dffcff 0 7%,#36caff 16%,#0569b9 43%,#02152b 72%);box-shadow:0 0 15px rgba(28,190,255,.55);flex:0 0 auto}
-  .sifer-ai-title{font-size:15px;font-weight:800;letter-spacing:.08em}.sifer-ai-sub{font-size:10px;color:#77cbed;margin-top:3px}
-  .sifer-ai-close{margin-left:auto;border:0;background:transparent;color:#9bdcff;font-size:21px;cursor:pointer}
-  .sifer-ai-voice{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;font-size:10px;color:#78d8ff;border-top:1px solid rgba(83,185,255,.14)}
-  .sifer-ai-voice-dot{width:9px;height:9px;border-radius:50%;background:#547080}.sifer-ai-voice.listening .sifer-ai-voice-dot{background:#36d7ff;animation:siferVoicePulse 1.2s infinite}.sifer-ai-voice.processing .sifer-ai-voice-dot{background:#b9f3ff;animation:siferVoicePulse .7s infinite}@keyframes siferVoicePulse{50%{transform:scale(1.35);box-shadow:0 0 0 8px rgba(54,215,255,.06)}}
-  .sifer-ai-chat{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-  .sifer-msg{max-width:88%;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.45;white-space:pre-wrap}
-  .sifer-msg.ai{align-self:flex-start;background:rgba(12,61,94,.56);border:1px solid rgba(55,184,255,.18)}
-  .sifer-msg.user{align-self:flex-end;background:rgba(0,111,191,.72);border:1px solid rgba(93,211,255,.24)}
-  .sifer-ai-status{padding:0 14px 7px;font-size:9px;color:#68c9ef;min-height:15px}
-  .sifer-ai-form{display:flex;gap:7px;padding:9px;border-top:1px solid rgba(83,185,255,.2);background:rgba(0,0,0,.22)}
-  .sifer-ai-input{flex:1;min-width:0;resize:none;height:42px;background:#031526;border:1px solid rgba(80,180,235,.35);border-radius:8px;color:#e9fbff;padding:10px;font-size:12px;outline:none}
-  .sifer-ai-input:focus{border-color:#2bc8ff;box-shadow:0 0 0 2px rgba(43,200,255,.08)}
-  .sifer-ai-send{width:48px;border:1px solid #168ac5;border-radius:8px;background:linear-gradient(#0798df,#075b98);color:#fff;font-weight:800;cursor:pointer}
-  .sifer-ai-send:disabled{opacity:.45;cursor:wait}
-  @keyframes siferOrbit{to{transform:rotate(360deg) scaleX(.72)}}
-  @keyframes siferPulse{0%,100%{transform:scale(.78);opacity:.85}50%{transform:scale(1.18);opacity:1}}
-  @keyframes siferFloat{0%,100%{transform:translate(0,0);opacity:.45}50%{transform:translate(4px,-7px);opacity:1}}
-  @media(max-width:700px){#sifer-ai-root{right:2px;bottom:12px}#sifer-ai-orb{width:86px;height:86px}#sifer-ai-orb:before{width:72px;margin-left:-36px}#sifer-ai-orb:after{width:48px;margin-left:-24px}#sifer-ai-panel{right:7px!important;bottom:100px!important;width:calc(100vw - 14px)!important;height:min(560px,calc(100vh - 115px))}}
+  #sifer-ai-root{position:fixed;right:16px;bottom:16px;width:92px;height:92px;z-index:2147483647;font-family:Arial,sans-serif;pointer-events:none}
+  #sifer-ai-orb{position:absolute;inset:0;width:92px;height:92px;border:0;background:transparent;padding:0;margin:0;cursor:pointer;pointer-events:auto;outline:none}
+  #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;border:1px solid rgba(67,202,255,.55);border-radius:50%;transform:translate(-50%,-50%);animation:siferOrbit 4s linear infinite}
+  #sifer-ai-orb:before{width:76px;height:28px}.sifer-core{position:absolute!important;left:50%;top:50%;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:#efffff;box-shadow:0 0 8px #fff,0 0 22px #39cfff,0 0 42px #168cff}
+  #sifer-ai-orb .sifer-p{position:absolute;width:3px;height:3px;border-radius:50%;background:#b8f4ff;box-shadow:0 0 8px #35d5ff;pointer-events:none}
+  #sifer-ai-panel{position:fixed;right:16px;bottom:118px;width:min(410px,calc(100vw - 24px));height:min(600px,calc(100vh - 130px));z-index:2147483646;background:#061522;border:1px solid #249bd0;border-radius:14px;box-shadow:0 12px 50px rgba(0,0,0,.6),0 0 30px rgba(0,160,255,.25);display:none;flex-direction:column;overflow:hidden;color:#e8f8ff}
+  #sifer-ai-panel.show{display:flex}
+  .sifer-ai-head{height:58px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #19445b}.sifer-ai-mini{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,#fff,#36caff 25%,#07558c 55%,#02111e 75%);box-shadow:0 0 16px #26bfff}.sifer-ai-title{font-size:15px;font-weight:800}.sifer-ai-sub{font-size:9px;color:#77cbed}.sifer-ai-close{margin-left:auto;background:none;border:0;color:#b8eaff;font-size:24px;cursor:pointer}
+  .sifer-ai-chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}.sifer-msg{max-width:88%;padding:9px 11px;border-radius:10px;font-size:12px;line-height:1.4;white-space:pre-wrap}.sifer-msg.ai{align-self:flex-start;background:#0c3d5e}.sifer-msg.user{align-self:flex-end;background:#086fbf}
+  .sifer-ai-voice{padding:7px;text-align:center;font-size:10px;color:#72d8ff;border-top:1px solid #19445b}.sifer-ai-status{min-height:16px;padding:0 10px 5px;font-size:9px;color:#6fc9ef}.sifer-ai-form{display:flex;gap:6px;padding:8px;border-top:1px solid #19445b}.sifer-ai-input{flex:1;height:42px;resize:none;background:#031526;border:1px solid #2b6985;border-radius:7px;color:#fff;padding:9px;font-size:12px}.sifer-ai-send{width:46px;border:1px solid #168ac5;border-radius:7px;background:#087fc0;color:#fff;font-weight:800}
+  @keyframes siferOrbit{to{transform:translate(-50%,-50%) rotate(360deg) scaleX(.7)}}
+  @media(max-width:700px){#sifer-ai-root{right:3px;bottom:8px}#sifer-ai-panel{right:7px;bottom:96px;width:calc(100vw - 14px);height:min(560px,calc(100vh - 110px))}}
   `;
+  const oldStyle=document.getElementById('sifer-ai-style'); if(oldStyle)oldStyle.remove();
   const style=document.createElement('style'); style.id='sifer-ai-style'; style.textContent=css; document.head.appendChild(style);
 
   const root=document.createElement('div'); root.id='sifer-ai-root';
   root.innerHTML=`
-    <div id="sifer-ai-panel" hidden>
-      <div class="sifer-ai-head">
-        <div class="sifer-ai-mini"></div>
-        <div><div class="sifer-ai-title">SIFER</div><div class="sifer-ai-sub">ASISTENTE INTELIGENTE · POS AUTOMOTRIZ</div></div>
-        <button class="sifer-ai-close" title="Cerrar">×</button>
-      </div>
+    <button id="sifer-ai-orb" type="button" aria-label="Abrir SIFER" title="Abrir SIFER"><i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i></button>
+    <section id="sifer-ai-panel" aria-hidden="true">
+      <div class="sifer-ai-head"><div class="sifer-ai-mini"></div><div><div class="sifer-ai-title">SIFER</div><div class="sifer-ai-sub">ASISTENTE INTELIGENTE · POS AUTOMOTRIZ</div></div><button class="sifer-ai-close" type="button" aria-label="Cerrar">×</button></div>
       <div class="sifer-ai-chat" id="sifer-ai-chat"></div>
-      <div class="sifer-ai-voice" id="sifer-ai-voice"><span class="sifer-ai-voice-dot"></span><span id="sifer-ai-voice-text">Micrófono inactivo</span></div>
+      <div class="sifer-ai-voice" id="sifer-ai-voice"><span id="sifer-ai-voice-text">Micrófono inactivo</span></div>
       <div class="sifer-ai-status" id="sifer-ai-status"></div>
-      <form class="sifer-ai-form" id="sifer-ai-form">
-        <textarea class="sifer-ai-input" id="sifer-ai-input" placeholder="Dile a SIFER qué necesitas…" rows="1"></textarea>
-        <button class="sifer-ai-send" id="sifer-ai-send" type="submit">➤</button>
-      </form>
-    </div>
-    <button id="sifer-ai-orb" title="Abrir SIFER">
-      <i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i><i class="sifer-p p4"></i><i class="sifer-p p5"></i>
-    </button>`;
-  // Portal de nivel raíz: evita que el layout del POS, overflow o transformaciones oculten la esfera.
-  (document.documentElement || document.body).appendChild(root);
+      <form class="sifer-ai-form" id="sifer-ai-form"><textarea class="sifer-ai-input" id="sifer-ai-input" placeholder="Dile a SIFER qué necesitas…" rows="1"></textarea><button class="sifer-ai-send" id="sifer-ai-send" type="submit">➤</button></form>
+    </section>`;
+  document.body.appendChild(root);
   root.setAttribute('data-sifer-mounted','true');
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
-  const particleFrag=document.createDocumentFragment();
-  for(let i=0;i<56;i++){
-    const p=document.createElement('i');
-    p.className='sifer-p sifer-auto';
-    const a=Math.random()*Math.PI*2;
-    const r=12+Math.random()*39;
-    const vertical=(Math.random()*2-1)*Math.sqrt(Math.max(1-(r/52)*(r/52),.08))*42;
-    const x=Math.cos(a)*r;
-    const y=Math.sin(a)*r*.72+vertical*.34;
-    const depth=.65+Math.random()*.7;
-    p.style.setProperty('--x',x.toFixed(1)+'px');
-    p.style.setProperty('--y',y.toFixed(1)+'px');
-    p.style.setProperty('--o',(0.32+Math.random()*.68).toFixed(2));
-    p.style.setProperty('--s',depth.toFixed(2));
-    p.style.setProperty('--d',(1.8+Math.random()*2.8).toFixed(2)+'s');
-    p.style.setProperty('--delay',(-Math.random()*3.5).toFixed(2)+'s');
-    particleFrag.appendChild(p);
-  }
-  orb.appendChild(particleFrag);
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
   const form=root.querySelector('#sifer-ai-form');
   const input=root.querySelector('#sifer-ai-input');
   const send=root.querySelector('#sifer-ai-send');
   const status=root.querySelector('#sifer-ai-status');
-
   function render(){
     chat.innerHTML=messages.map(m=>`<div class="sifer-msg ${m.role==='user'?'user':'ai'}">${escapeHtml(m.text)}</div>`).join('');
     chat.scrollTop=chat.scrollHeight;
@@ -122,30 +68,19 @@
   async function transcribeVoice(blob){voice.processing=true;setVoice('processing','Transcribiendo…');try{const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const audioBase64=btoa(binary);const r=await fetch('/api/sifer-assistant?mode=transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'transcribe',audioBase64,mimeType:blob.type||'audio/webm'})});const data=await r.json();if(!r.ok)throw new Error(data?.error||'No pude transcribir la frase');const text=String(data?.text||'').trim();if(!text)throw new Error('No pude entenderte.');await ask(text);const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}catch(e){speak(e?.message||'No pude entenderte.')}finally{voice.processing=false}}
   function stopVoice(){voice.session++;clearTimeout(voice.timer);clearTimeout(voice.restartTimer);try{voice.recognition?.stop()}catch{}try{voice.recorder?.stop()}catch{}voice.recognition=null;voice.recorder=null;voice.listening=false;voice.processing=false;if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null}try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;setVoice('off','Micrófono inactivo')}
   function toggle(force){
-    open=force===undefined?!open:force;
+    const next=force===undefined?!open:Boolean(force);
+    open=next;
+    panel.classList.toggle('show',open);
+    panel.setAttribute('aria-hidden',open?'false':'true');
     if(open){
-      panel.classList.add('show');
-      panel.hidden=false;
-      panel.style.setProperty('display','flex','important');
-      panel.style.setProperty('visibility','visible','important');
-      panel.style.setProperty('opacity','1','important');
       if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
-      startVoice();
-      setTimeout(()=>input.focus(),60);
+      render(); startVoice(); setTimeout(()=>input.focus(),50);
     }else{
-      panel.classList.remove('show');
-      panel.hidden=true;
-      panel.style.setProperty('display','none','important');
       stopVoice();
     }
   }
-  function openPanelFromUserGesture(e){
-    if(e){e.preventDefault();e.stopPropagation();}
-    toggle(true);
-  }
-  orb.addEventListener('pointerdown',openPanelFromUserGesture,{passive:false});
-  orb.addEventListener('click',openPanelFromUserGesture);
-  root.querySelector('.sifer-ai-close').addEventListener('click',()=>toggle(false));
+  orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(true);});
+  root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(false);});
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
   function buildReadOnlyData(){
