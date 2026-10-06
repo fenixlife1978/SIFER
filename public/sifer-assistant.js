@@ -8,15 +8,17 @@
   let busy = false;
 
   const css = `
-  #sifer-ai-root{position:fixed;right:18px;bottom:28px;z-index:90;font-family:Arial,Helvetica,sans-serif}
-  #sifer-ai-orb{width:72px;height:72px;border-radius:50%;border:1px solid rgba(75,190,255,.75);background:radial-gradient(circle at 50% 45%,rgba(160,235,255,.95) 0 7%,rgba(37,160,255,.38) 18%,rgba(0,77,150,.20) 42%,transparent 68%),rgba(0,20,45,.86);box-shadow:0 0 10px rgba(0,183,255,.75),0 0 28px rgba(0,130,255,.42),inset 0 0 22px rgba(105,225,255,.5);cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#dff8ff;font-weight:800;letter-spacing:.08em;font-size:10px}
-  #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;inset:7px;border:1px solid rgba(90,210,255,.35);border-radius:50%;animation:siferOrbit 5s linear infinite}
-  #sifer-ai-orb:after{inset:15px;border-color:rgba(140,235,255,.28);animation-duration:3.2s;animation-direction:reverse}
-  #sifer-ai-orb .sifer-core{width:18px;height:18px;border-radius:50%;background:#d8fbff;box-shadow:0 0 8px #fff,0 0 22px #28cfff,0 0 38px #0789ff;z-index:2;animation:siferPulse 1.8s ease-in-out infinite}
-  #sifer-ai-orb .sifer-p{position:absolute;width:3px;height:3px;border-radius:50%;background:#8feaff;box-shadow:0 0 7px #22bfff;animation:siferFloat 2.4s ease-in-out infinite}
-  #sifer-ai-orb .p1{left:16px;top:25px}.p2{right:13px;top:19px;animation-delay:.4s}.p3{right:18px;bottom:19px;animation-delay:.8s}.p4{left:13px;bottom:22px;animation-delay:1.1s}.p5{left:32px;top:10px;animation-delay:1.5s}
-  #sifer-ai-orb.active{box-shadow:0 0 15px rgba(75,210,255,.95),0 0 45px rgba(0,140,255,.65),inset 0 0 30px rgba(105,225,255,.65)}
-  #sifer-ai-orb.active .sifer-core{animation:siferPulse .7s ease-in-out infinite}
+  #sifer-ai-root{position:fixed;right:12px;bottom:20px;z-index:9999;font-family:Arial,Helvetica,sans-serif}
+  /* SIFER holographic core: transparent field only, no circular container. */
+  #sifer-ai-orb{width:104px;height:104px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;cursor:pointer;position:relative;overflow:visible;display:block;color:transparent;appearance:none;-webkit-appearance:none;outline:none}
+  #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:30px;margin:-15px 0 0 -43px;border:1px solid rgba(67,202,255,.22);border-radius:50%;filter:blur(.2px);animation:siferOrbit 4.8s linear infinite;transform-origin:center}
+  #sifer-ai-orb:after{width:58px;height:20px;margin:-10px 0 0 -29px;border-color:rgba(150,238,255,.18);animation-duration:3.1s;animation-direction:reverse}
+  #sifer-ai-orb .sifer-core{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#e9fdff;box-shadow:0 0 5px #fff,0 0 13px #54dcff,0 0 28px rgba(0,148,255,.95);z-index:5;animation:siferPulse 1.6s ease-in-out infinite}
+  #sifer-ai-orb .sifer-p{position:absolute;width:2px;height:2px;border-radius:50%;background:#a7efff;box-shadow:0 0 5px #2acbff,0 0 9px rgba(30,171,255,.65);animation:siferFloat 2.4s ease-in-out infinite}
+  #sifer-ai-orb .p1{left:18px;top:48px}.p2{left:29px;top:27px;animation-delay:.3s}.p3{right:18px;top:39px;animation-delay:.7s}.p4{right:27px;bottom:24px;animation-delay:1s}.p5{left:45px;top:10px;animation-delay:1.4s}
+  #sifer-ai-orb.active:before{border-color:rgba(100,225,255,.55);box-shadow:0 0 12px rgba(0,177,255,.35)}
+  #sifer-ai-orb.active .sifer-core{animation:siferPulse .65s ease-in-out infinite}
+  #sifer-ai-orb.active .sifer-p{animation-duration:1.15s;box-shadow:0 0 7px #39d8ff,0 0 15px rgba(30,171,255,.85)}
   #sifer-ai-panel{position:absolute;right:0;bottom:84px;width:min(410px,calc(100vw - 28px));height:min(600px,calc(100vh - 120px));background:linear-gradient(145deg,rgba(4,18,34,.98),rgba(1,10,22,.98));border:1px solid rgba(55,184,255,.48);border-radius:14px;box-shadow:0 0 30px rgba(0,115,220,.32),0 18px 60px rgba(0,0,0,.48);display:none;overflow:hidden;color:#e8f8ff;backdrop-filter:blur(12px)}
   #sifer-ai-panel.show{display:flex;flex-direction:column}
   .sifer-ai-head{height:68px;display:flex;align-items:center;gap:11px;padding:10px 13px;border-bottom:1px solid rgba(83,185,255,.2);background:linear-gradient(90deg,rgba(0,92,170,.16),transparent)}
@@ -36,7 +38,7 @@
   @keyframes siferOrbit{to{transform:rotate(360deg) scaleX(.72)}}
   @keyframes siferPulse{0%,100%{transform:scale(.78);opacity:.85}50%{transform:scale(1.18);opacity:1}}
   @keyframes siferFloat{0%,100%{transform:translate(0,0);opacity:.45}50%{transform:translate(4px,-7px);opacity:1}}
-  @media(max-width:700px){#sifer-ai-root{right:10px;bottom:22px}#sifer-ai-orb{width:62px;height:62px}#sifer-ai-panel{bottom:72px;height:min(560px,calc(100vh - 105px))}}
+  @media(max-width:700px){#sifer-ai-root{right:2px;bottom:12px}#sifer-ai-orb{width:86px;height:86px}#sifer-ai-orb:before{width:72px;margin-left:-36px}#sifer-ai-orb:after{width:48px;margin-left:-24px}#sifer-ai-panel{bottom:78px;height:min(560px,calc(100vh - 105px))}}
   `;
   const style=document.createElement('style'); style.id='sifer-ai-style'; style.textContent=css; document.head.appendChild(style);
 
@@ -57,7 +59,6 @@
     </div>
     <button id="sifer-ai-orb" title="Abrir SIFER">
       <i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i><i class="sifer-p p4"></i><i class="sifer-p p5"></i>
-      <span>SIFER</span>
     </button>`;
   document.body.appendChild(root);
 
