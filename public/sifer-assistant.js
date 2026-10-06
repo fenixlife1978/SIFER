@@ -235,7 +235,7 @@
       case 'navigate': {
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
         const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
-        if(typeof go!=='function') throw new Error('Navegación no disponible'); go(target); return {ok:true,message:'Módulo abierto: '+target};
+        const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); return {ok:true,message:'Módulo abierto: '+target};
       }
       case 'add_to_cart': if(typeof addToCart!=='function') throw new Error('Carrito no disponible'); addToCart(String(args.id||''),args.type==='repuesto'?'repuesto':'producto'); return {ok:true,message:'Artículo agregado al carrito'};
       case 'remove_cart_line': if(typeof selected!=='undefined') selected=Number(args.index); if(typeof removeCart!=='function') throw new Error('Carrito no disponible'); removeCart(); return {ok:true,message:'Línea eliminada del carrito'};
@@ -312,27 +312,28 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
-    if(/^(abre|abrir|ir|ve|vamos|lleva|entra|muestr).*(pos|punto de venta|ventas)/.test(q)) return {name:'navigate',args:{view:'pos'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(inventario|productos)/.test(q)) return {name:'navigate',args:{view:'productos'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(compras|compra)/.test(q)) return {name:'navigate',args:{view:'compras'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(clientes|cliente)/.test(q)) return {name:'navigate',args:{view:'clientes'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(proveedores|proveedor)/.test(q)) return {name:'navigate',args:{view:'proveedores'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(cuentas por cobrar|cxc)/.test(q)) return {name:'navigate',args:{view:'cxc'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(cuentas por pagar|cxp)/.test(q)) return {name:'navigate',args:{view:'cxp'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(caja|cortes|corte)/.test(q)) return {name:'navigate',args:{view:'caja'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(pedidos|pedido)/.test(q)) return {name:'navigate',args:{view:'pedidos'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(presupuesto|cotizacion)/.test(q)) return {name:'navigate',args:{view:'presupuestos'}};
-    if(/^(abre|ir|ve|vamos|muestr).*(configuracion|configuracion)/.test(q)) return {name:'navigate',args:{view:'config'}};
+    const actionPrefix='(?:.*?)(?:abre|abrir|ir|ve|vamos|lleva|entra|muestra|mostrar|muestr)';
+    if(new RegExp(actionPrefix+'.*(pos|punto de venta|ventas)').test(q)) return {name:'navigate',args:{view:'pos'}};
+    if(new RegExp(actionPrefix+'.*(inventario|productos|product|inventarii)').test(q)) return {name:'navigate',args:{view:'productos'}};
+    if(new RegExp(actionPrefix+'.*(compras|compra)').test(q)) return {name:'navigate',args:{view:'compras'}};
+    if(new RegExp(actionPrefix+'.*(clientes|cliente)').test(q)) return {name:'navigate',args:{view:'clientes'}};
+    if(new RegExp(actionPrefix+'.*(proveedores|proveedor)').test(q)) return {name:'navigate',args:{view:'proveedores'}};
+    if(new RegExp(actionPrefix+'.*(cuentas por cobrar|cxc)').test(q)) return {name:'navigate',args:{view:'cxc'}};
+    if(new RegExp(actionPrefix+'.*(cuentas por pagar|cxp)').test(q)) return {name:'navigate',args:{view:'cxp'}};
+    if(new RegExp(actionPrefix+'.*(caja|cortes|corte)').test(q)) return {name:'navigate',args:{view:'caja'}};
+    if(new RegExp(actionPrefix+'.*(pedidos|pedido)').test(q)) return {name:'navigate',args:{view:'pedidos'}};
+    if(new RegExp(actionPrefix+'.*(presupuesto|cotizacion)').test(q)) return {name:'navigate',args:{view:'presupuestos'}};
+    if(new RegExp(actionPrefix+'.*(configuracion|config)').test(q)) return {name:'navigate',args:{view:'config'}};
     if(/nuevo (cliente|clientes)|crear (cliente|clientes)|abre(r)? (cliente|clientes)/.test(q)) return {name:'open_customer',args:{}};
     if(/nuevo (proveedor|proveedores)|crear (proveedor|proveedores)|abre(r)? (proveedor|proveedores)/.test(q)) return {name:'open_supplier',args:{}};
     if(/nuevo pedido|crear pedido/.test(q)) return {name:'new_order',args:{}};
-    if(/nuevo presupuesto|nuevo presupuesto|crear presupuesto|nueva cotizacion|crear cotizacion/.test(q)) return {name:'open_quote',args:{}};
+    if(/nuevo presupuesto|crear presupuesto|nueva cotizacion|crear cotizacion/.test(q)) return {name:'open_quote',args:{}};
     if(/tasa bcv|tipo de cambio|cotizacion bcv|dolar bcv/.test(q)) return {name:'open_bcv',args:{}};
     if(/(cobro|pago).*(cxc|cuenta por cobrar|cliente)/.test(q)) { const m=q.match(/(?:cobro|pago).*?(?:cxc|cuenta por cobrar|cliente)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxc',query:(m?.[1]||'').trim()}}; }
     if(/(pago|pagar).*(cxp|cuenta por pagar|proveedor)/.test(q)) { const m=q.match(/(?:pago|pagar).*?(?:cxp|cuenta por pagar|proveedor)\s*(.*)$/); return {name:'open_account_payment',args:{type:'cxp',query:(m?.[1]||'').trim()}}; }
     if(/selecciona|seleccionar|usa|usar|asigna.*cliente/.test(q)) { const m=q.match(/(?:selecciona|seleccionar|usa|usar|asigna.*cliente)\s+(?:el\s+cliente\s+)?(.+)$/); if(m?.[1]) return {name:'select_customer',args:{query:m[1]}}; }
     if(/descuento/.test(q)&&/carrito|articulo|linea|producto/.test(q)) { const m=q.match(/(\d+(?:\.\d+)?)\s*%/); if(m) return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'}; }
-    if(/(devolucion|devolución|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
+    if(/(devolucion|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
@@ -346,7 +347,7 @@
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
     if(/(agrega|añade|mete|pon).*(al carrito|carrito)/.test(q)){
-      const clean=q.replace(/.*?(agrega|añade|mete|pon)\\s+/,'').replace(/\\s+(al carrito|carrito).*$/,'').trim();
+      const clean=q.replace(/.*?(agrega|añade|mete|pon)\s+/,'').replace(/\s+(al carrito|carrito).*$/,'').trim();
       const p=findProductForCommand(clean);
       if(p)return {name:'add_to_cart',args:{id:p.id,type:(p.sku&&!p.codigo?'repuesto':'producto')}};
     }
