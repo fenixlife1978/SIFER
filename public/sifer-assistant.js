@@ -139,8 +139,11 @@
   }
 
   async function ask(text){
+    const command=extractWakeWord(text);
+    if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
+    if(!command){ status.textContent='Dime qué necesitas después de “SIFER”.'; setTimeout(()=>{if(!busy)status.textContent='';},2200); return; }
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
-    const userMsg={role:'user',text}; messages.push(userMsg); render();
+    const userMsg={role:'user',text:'SIFER, '+command}; messages.push(userMsg); render();
     const aiIndex=messages.push({role:'assistant',text:''})-1; render();
     try{
       const readOnlyData=buildReadOnlyData();

@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SIFER360 — POS Automotriz</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<script src="/offline_sync.js"></script>
+<style>
+:root{--blue:#0b63ce;--line:#c9c9c9;--soft:#f4f4f4;--cream:#f7f0dc;--green:#13b67a;--red:#ef6b70;--text:#222;--nav:#063b70}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#d1d1d1}
+button,input,select,textarea{font:inherit}button{cursor:pointer}#viewport{position:fixed;inset:0;overflow:hidden;background:#d1d1d1}
+#stage{position:absolute;inset:0;width:100vw;height:100vh}.app{width:100%;height:100%;display:flex;flex-direction:column;background:#fff;overflow:hidden}
+.titlebar{height:31px;flex:0 0 31px;background:linear-gradient(#fafafa,#e7e7e7);border-bottom:1px solid #aaa;display:flex;align-items:center;padding:0 9px;font-size:12px}.dot{width:9px;height:9px;background:#673ab7;border-radius:50%;margin-right:7px}.window-actions{margin-left:auto;display:flex;align-items:center;gap:6px;color:#666}
+.fs-btn{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(#fff,#ececec);border:1px solid #b8b8b8;padding:2px 7px;font-size:10px;font-weight:700;color:#0b4f85;border-radius:3px;cursor:pointer;line-height:1.2}.fs-btn:hover{background:#e0efff;border-color:#0873d1;color:#053860}.win-icon{cursor:pointer;padding:1px 5px;border-radius:3px}.win-icon:hover{background:#ddd;color:#111}
+.menubar{display:flex;height:25px;background:linear-gradient(#fafafa,#e5e5e5);border-bottom:1px solid #aaa;align-items:center;padding:0 6px;gap:2px;font-size:11px}
+.modulebar{height:52px;flex:0 0 52px;display:flex;align-items:stretch;gap:4px;padding:4px 6px;background:#e9e9e9;border-bottom:1px solid #aaa;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;white-space:nowrap}.modulebar::-webkit-scrollbar{height:7px}.modulebar::-webkit-scrollbar-thumb{background:#aaa}.module{flex:0 0 auto;min-width:92px;border:1px solid #bdbdbd;background:linear-gradient(#fff,#e8e8e8);font-size:10px;font-weight:700;padding:0 10px;display:flex;align-items:center;justify-content:center;gap:5px}.module.active{background:#0b67c8;color:#fff;border-color:#0757a8}.module .mi{font-family:"Segoe UI Emoji","Segoe UI Symbol",Arial,sans-serif;font-size:17px;line-height:1;font-variant-emoji:emoji}.toolbar{height:64px;flex:0 0 64px;background:#ededed;border-bottom:1px solid #aaa;padding:5px 6px;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}.toolbar::-webkit-scrollbar{height:6px}.toolbar::-webkit-scrollbar-thumb{background:#aaa}.tool{height:53px;min-width:82px;flex:0 0 82px;border:1px solid #c8c8c8;background:linear-gradient(#fff,#eee);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#222;font-weight:700;font-size:10px;text-align:center;box-shadow:inset 0 1px #fff}.tool.cream{background:linear-gradient(#fffdf5,#eee4c9)}.tool .ico{font-family:"Segoe UI Emoji","Segoe UI Symbol",Arial,sans-serif;font-size:18px;color:#087bc2;line-height:1;font-variant-emoji:emoji}.tool.green .ico{color:#0aa77a}.tool.red{background:linear-gradient(#fff0f0,#f2b3b7)}.tool.active{outline:2px solid #0873d1;outline-offset:-2px}
+.main{flex:1;height:100%;overflow:auto;background:#fff;padding:8px}
+.pagehead{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #bbb;padding:4px 2px 8px;margin-bottom:9px}.pagehead h2{margin:0;font-size:18px}.pagehead .sub{font-size:11px;color:#666}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px}.card{border:1px solid #ccc;background:#fafafa;padding:9px}.card b{display:block;font-size:20px;margin-top:5px}.card span{font-size:11px;color:#666}
+.panel{border:1px solid #ccc;background:#fff;margin-bottom:10px}.panelhead{background:linear-gradient(#fff,#e8e8e8);border-bottom:1px solid #ccc;padding:7px 9px;font-size:12px;font-weight:700}.panelbody{padding:9px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;background:linear-gradient(#fff,#e8e8e8);border:1px solid #d0d0d0;text-align:left;padding:5px;font-weight:700}td{height:31px;border:1px solid #e2e2e2;padding:5px}td.num{text-align:right}.clickrow:hover{background:#eef6ff}.badge{display:inline-block;padding:3px 7px;border-radius:10px;font-size:10px;background:#e9eef5}.ok{background:#d9f4e9;color:#087c58}.warn{background:#fff1c7;color:#855f00}.bad{background:#ffd9dc;color:#9a2028}
+.actions{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}.btn{border:1px solid #aaa;background:linear-gradient(#fff,#eee);padding:7px 11px;font-weight:700;font-size:11px}.btn.primary{background:#0873d1;color:#fff;border-color:#075da8}.btn.green{background:#16ae7d;color:#fff}.btn.danger{background:#ef6b70;color:#fff}.btn.cream{background:#eee4c9}
+.searchbar{display:flex;gap:6px;margin-bottom:8px}.searchbar input{flex:1;padding:8px;border:1px solid #aaa}
+.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.field label{display:block;font-size:11px;font-weight:700;margin-bottom:3px}.field input,.field select,.field textarea{width:100%;padding:7px;border:1px solid #aaa;background:#fff}.field textarea{min-height:65px;resize:vertical}.full{grid-column:1/-1}
+.posscreen{width:100%;height:100%;display:flex;flex-direction:column;background:#fff;min-height:0}.posheadline{height:27px;flex:0 0 27px;border:1px solid #bbb;background:linear-gradient(#fff,#eee);display:flex;align-items:center;justify-content:space-between;padding:0 7px;font-size:10px}.posscreen .posgrid{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:0;flex:1;min-height:0}.posleft{min-width:0;display:flex;flex-direction:column}.posscreen .postable{height:auto;flex:1;overflow:auto}.posscreen table{font-size:10px}.posscreen th{height:26px;padding:3px}.posscreen td{height:27px;padding:3px}.posscreen tr.selected{background:#0867d1;color:#fff}.emptypos{text-align:center;padding:20px!important;color:#666}.posbottom{height:88px;display:grid;grid-template-columns:145px 1fr 125px;gap:5px;border-top:1px solid #bbb;padding:5px;background:#fff}.stockbox{border:1px solid #ccc;overflow:hidden}.stockbox table{font-size:9px}.stockbox th,.stockbox td{height:19px;padding:2px}.posactions{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.posactions button{border:1px solid #bbb;background:linear-gradient(#fff,#eee);font-size:10px;font-weight:700}.posactions .danger{background:linear-gradient(#fff0f0,#efb2b5)}.postotal{background:#050505;color:#00f02b;font-size:23px;font-weight:800;display:flex;align-items:center;justify-content:flex-end;padding:5px}.possummary{height:42px;display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #bbb;background:#f5f5f5}.possummary div{text-align:center;border-right:1px solid #ddd;font-size:9px;padding:3px}.possummary b{display:block;font-size:11px;margin-top:2px}.posside{width:78px!important;border-left:1px solid #aaa;background:#f2f2f2;padding:3px;display:flex;flex-direction:column;gap:3px;overflow:auto}.posside button{min-height:43px!important;height:43px;border:1px solid #bbb;background:linear-gradient(#fff,#eee);font-size:8px!important;font-weight:700;padding:2px}.posside .pay{background:linear-gradient(#a8f0d9,#20a979);color:#fff}.statusbar{height:18px;flex:0 0 18px}.posgrid{display:grid;grid-template-columns:1fr 105px;gap:8px}.postable{height:360px;overflow:auto}.posside{border-left:1px solid #aaa;background:#f5f5f5;padding:5px;display:flex;flex-direction:column;gap:6px}.posside button{min-height:52px;border:1px solid #bbb;background:linear-gradient(#fff,#eee);font-size:11px;font-weight:700}.posside .pay{background:linear-gradient(#a8f0d9,#20a979);color:#fff}.totalbox{background:#030303;color:#14f238;font-size:27px;font-weight:800;padding:9px;text-align:right;margin-top:7px}.possummary{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #ccc;margin-top:6px}.possummary div{text-align:center;padding:5px;border-right:1px solid #ddd;font-size:10px}.possummary b{display:block;font-size:14px;margin-top:3px}
+.statusbar{height:18px;flex:0 0 18px;border-top:1px solid #aaa;background:#eee;font-size:10px;color:#555;padding:3px 7px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);display:none;align-items:flex-start;justify-content:center;padding-top:55px;z-index:20}.modal-backdrop.show{display:flex}.modal{width:min(700px,calc(100vw - 25px));max-height:620px;overflow:auto;background:#fff;border:1px solid #888;box-shadow:0 8px 25px #333}.modalhead{height:40px;background:linear-gradient(#fafafa,#e7e7e7);border-bottom:1px solid #bbb;display:flex;align-items:center;padding:0 12px;font-weight:700}.modalhead button{margin-left:auto;border:0;background:transparent;font-size:20px}.modalbody{padding:12px}.modalfoot{display:flex;justify-content:flex-end;gap:7px;padding:9px;border-top:1px solid #ddd}.toast{position:fixed;right:15px;bottom:15px;background:#222;color:#fff;padding:11px 15px;border-radius:4px;display:none;z-index:50;font-size:12px}.toast.show{display:block}
+@media(max-width:700px){.modal-backdrop{padding-top:20px}}
+@media print {
+  body { background: #fff !important; }
+  body > *:not(#thermal-print-area) { display: none !important; }
+  #thermal-print-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 76mm;
+    max-width: 76mm;
+    margin: 0;
+    padding: 2mm;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    font-size: 11px;
+    color: #000;
+    background: #fff;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0mm;
+  }
+}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage"><div class="app">
+<div class="titlebar"><span class="dot"></span>SIFER360 — POS Automotriz — <span id="windowTitle">Inicio</span><div class="window-actions"><button id="btnFullscreen" class="fs-btn" title="Activar modo pantalla completa" onclick="toggleFullScreen()">⛶ Pantalla Completa</button><span class="win-icon" onclick="toast('Ventana minimizada')" title="Minimizar">—</span><span class="win-icon" onclick="toggleFullScreen()" title="Maximizar / Restaurar">□</span><span class="win-icon" onclick="toast('Ventana SIFER360')" title="Cerrar">×</span></div></div>
+<div class="menubar" id="menubar"></div>
+<main class="main" id="main"></main>
+<div class="statusbar" id="statusbar">Usuario: Administrador · Sistema listo · <span id="syncStatus">🟢 En línea</span> · Operación offline disponible</div>
+</div></div></div>
+<div class="modal-backdrop" id="modal"><div class="modal"><div class="modalhead"><span id="modalTitle"></span><button onclick="closeModal()">×</button></div><div class="modalbody" id="modalBody"></div><div class="modalfoot" id="modalFoot"></div></div></div>
+<div class="toast" id="toast"></div>
+<div id="thermal-print-area" style="display:none"></div>
+<script src="/repuestos.js"></script>
+<script src="/master_catalog.js"></script>
+<script>
+const KEY='sifer360_v1';
+const seed={
+config:{empresa:'SIFER 360',moneda:'USD',impuesto:7,bcv:{rate:814.6908,effectiveDate:'2026-09-08',updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json',status:'demo'},bcvHistory:[{effectiveDate:'2026-09-08',rate:814.6908,updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json'},{effectiveDate:'2026-09-07',rate:813.7361,updatedAt:'2026-09-07T19:33:57-04:00',source:'https://bcv.today/api/v1/rate.json'}]},
+productos:[
+{id:'PR-001',codigo:'750001',nombre:'Taladro inalámbrico 20V',categoria:'Herramientas',marca:'ProTool',unidad:'Unidad',costo:75,precio:129.99,stock:18,min:5,imagen:'/images/prod_taladro_inalambrico_1791152564948.jpg'},
+{id:'PR-002',codigo:'750002',nombre:'Guantes de seguridad reforzados',categoria:'Seguridad',marca:'SafePro',unidad:'Par',costo:8,precio:14.99,stock:45,min:10,imagen:'/images/prod_guantes_seguridad_1791152574833.jpg'},
+{id:'PR-003',codigo:'750003',nombre:'Tornillo hexagonal 1/4 x 2"',categoria:'Tornillería',marca:'Sifer',unidad:'Caja',costo:18,precio:32.5,stock:12,min:4,imagen:'/images/prod_tornillo_hexagonal_1791152584594.jpg'},
+{id:'PR-004',codigo:'750004',nombre:'Pintura acrílica blanca 1 galón',categoria:'Pinturas',marca:'ColorMax',unidad:'Galón',costo:22,precio:39.95,stock:7,min:3,imagen:'/images/prod_pintura_galon_1791152594128.jpg'},
+{id:'PR-005',codigo:'750005',nombre:'Cemento gris 42.5 kg',categoria:'Construcción',marca:'Andino',unidad:'Saco',costo:7.5,precio:11.95,stock:50,min:12,imagen:'/images/prod_cemento_saco_1791152604023.jpg'},
+{id:'PR-006',codigo:'750006',nombre:'Cable eléctrico 12 AWG',categoria:'Electricidad',marca:'ElectroMax',unidad:'Rollo',costo:42,precio:69.9,stock:9,min:3,imagen:'/images/prod_cable_electrico_1791152613266.jpg'}
+],
+clientes:[{id:'CL-001',nombre:'Constructora Central',documento:'J-00000001',telefono:'555-0101',email:'compras@constructora.local',direccion:'Av. Principal 100',limite:5000,saldo:0}],
+proveedores:[{id:'PV-001',nombre:'Distribuidora Ferretera Nacional',documento:'J-10000001',telefono:'555-0202',email:'ventas@distribuidora.local',direccion:'Zona Industrial',saldo:0}],
+ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],pedidos:[],usuarios:[{id:'USR-001',nombre:'Administrador',rol:'Administrador',activo:true}],cajas:[{id:'CAJA-01',nombre:'Caja 1',abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1}],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},terminalId:'CAJA-01',usuarioActualId:'USR-001',seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7,pedido:1,usuario:2,caja:2}
+};
+let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false; let activeOrderId=null;
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);d.cajas=Array.isArray(d.cajas)&&d.cajas.length?d.cajas:[structuredClone(seed.cajas[0])];d.terminalId=d.terminalId||'CAJA-01';d.usuarioActualId=d.usuarioActualId||'USR-001';d.usuarios=Array.isArray(d.usuarios)&&d.usuarios.length?d.usuarios:structuredClone(seed.usuarios);d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
+function save(reason='db-save'){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,reason).catch(()=>{});}
+window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
+function cajaActual(){if(!Array.isArray(db.cajas)||!db.cajas.length)db.cajas=structuredClone(seed.cajas);let c=db.cajas.find(x=>x.id===db.terminalId);if(!c){c=structuredClone(db.cajas[0]);db.terminalId=c.id}return c}
+function usuarioActual(){return (db.usuarios||[]).find(x=>x.id===db.usuarioActualId)||db.usuarios?.[0]||{nombre:'Administrador',rol:'Administrador'}}
+async function reserveDocumentNumber(kind){
+  const c=cajaActual(),fallback=()=>kind==='DEV'?'DEV-'+String(c.seqDevolucion++).padStart(5,'0'):kind==='Z'?'Z-'+String(c.seqZ++).padStart(5,'0'):'VTA-'+String(c.seqVenta++).padStart(5,'0');
+  if(!navigator.onLine)return fallback();
+  try{
+    const r=await fetch('/api/turso-sequence',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cajaId:c.id,tipo:kind})});
+    const data=await r.json();
+    if(!r.ok||!data.ok)throw new Error(data.error||'No se pudo reservar numeración');
+    return data.documento;
+  }catch(e){
+    toast('Turso no disponible: se usará numeración local para esta operación');
+    return fallback();
+  }
+}
+function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
+function id(prefix,key){let n=db.seq[key]++;return prefix+'-'+String(n).padStart(5,'0')}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),1900)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function fmt(d=new Date()){return d.toLocaleString('es-ES')}
+function fmtDate(d){if(!d)return '—';try{return new Date(d+'T00:00:00').toLocaleDateString('es-VE')}catch(e){return d}}
+function fmtRate(n){return Number(n||0).toLocaleString('es-VE',{minimumFractionDigits:4,maximumFractionDigits:8})}
+function bcvData(){return db.config.bcv||{rate:0,effectiveDate:null,updatedAt:null,source:'https://bcv.today/api/v1/rate.json',status:'sin datos',autoSaved:true}}
+function bcvSource(){return 'https://bcv.today/api/v1/rate.json'}
+function bcvFallbackSource(){return 'https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv'}
+function bcvHistory(){if(!Array.isArray(db.config.bcvHistory))db.config.bcvHistory=[];return db.config.bcvHistory}
+
+function ensureBCVHistory(customEntry=null){
+  const b=bcvData(), h=bcvHistory();
+  const entry = customEntry || (b.rate && b.effectiveDate ? {
+    effectiveDate: b.effectiveDate,
+    rate: Number(b.rate),
+    updatedAt: b.updatedAt || new Date().toISOString(),
+    source: b.source || bcvSource(),
+    tipo: b.status === 'live' ? '⚡ Auto-Guardado Diario' : '💾 Guardado Local'
+  } : null);
+
+  if(!entry || !entry.rate || !entry.effectiveDate) return;
+
+  const idx = h.findIndex(x => x.effectiveDate === entry.effectiveDate);
+  if(idx >= 0){
+    h[idx] = {...h[idx], ...entry};
+  } else {
+    h.unshift(entry);
+  }
+
+  // Ordenar cronológicamente descendente
+  h.sort((a,b) => new Date(b.effectiveDate || 0).getTime() - new Date(a.effectiveDate || 0).getTime());
+
+  // Calcular variaciones porcentuales diarias
+  for(let i=0; i<h.length; i++){
+    if(i < h.length - 1 && h[i+1]?.rate){
+      const prev = Number(h[i+1].rate);
+      const curr = Number(h[i].rate);
+      const diff = ((curr - prev) / prev) * 100;
+      h[i].variacion = diff;
+    } else {
+      h[i].variacion = 0;
+    }
+  }
+
+  db.config.bcvHistory = h.slice(0, 365);
+}
+
+function bcvPanel(){
+  const b=bcvData();
+  const h=bcvHistory();
+  const todayEntry = h.find(x => x.effectiveDate === b.effectiveDate);
+  const varPct = todayEntry?.variacion || 0;
+  const varColor = varPct > 0 ? '#cf1322' : (varPct < 0 ? '#389e0d' : '#555');
+  const varSign = varPct > 0 ? '▲ +' : (varPct < 0 ? '▼ ' : '');
+
+  return `<div class="panel"><div class="panelhead" style="display:flex;justify-content:space-between;align-items:center">
+    <span>Control de Tasa BCV Oficial y Auto-Guardado Diario</span>
+    <span class="badge ok" style="font-size:10px;padding:3px 8px">🟢 Auto-guardado diario activo (${h.length} días)</span>
+  </div><div class="panelbody"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap"><div>
+    <div style="font-size:11px;color:#666;text-transform:uppercase">Tasa BCV vigente consultada</div>
+    <div style="font-size:28px;font-weight:800;color:#0b4f85;margin:3px 0">${fmtRate(b.rate)} <span style="font-size:15px;color:#555">Bs/USD</span>
+      ${varPct !== 0 ? `<span style="font-size:13px;font-weight:bold;color:${varColor};margin-left:6px">${varSign}${varPct.toFixed(2)}%</span>` : ''}
+    </div>
+    <div style="font-size:11px;color:#444">Fecha Valor: <b>${fmtDate(b.effectiveDate)}</b> · Captura automática: <b>${b.updatedAt?fmt(new Date(b.updatedAt)):'—'}</b></div>
+    <div style="font-size:10px;color:#777;margin-top:2px">Sincronización diaria automática programada cada 15 min · Registrado en base histórica local</div>
+  </div><div class="actions" style="margin:0;display:flex;gap:6px;align-items:center">
+    <button class="btn primary" onclick="updateBCVRate()">↻ Sincronizar BCV</button>
+    <button class="btn" onclick="showBCVHistory()">📜 Ver Histórico Diario</button>
+  </div></div></div></div>`;
+}
+
+function showBCVHistory(){
+  ensureBCVHistory();
+  const h=bcvHistory();
+  openModal('📜 Histórico de Tasas Diarias BCV Guardadas Automáticamente', `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f5f8fb;padding:8px 10px;border:1px solid #d0dbe8;border-radius:4px;margin-bottom:8px">
+      <div style="font-size:11px;color:#333">
+        <b>Registro histórico permanente:</b> ${h.length} días almacenados localmente de forma automática.
+      </div>
+      <button class="btn" style="font-size:10px;padding:4px 8px" onclick="downloadBCVHistoryCSV()">📥 Exportar Histórico (CSV)</button>
+    </div>
+    <div style="max-height:360px;overflow-y:auto;border:1px solid #ddd;border-radius:3px">
+      <table style="width:100%;font-size:11px">
+        <thead>
+          <tr>
+            <th>Fecha Valor</th>
+            <th>Tasa Oficial (Bs/USD)</th>
+            <th>Variación Diaria</th>
+            <th>Modo de Guardado</th>
+            <th>Hora de Registro</th>
+            <th>Fuente</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${h.map(x => {
+            const v = Number(x.variacion) || 0;
+            const vColor = v > 0 ? '#cf1322' : (v < 0 ? '#389e0d' : '#777');
+            const vSign = v > 0 ? '▲ +' : (v < 0 ? '▼ ' : '');
+            return `<tr>
+              <td><b>${fmtDate(x.effectiveDate)}</b></td>
+              <td style="font-family:monospace;font-size:12px;font-weight:bold;color:#0b4f85">${fmtRate(x.rate)}</td>
+              <td style="font-weight:bold;color:${vColor}">${v !== 0 ? `${vSign}${v.toFixed(2)}%` : '0.00%'}</td>
+              <td><span class="badge ${x.tipo?.includes('Auto')?'ok':'cream'}" style="font-size:9px">${esc(x.tipo || '⚡ Auto-Guardado Diario')}</span></td>
+              <td style="font-size:10px;color:#555">${x.updatedAt ? fmt(new Date(x.updatedAt)) : '—'}</td>
+              <td style="font-size:9px;color:#777">${esc(x.source || 'BCV API')}</td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px">No hay histórico registrado.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `, `<button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="updateBCVRate(false)">↻ Actualizar Ahora</button>`);
+}
+
+function downloadBCVHistoryCSV(){
+  const h = bcvHistory();
+  if(!h.length) return toast('No hay histórico para exportar');
+  let csv = 'Fecha_Valor,Tasa_VES_USD,Variacion_Porcentaje,Tipo_Registro,Fecha_Hora_Captura,Fuente\n';
+  h.forEach(x => {
+    csv += `"${x.effectiveDate || ''}","${Number(x.rate || 0).toFixed(4)}","${(Number(x.variacion) || 0).toFixed(2)}%","${x.tipo || 'Auto'}","${x.updatedAt || ''}","${x.source || ''}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Historico_Tasas_BCV_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Histórico BCV descargado');
+}
+
+async function updateBCVRate(silent=false){
+  const b=bcvData();
+  try{
+    if(!silent) toast('Consultando y guardando tasa BCV oficial…');
+    let rate = 0;
+    let effectiveDate = new Date().toISOString().slice(0,10);
+    let captured = new Date().toISOString();
+    let sourceUsed = bcvSource();
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const r = await fetch(bcvSource(), { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeout);
+      if(r.ok) {
+        const data = await r.json();
+        rate = Number(data.USD);
+        effectiveDate = data.effective_date || data.date || effectiveDate;
+        captured = data.updated_at || captured;
+      }
+    } catch(errPrimary) {
+      // Intentar fallback si falla el principal
+      try {
+        const controller2 = new AbortController();
+        const timeout2 = setTimeout(() => controller2.abort(), 8000);
+        const r2 = await fetch(bcvFallbackSource(), { cache: 'no-store', signal: controller2.signal });
+        clearTimeout(timeout2);
+        if(r2.ok) {
+          const data2 = await r2.json();
+          rate = Number(data2?.monitors?.usd?.price || data2?.bcv?.price || 0);
+          effectiveDate = data2?.monitors?.usd?.last_update?.slice(0,10) || effectiveDate;
+          sourceUsed = bcvFallbackSource();
+        }
+      } catch(errSec) {
+        // Fallback handled below
+      }
+    }
+
+    if(!Number.isFinite(rate) || rate <= 0) {
+      throw new Error('Respuesta BCV inválida');
+    }
+
+    const changed = Number(b.rate) !== rate || b.effectiveDate !== effectiveDate;
+    db.config.bcv = {
+      rate,
+      effectiveDate,
+      updatedAt: captured,
+      source: sourceUsed,
+      status: 'live',
+      autoSaved: true
+    };
+
+    ensureBCVHistory({
+      effectiveDate,
+      rate,
+      updatedAt: captured,
+      source: sourceUsed,
+      tipo: '⚡ Auto-Guardado Diario'
+    });
+
+    save();
+    if(!silent) {
+      closeModal();
+      renderView();
+      toast(changed ? `Tasa BCV del día guardada: ${fmtRate(rate)} Bs/USD` : `Tasa BCV al día (${fmtRate(rate)} Bs/USD)`);
+    } else if(changed) {
+      renderView();
+    }
+  }catch(e){
+    db.config.bcv = {...b, status: 'offline'};
+    ensureBCVHistory();
+    save();
+    if(!silent) toast('No se pudo conectar con el servicio BCV. Se conserva la última tasa guardada.');
+  }
+}
+
+function maybeRefreshBCV(){
+  if(bcvRefreshInFlight) return;
+  const b=bcvData();
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const h = bcvHistory();
+  const hasToday = h.some(x => x.effectiveDate === todayStr || x.effectiveDate === b.effectiveDate);
+  const age = b.updatedAt ? Date.now() - new Date(b.updatedAt).getTime() : Infinity;
+
+  // Auto-guardar si no existe la tasa de hoy o si han pasado más de 30 minutos
+  if(!b.rate || !hasToday || age > 30 * 60 * 1000) {
+    bcvRefreshInFlight = true;
+    updateBCVRate(true).finally(() => { bcvRefreshInFlight = false; });
+  }
+}
+function navItems(){return [['inicio','🏠 Inicio'],['pos','🛒 Punto de Venta'],['master_catalog','📖 Catálogo Automotriz'],['repuestos','🚗 Repuestos'],['productos','📦 Inventario'],['compras','🛍️ Compras'],['clientes','👤 Clientes'],['proveedores','🏭 Proveedores'],['cxc','💰 CxC'],['cxp','💳 CxP'],['presupuestos','📋 Presupuestos'],['reportes','📊 Reportes'],['caja','🏦 Caja'],['config','⚙️ Configuración']]}
+function renderShell(){
+ document.getElementById('windowTitle').textContent=title(view);
+ const menus=[['Archivo',()=>menu('Sistema')],['Ventas',()=>menu('Ventas')],['Inventario',()=>go('productos')],['Compras',()=>menu('Compras')],['Cuentas',()=>menu('Cuentas')],['Contactos',()=>menu('Contactos')],['Reportes',()=>menu('Reportes')],['Sistema',()=>menu('Sistema')]];
+ document.getElementById('menubar').innerHTML=menus.map(m=>`<button style="background:none;border:none;padding:3px 7px;font-size:11px" onclick="(${m[1]})()">${m[0]}</button>`).join('');
+ const modules=navItems().concat([['pedidos','📝 Pedidos'],['usuarios','👥 Usuarios/Cajas']]);
+ document.getElementById('menubar').insertAdjacentHTML('afterend',
+   `<div class="modulebar">${modules.map(([k,l])=>{let parts=l.split(' ');let ico=parts.shift();return `<button class="module ${view===k?'active':''}" onclick="go('${k}')"><span class="mi">${ico}</span><span>${parts.join(' ')}</span></button>`}).join('')}</div>`
+ );
+ // Keep exactly one module bar after every rerender.
+ const bars=document.querySelectorAll('.modulebar'); if(bars.length>1) bars[0].remove();
+ // Se elimina la segunda toolbar de acciones duplicadas/inactivas.
+
+ renderView()
+}
+function toggleSaleCondition(){saleType=saleType==='contado'?'credito':'contado';renderView();toast('Condición: '+(saleType==='credito'?'Crédito':'Contado'))}
+async function refreshModuleData(){
+  try{
+    if(window.SiferOffline&&navigator.onLine){
+      await window.SiferOffline.syncPending();
+      await window.SiferOffline.pullProductsInventory();
+    }
+    await syncOrdersFromTurso();
+    db=load();
+    renderShell();
+    toast('Datos actualizados');
+  }catch(e){
+    db=load();renderShell();toast('Datos locales actualizados');
+  }
+}
+function saveSaleMeta(patch){
+  db.posMeta={...(db.posMeta||{}),...patch,updatedAt:new Date().toISOString()};
+  save('pos-meta');renderView();
+}
+function openDeliveryModal(){
+  const d=db.posMeta?.delivery||{};
+  openModal('Entrega de la venta',`<div class="formgrid">
+    <div class="field"><label>Fecha de entrega</label><input id="deliveryDate" type="date" value="${esc(d.fecha||new Date().toISOString().slice(0,10))}"></div>
+    <div class="field"><label>Estado</label><select id="deliveryStatus"><option ${d.estado==='Pendiente'?'selected':''}>Pendiente</option><option ${d.estado==='Programada'?'selected':''}>Programada</option><option ${d.estado==='Entregada'?'selected':''}>Entregada</option></select></div>
+    <div class="field full"><label>Dirección de entrega</label><textarea id="deliveryAddress">${esc(d.direccion||'')}</textarea></div>
+    <div class="field full"><label>Observación</label><textarea id="deliveryNote">${esc(d.observacion||'')}</textarea></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveDeliveryMeta()">Guardar entrega</button>`);
+}
+function saveDeliveryMeta(){
+  saveSaleMeta({delivery:{fecha:document.getElementById('deliveryDate').value,estado:document.getElementById('deliveryStatus').value,direccion:document.getElementById('deliveryAddress').value.trim(),observacion:document.getElementById('deliveryNote').value.trim()}});
+  closeModal();renderView();toast('Datos de entrega guardados');
+}
+function openShipToModal(){
+  const s=db.posMeta?.shipping||{};
+  openModal('Enviar a / destino',`<div class="formgrid">
+    <div class="field"><label>Destino / sucursal</label><input id="shipDestination" value="${esc(s.destino||'')}" placeholder="Ej. Taller, sucursal o almacén"></div>
+    <div class="field"><label>Transportista</label><input id="shipCarrier" value="${esc(s.transportista||'')}"></div>
+    <div class="field full"><label>Referencia / guía</label><input id="shipTracking" value="${esc(s.guia||'')}"></div>
+    <div class="field full"><label>Observación</label><textarea id="shipNote">${esc(s.observacion||'')}</textarea></div>
+  </div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveShipToMeta()">Guardar destino</button>`);
+}
+function saveShipToMeta(){
+  saveSaleMeta({shipping:{destino:document.getElementById('shipDestination').value.trim(),transportista:document.getElementById('shipCarrier').value.trim(),guia:document.getElementById('shipTracking').value.trim(),observacion:document.getElementById('shipNote').value.trim()}});
+  closeModal();renderView();toast('Destino de envío guardado');
+}
+function openCustomerClassModal(){
+  const current=db.posMeta?.customerClass||'Detal';
+  openModal('Clase de cliente',`<div class="field"><label>Clasificación comercial</label><select id="customerClass">
+    <option ${current==='Detal'?'selected':''}>Detal</option><option ${current==='Taller'?'selected':''}>Taller</option><option ${current==='Mayor'?'selected':''}>Mayor</option><option ${current==='Flotilla'?'selected':''}>Flotilla</option>
+  </select></div><div style="font-size:11px;color:#666;margin-top:8px">La clase queda asociada a la venta actual y puede ser utilizada para aplicar la tarifa correspondiente al confirmar la operación.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveCustomerClass()">Aplicar clase</button>`);
+}
+function saveCustomerClass(){
+  saveSaleMeta({customerClass:document.getElementById('customerClass').value});
+  closeModal();renderView();toast('Clase de cliente aplicada');
+}
+function openGiftCardModal(){
+  const g=db.posMeta?.giftCard||{};
+  openModal('Tarjeta regalo',`<div class="formgrid">
+    <div class="field"><label>Código de tarjeta</label><input id="giftCode" value="${esc(g.codigo||'')}" placeholder="Código o referencia"></div>
+    <div class="field"><label>Monto autorizado USD</label><input id="giftAmount" type="number" min="0" step=".01" value="${Number(g.monto||0)}"></div>
+    <div class="field full"><label>Observación</label><textarea id="giftNote">${esc(g.observacion||'')}</textarea></div>
+  </div><div style="font-size:11px;color:#666;margin-top:8px">La tarjeta queda registrada como referencia de la venta; el cajero debe verificar el saldo de la tarjeta antes de cobrar.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveGiftCard()">Asociar tarjeta</button>`);
+}
+function saveGiftCard(){
+  const codigo=document.getElementById('giftCode').value.trim(),monto=Math.max(0,Number(document.getElementById('giftAmount').value)||0);
+  if(!codigo)return toast('Indique el código de la tarjeta');
+  saveSaleMeta({giftCard:{codigo,monto,observacion:document.getElementById('giftNote').value.trim()}});
+  closeModal();renderView();toast('Tarjeta regalo asociada a la venta');
+}
+function toggleFitmentView(){repuestoSubTab='buscador_vehiculo';renderView()}
+function toggleCrossRefView(){repuestoSubTab='referencias_cruzadas';renderView()}
+function title(v){return ({inicio:'Inicio',pos:'Punto de Venta',master_catalog:'Catálogo Automotriz',repuestos:'Repuestos Automotrices',productos:'Inventario y Productos',compras:'Compras',clientes:'Clientes',proveedores:'Proveedores',cxc:'Cuentas por Cobrar',cxp:'Cuentas por Pagar',presupuestos:'Presupuestos',reportes:'Reportes',caja:'Caja y Finanzas',config:'Configuración'})[v]||v}
+function go(v){view=v;selected=null;renderShell()}
+function renderView(){const m=document.getElementById('main');m.innerHTML=views[view]();bindView();document.getElementById('statusbar').textContent=`Usuario: ${usuarioActual().nombre} · ${cajaActual().nombre} · Módulo: ${title(view)} · Tasa BCV: ${fmtRate(bcvData().rate)} Bs/USD · ${fmt()}`}
+function menu(x){if(x==='Ventas')go('pos');else if(x==='Compras')go('compras');else if(x==='Inventario')go('productos');else if(x==='Cuentas')go('cxc');else if(x==='Contactos')go('clientes');else if(x==='Reportes')go('reportes');else if(x==='Sistema')go('inicio');else toast('Use el menú lateral para acceder a todas las funciones')}
+function focusSearch(){let e=document.querySelector('.searchbar input');if(e)e.focus()}
+function newAction(){if(view==='pos')addItem();else if(view==='master_catalog')openMasterCatalogSelectorModal('producto');else if(view==='repuestos')openMasterCatalogSelectorModal('repuesto');else if(view==='productos')openMasterCatalogSelectorModal('producto');else if(view==='clientes')openClient();else if(view==='proveedores')openSupplier();else if(view==='compras')openPurchase();else if(view==='presupuestos')openQuote();else toast('Nuevo disponible según el módulo')}
+function saveAction(){save();toast('Cambios guardados')}
+function printView(){window.print()}
+function bindView(){}
+function openBCV(){const b=bcvData();openModal('Tasa BCV',`<div class="panel" style="margin:0"><div class="panelbody"><div style="font-size:11px;color:#666;text-transform:uppercase">Tasa BCV vigente</div><div style="font-size:34px;font-weight:800;color:#0b4f85;margin:5px 0 8px">${fmtRate(b.rate)} Bs/USD</div><div style="font-size:12px">Vigencia: <b>${fmtDate(b.effectiveDate)}</b></div><div style="font-size:11px;color:#666;margin-top:3px">Última captura: ${b.updatedAt?fmt(b.updatedAt):'—'}</div></div></div>`,`<button class="btn" onclick="showBCVHistory()">Histórico</button><button class="btn primary" onclick="updateBCVRate()">Actualizar ahora</button><button class="btn" onclick="closeModal()">Cerrar</button>`)}
+function dashboard(){
+ const ventas=db.ventas.reduce((s,x)=>s+x.total,0), cxc=db.cxc.reduce((s,x)=>s+x.saldo,0),cxp=db.cxp.reduce((s,x)=>s+x.saldo,0),invProductos=db.productos||[],invRepuestos=typeof getRepuestos==='function'?getRepuestos():[],stock=[...invProductos,...invRepuestos].reduce((s,x)=>s+Number(x.stock||0),0),low=[...invProductos,...invRepuestos].filter(x=>Number(x.stock||0)<=Number(x.min||0)).length;
+ return `<div class="pagehead"><div><h2>Panel principal</h2><div class="sub">Control integral de ventas, compras, inventario y finanzas</div></div><button class="btn primary" onclick="go('pos')">Abrir Punto de Venta</button></div>
+ <div class="cards"><div class="card">Ventas acumuladas<b>${money(ventas)}</b><span>${db.ventas.length} operaciones</span></div><div class="card">Cuentas por cobrar<b>${money(cxc)}</b><span>${db.cxc.length} documentos</span></div><div class="card">Cuentas por pagar<b>${money(cxp)}</b><span>${db.cxp.length} documentos</span></div><div class="card">Existencias<b>${stock}</b><span>unidades registradas</span></div><div class="card">Stock bajo<b>${low}</b><span>requieren reposición</span></div></div>
+ ${bcvPanel()}
+ <div class="grid2"><div class="panel"><div class="panelhead">Últimas ventas</div><div class="panelbody">${salesTable(db.ventas.slice(-6).reverse())}</div></div><div class="panel"><div class="panelhead">Alertas de inventario</div><div class="panelbody">${db.productos.filter(p=>p.stock<=p.min).map(p=>`<div style="padding:7px;border-bottom:1px solid #eee"><b>${esc(p.nombre)}</b><br><small>Stock ${p.stock} · mínimo ${p.min}</small></div>`).join('')||'<div>No hay alertas.</div>'}</div></div></div>`
+}
+function salesTable(a){return `<table><thead><tr><th>Documento</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Ticket</th></tr></thead><tbody>${a.map(x=>`<tr><td>${x.numero}</td><td>${esc(x.cliente)}</td><td>${x.fecha}</td><td class="num">${money(x.total)}</td><td><span class="badge ${x.saldo?'warn':'ok'}">${x.saldo?'Pendiente':'Pagada'}</span></td><td><button class="btn" style="padding:3px 7px;font-size:10px" onclick="showTicketModal(db.ventas.find(v=>v.numero==='${x.numero}'))">🧾 Ticket 80mm</button></td></tr>`).join('')||'<tr><td colspan="6">No hay ventas.</td></tr>'}</tbody></table>`}
+function posView(){
+ const sub=cart.reduce((s,l)=>s+l.qty*l.price-l.disc,0),tax1=sub*db.config.impuesto/100,total=sub+tax1;
+ return `<div class="posscreen">
+ <div class="posheadline"><span>Venta ${db.ventas.length+1}</span><span>Cliente: <b>${esc(db.clientes.find(c=>c.id===saleCustomer)?.nombre||'Cliente general')}</b></span><span>Tasa BCV: <b>${fmtRate(bcvData().rate)} Bs/USD</b> · ${fmt()}</span></div>
+ <div class="posgrid">
+  <div class="posleft">
+   <div class="postable"><table><thead><tr><th>Artículo</th><th>Descripción</th><th>Qty</th><th>Precio</th><th>Desc.</th><th>Imp. 1</th><th>Imp. 2</th><th>Importe</th></tr></thead>
+   <tbody>${cart.map((l,i)=>{let p=db.productos.find(x=>x.id===l.id),base=l.qty*l.price-l.disc,t1=base*db.config.impuesto/100,t2=0;return `<tr class="${selected===i?'selected':''}" onclick="selected=${i};renderView()"><td>${p?.codigo||l.id}</td><td>${esc(p?.nombre||l.id)}</td><td class="num">${l.qty.toFixed(2)}</td><td class="num">${money(l.price)}</td><td class="num">${money(l.disc)}</td><td class="num">${money(t1)}</td><td class="num">${money(t2)}</td><td class="num">${money(base+t1+t2)}</td></tr>`}).join('')||'<tr><td colspan="8" class="emptypos">No hay artículos en la venta. Pulse «Agregar artículo».</td></tr>'}</tbody></table></div>
+   <div class="posbottom">
+    <div class="stockbox"><table><thead><tr><th></th><th>Local</th><th>Total</th><th>Disponible</th></tr></thead><tbody>${(()=>{const l=selected!=null?cart[selected]:null;const p=l?(db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null)):null;const s=Number(p?.stock||0);return '<tr><td>Stock</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td></tr><tr><td>Reservado</td><td>0.00</td><td>0.00</td><td>0.00</td></tr><tr><td>Disponible</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td><td>'+s.toFixed(2)+'</td></tr>';})()}</tbody></table></div>
+    <div class="posactions"><button onclick="addItem()">Agregar artículo</button><button onclick="addItem()">Buscar artículo</button><button onclick="editCart()">Detalles</button><button class="danger" onclick="removeCart()">✖ Eliminar línea</button><button onclick="returnCart()">↩ Retorno artículo</button></div>
+    <div class="postotal">${money(total)}</div>
+   </div>
+   <div class="possummary"><div>Impuesto 1<b>${money(tax1)}</b></div><div>Impuesto 2<b>${money(0)}</b></div><div>Total<b>${money(total)}</b></div><div>Pagado<b>${money(saleType==='contado'?0:0)}</b></div><div>Saldo<b>${money(total)}</b></div></div>
+  </div>
+  <aside class="posside"><button onclick="openClientSearch()">CAMBIAR<br>CLIENTE</button><button onclick="openDeliveryModal()">ENTREGA</button><button onclick="openShipToModal()">ENVIAR A</button><button onclick="changeSelectedQty(1)">+1</button><button onclick="changeSelectedQty(-1)">−1</button><button onclick="saleType='credito';renderView();toast('Venta a crédito')">A/R<br>FACTURA</button><button onclick="saleType='contado';renderView();toast('Venta de contado')">CAJA<br>FACTURA</button><button onclick="go('presupuestos')">PRESUPUESTO</button><button onclick="openCustomerClassModal()">CLASES<br>DE CLIENTE</button><button onclick="openItemSearch()">RELLAMAR<br>INVENTARIO</button><button onclick="openGiftCardModal()">TARJETA<br>REGALO</button><button onclick="cancelSale()">SALIR<br>SIN REGISTRAR</button><button class="pay" onclick="checkout()">TOMAR<br>PAGO</button></aside>
+ </div></div>`
+}
+function changeSelectedQty(delta){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart[selected].qty+=delta;if(cart[selected].qty<=0)cart.splice(selected,1);renderView()}
+function openClientSearch(){openModal('Buscar cliente',`<div class="searchbar"><input id="clientQ" placeholder="Nombre o documento" oninput="renderClientChoices()"></div><div id="clientChoices"></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);renderClientChoices()}
+function renderClientChoices(){let q=(document.getElementById('clientQ')?.value||'').toLowerCase(),a=db.clientes.filter(c=>(c.nombre+' '+c.documento).toLowerCase().includes(q));document.getElementById('clientChoices').innerHTML=`<table><thead><tr><th>Cliente</th><th>Documento</th><th>Saldo</th><th></th></tr></thead><tbody>${a.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${money(c.saldo)}</td><td><button class="btn primary" onclick="saleCustomer='${c.id}';closeModal();renderView()">Seleccionar</button></td></tr>`).join('')}</tbody></table>`}
+
+function filterPos(){let q=document.getElementById('posSearch')?.value||'';openItemSearch(q)}
+function openItemSearch(q=''){openModal('Agregar artículo',`<div class="searchbar"><input id="itemQ" value="${esc(q)}" placeholder="🔍 Búsqueda inteligente por palabras claves (ej: bujes aveo, lapiz fiesta, bateria duncan, bombillo h4, aceite 20w50)..." oninput="renderItemChoices()"><button class="btn" onclick="renderItemChoices()">Buscar</button></div><div id="itemChoices"></div>`, `<button class="btn" onclick="closeModal()">Cerrar</button>`);renderItemChoices()}
+function renderItemChoices(){
+  let q=document.getElementById('itemQ')?.value||'';
+  let prods=db.productos.filter(p=>{
+    let text = `${p.codigo} ${p.codigoOEM||''} ${p.nombre} ${p.categoria} ${p.marca||''}`;
+    return typeof matchKeywords==='function' ? matchKeywords(text, q) : text.toLowerCase().includes(q.toLowerCase());
+  });
+  let reps=typeof getRepuestos==='function' ? getRepuestos().filter(r=>{
+    let text = `${r.sku} ${r.codigoOEM||''} ${r.nombre} ${r.categoria} ${r.marca||''} ${(r.compatibilidad||[]).map(c=>c.marca+' '+c.modelo).join(' ')}`;
+    return typeof matchKeywords==='function' ? matchKeywords(text, q) : text.toLowerCase().includes(q.toLowerCase());
+  }) : [];
+
+  document.getElementById('itemChoices').innerHTML=`
+  <div style="max-height:360px;overflow:auto">
+    ${reps.length ? `<div style="font-size:10px;font-weight:bold;color:#0b4f85;padding:4px 2px;background:#f0f4fa;border-bottom:1px solid #d0dbe8">🚗 REPUESTOS AUTOMOTRICES (${reps.length})</div>` : ''}
+    ${reps.length ? `<table><thead><tr><th>Repuesto / SKU</th><th>Marca / OEM</th><th>Precio</th><th>Stock</th><th></th></tr></thead><tbody>${reps.map(r=>`<tr><td><b>${esc(r.nombre)}</b><br><small style="color:#0b4f85;font-family:monospace">${esc(r.sku)}</small></td><td>${esc(r.marca)}<br><small style="color:#666">OEM: ${esc(r.codigoOEM)}</small></td><td>${money(r.precio)}</td><td><span class="badge ${r.stock<=r.min?'bad':'ok'}">${r.stock}</span></td><td><button class="btn primary" onclick="addToCart('${r.id}','repuesto')">Agregar</button></td></tr>`).join('')}</tbody></table>` : ''}
+    <div style="font-size:10px;font-weight:bold;color:#555;padding:4px 2px;background:#eee;border-bottom:1px solid #ddd;margin-top:6px">📦 PRODUCTOS DE VENTA (${prods.length})</div>
+    <table><thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th></th></tr></thead><tbody>${prods.map(p=>`<tr><td><b>${esc(p.nombre)}</b><br><small>${p.codigo} · ${p.categoria}</small></td><td>${money(p.precio)}</td><td>${p.stock}</td><td><button class="btn primary" onclick="addToCart('${p.id}','producto')">Agregar</button></td></tr>`).join('')}</tbody></table>
+  </div>`;
+}
+function addItem(){openItemSearch()}
+function addToCart(pid, type='producto'){
+  const isRep=type==='repuesto';
+  const p=isRep?(typeof getRepuestos==='function'?getRepuestos().find(x=>x.id===pid):null):db.productos.find(x=>x.id===pid);
+  if(!p) return toast('Artículo no encontrado');
+  const l=cart.find(x=>x.id===pid);
+  const nextQty=(l?.qty||0)+1;
+  if(nextQty>Number(p.stock||0)) return toast('Existencia insuficiente');
+  if(l) l.qty=nextQty;
+  else cart.push({id:pid,tipo:isRep?'repuesto':'producto',nombre:p.nombre,sku:p.sku||p.codigo,qty:1,price:Number(p.precio)||0,disc:0});
+  closeModal();renderView();toast('Artículo agregado a la venta');
+}
+function editCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');let l=cart[selected];openModal('Editar línea',`<div class="formgrid"><div class="field"><label>Cantidad</label><input id="eQty" type="number" min="0.01" step="0.01" value="${l.qty}"></div><div class="field"><label>Precio</label><input id="ePrice" type="number" min="0" step=".01" value="${l.price}"></div><div class="field"><label>Descuento</label><input id="eDisc" type="number" min="0" step=".01" value="${l.disc}"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveCartLine()">Guardar</button>`)}
+function saveCartLine(){
+  if(selected==null||!cart[selected])return toast('Seleccione una línea');
+  const l=cart[selected],qty=Number(document.getElementById('eQty').value)||0,price=Number(document.getElementById('ePrice').value)||0,disc=Number(document.getElementById('eDisc').value)||0;
+  if(qty<=0||price<0||disc<0)return toast('Cantidad, precio o descuento inválido');
+  const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+  if(!p)return toast('Artículo no encontrado');
+  const isReturn=l.qty<0;
+  if(!isReturn&&qty>Number(p.stock||0))return toast('La cantidad supera la existencia disponible');
+  if(isReturn&&qty>Number(p.stock||0))return toast('La cantidad solicitada no puede superar la existencia actual');
+  if(disc>qty*price)return toast('El descuento no puede superar el importe de la línea');
+  l.qty=isReturn?-qty:qty;l.price=price;l.disc=disc;
+  if(!l.qty)cart.splice(selected,1);
+  selected=null;closeModal();renderView();toast('Línea actualizada');
+}
+function removeCart(){if(selected==null||!cart[selected])return toast('Seleccione una línea');cart.splice(selected,1);selected=null;renderView();toast('Línea eliminada')}
+function returnCart(){
+  if(selected==null||!cart[selected]) return toast('Seleccione una línea');
+  if(cart.some(l=>l.qty<0)) return toast('La devolución ya tiene una línea seleccionada');
+  cart[selected].qty=-Math.abs(cart[selected].qty);cart[selected].devolucion=true;
+  renderView();toast('Artículo marcado para devolución. Se solicitará la venta original al cobrar.');
+}
+function cancelSale(){if(cart.length&&confirm('¿Desea cancelar la venta actual?')){cart=[];selected=null;db.posMeta=null;save();renderView();toast('Venta cancelada sin registrar')}}
+async function releaseActiveOrder(){
+  if(!activeOrderId)return closeModal();
+  if(navigator.onLine){
+    try{
+      const r=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'release',id:activeOrderId,actorId:usuarioActual().id,cajaId:cajaActual().id})});
+      const data=await r.json();
+      if(!r.ok||!data.ok)return toast(data.error||'No se pudo liberar la reserva');
+    }catch(e){return toast('No se pudo liberar la reserva en Turso');}
+  }
+  const p=(db.pedidos||[]).find(x=>x.id===activeOrderId);
+  if(p){p.estado='Pendiente';p.claimedBy=null;p.claimedAt=null;save('order-released');}
+  activeOrderId=null;cart=[];closeModal();renderView();toast('Pedido liberado y stock reservado restaurado');
+}
+function checkout(){
+  if(!cart.length)return toast('No hay artículos');
+  if(!cajaActual().abierta)return toast('Abra la caja antes de cobrar');
+  const hasReturn=cart.some(l=>l.qty<0),hasSale=cart.some(l=>l.qty>0);
+  if(hasReturn&&hasSale)return toast('No se pueden mezclar ventas y devoluciones');
+  saleCustomer=document.getElementById('saleCustomer')?.value||saleCustomer;
+  saleType=document.getElementById('saleType')?.value||saleType;
+  const c=db.clientes.find(x=>x.id===saleCustomer),sub=cart.reduce((s,l)=>s+l.qty*l.price-(l.disc||0),0),tax=sub*db.config.impuesto/100,total=sub+tax,amount=Math.abs(total),defaultPay=saleType==='credito'?0:amount;
+  const returnField=hasReturn?'<div class="field full"><label>Factura / Venta original</label><input id="returnOrigin" placeholder="Ej: VTA-00001" required></div>':'';
+  openModal(hasReturn?'Procesar devolución':'Cobrar venta',`<div class="formgrid">
+    <div class="field"><label>Cliente</label><input readonly value="${esc(c?.nombre||'Cliente general')}"></div>
+    <div class="field"><label>${hasReturn?'Monto a devolver':'Total'} USD</label><input readonly value="${money(amount)}"></div>
+    ${returnField}
+    <div class="field"><label>Método 1</label><select id="payMethod1"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div>
+    <div class="field"><label>Monto 1 USD</label><input id="payAmount1" type="number" min="0" step=".01" value="${defaultPay}" oninput="updatePaymentTotals(${amount})"></div>
+    <div class="field"><label>Método 2 (opcional)</label><select id="payMethod2"><option>Ninguno</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div>
+    <div class="field"><label>Monto 2 USD</label><input id="payAmount2" type="number" min="0" step=".01" value="0" oninput="updatePaymentTotals(${amount})"></div>
+    <div class="field"><label>Total aplicado</label><input id="payApplied" readonly value="${money(defaultPay)}"></div>
+    <div class="field"><label>Faltante / Cambio</label><input id="payChange" readonly value="${money(Math.max(0,amount-defaultPay))}"></div>
+  </div>`,`<button class="btn" onclick="activeOrderId?releaseActiveOrder():closeModal()">Cancelar</button><button class="btn primary" onclick="finishSale(${total})">${hasReturn?'Procesar devolución':'Registrar venta'}</button>`);
+}
+function updatePaymentTotals(total){
+  const a=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),b=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),sum=a+b;
+  const applied=document.getElementById('payApplied'),change=document.getElementById('payChange');
+  if(applied)applied.value=money(sum);
+  if(change)change.value=money(Math.max(0,total-sum));
+}function getReceiptHTML(v, rate){
+ const subVES = (v.subtotal || (v.total / (1 + db.config.impuesto / 100))) * rate;
+ const taxVES = (v.impuesto || (v.total - (v.total / (1 + db.config.impuesto / 100)))) * rate;
+ const totVES = v.total * rate;
+ const paidVES = (v.pagado || 0) * rate;
+ const saldoVES = (v.saldo || 0) * rate;
+ return `
+ <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px">
+   <div style="font-size:14px;font-weight:bold">${esc(db.config.empresa||'SIFER 360')}</div>
+   <div style="font-size:10px">RIF: J-50000000-1 · TICKET DE CAJA</div>
+   <div style="font-size:10px">PUNTO DE VENTA AUTOMOTRIZ</div>
+   <div style="font-size:10px;margin-top:2px">Tasa BCV consultada: <b>${fmtRate(rate)} Bs/USD</b></div>
+ </div>
+ <div style="font-size:10px;margin-bottom:6px;border-bottom:1px dashed #000;padding-bottom:5px">
+   <div><b>Ticket N°:</b> ${esc(v.numero)}</div>
+   <div><b>Fecha:</b> ${esc(v.fecha)}</div>
+   <div><b>Cliente:</b> ${esc(v.cliente||'Cliente general')}</div>
+   <div><b>Condición:</b> ${esc(v.tipo==='credito'?'Crédito':v.tipo==='devolucion'?'Devolución':'Contado')} · <b>Pago:</b> ${esc(v.metodo||'Efectivo')}</div>${(v.pagos||[]).map(p=>`<div style="display:flex;justify-content:space-between"><span>${esc(p.metodo)}:</span><span>${money(p.monto)}</span></div>`).join('')}
+ </div>
+ <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">
+   <thead>
+     <tr style="border-bottom:1px solid #000">
+       <th style="text-align:left;padding:2px 0;background:transparent;border:0">Cant/Desc</th>
+       <th style="text-align:right;padding:2px 0;background:transparent;border:0">P.Unit</th>
+       <th style="text-align:right;padding:2px 0;background:transparent;border:0">Total</th>
+     </tr>
+   </thead>
+   <tbody>
+     ${v.lineas.map(l=>{
+       let p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+       let name=p?.nombre||l.nombre||l.id;
+       let lineTot=l.qty*l.price-(l.disc||0);
+       return `
+       <tr>
+         <td colspan="3" style="padding:3px 0 0 0;font-weight:bold;border:0">${esc(name)}</td>
+       </tr>
+       <tr style="border-bottom:1px dotted #ccc">
+         <td style="padding:0 0 3px 0;border:0">${l.qty.toFixed(2)}</td>
+         <td style="text-align:right;padding:0 0 3px 0;border:0">${money(l.price)}</td>
+         <td style="text-align:right;padding:0 0 3px 0;font-weight:bold;border:0">${money(lineTot)}</td>
+       </tr>`;
+     }).join('')}
+   </tbody>
+ </table>
+ <div style="border-top:1px dashed #000;padding-top:4px;font-size:10px">
+   <div style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${money(v.subtotal||v.total)}</span></div>
+   <div style="display:flex;justify-content:space-between"><span>IVA (${db.config.impuesto}%):</span><span>${money(v.impuesto||0)}</span></div>
+   <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin:4px 0;border-top:1px solid #000;border-bottom:1px solid #000;padding:3px 0">
+     <span>TOTAL USD:</span><span>${money(v.total)}</span>
+   </div>
+   <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:bold;color:#0b4f85;margin-bottom:4px">
+     <span>TOTAL BS:</span><span>Bs ${totVES.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+   </div>
+   <div style="display:flex;justify-content:space-between"><span>Pagado:</span><span>${money(v.pagado||0)} (Bs ${paidVES.toLocaleString('es-VE',{minimumFractionDigits:2})})</span></div>
+   <div style="display:flex;justify-content:space-between"><span>Saldo:</span><span>${money(v.saldo||0)} (Bs ${saldoVES.toLocaleString('es-VE',{minimumFractionDigits:2})})</span></div>
+ </div>
+ <div style="text-align:center;margin-top:12px;font-size:9px;border-top:1px dashed #000;padding-top:6px">
+   <div>¡GRACIAS POR SU COMPRA!</div>
+   <div style="margin-top:2px">SIFER360 — POS Automotriz</div>
+ </div>
+ `;
+}
+
+function printThermalTicket(saleNumber){
+ const v = typeof saleNumber === 'object' ? saleNumber : db.ventas.find(x => x.numero === saleNumber);
+ if(!v) return toast('Venta no encontrada');
+ const b = bcvData();
+ const rate = b.rate || 1;
+ const html = getReceiptHTML(v, rate);
+ const area = document.getElementById('thermal-print-area');
+ if(area){
+   area.innerHTML = html;
+   window.print();
+ }
+}
+
+function showTicketModal(v){
+ if(!v) return toast('Venta no encontrada');
+ const b = bcvData();
+ const rate = b.rate || 1;
+ const content = getReceiptHTML(v, rate);
+ openModal('Ticket de Venta — ' + v.numero, `
+   <div style="display:flex;flex-direction:column;align-items:center;background:#525659;padding:16px;border-radius:4px;overflow:auto;max-height:420px">
+     <div style="background:#fff;width:76mm;min-height:280px;padding:14px 10px;box-shadow:0 4px 16px rgba(0,0,0,0.45);font-family:'Courier New',Courier,monospace;font-size:11px;color:#000;line-height:1.25;border-radius:2px">
+       ${content}
+     </div>
+   </div>
+ `, `
+   <button class="btn" onclick="closeModal()">Cerrar</button>
+   <button class="btn primary" onclick="printThermalTicket('${v.numero}')">🖨️ Imprimir Ticket (80mm)</button>
+ `);
+}
+
+async function finishSale(total){
+  const isReturn=cart.some(l=>l.qty<0),isSale=cart.some(l=>l.qty>0),amount=Math.abs(total);
+  if(activeOrderId && !isReturn && navigator.onLine){
+    try{
+      const check=await fetch('/api/turso-orders',{method:'GET',cache:'no-store'});
+      if(check.ok){
+        const data=await check.json(),remote=(data.orders||[]).find(x=>String(x.id)===String(activeOrderId));
+        if(!remote || String(remote.estado)!=='En caja' || String(remote.claimed_by||'')!==String(usuarioActual().id)){
+          return toast('Este pedido ya no está reservado por este operador.');
+        }
+      }
+    }catch(e){return toast('No se pudo validar el pedido antes de facturar');}
+  }
+  if(isReturn&&isSale)return toast('Operación inválida');
+  const a1=Math.max(0,Number(document.getElementById('payAmount1')?.value)||0),a2=Math.max(0,Number(document.getElementById('payAmount2')?.value)||0),applied=a1+a2;
+  if(!isReturn&&saleType==='credito'&&applied>0)return toast('Una venta a crédito no puede registrar pago inicial aquí');
+  if(!isReturn&&saleType!=='credito'&&applied<amount)return toast('El pago total es insuficiente');
+  if(isReturn){
+    const origin=(document.getElementById('returnOrigin')?.value||'').trim(),original=db.ventas.find(v=>v.numero===origin);
+    if(!original)return toast('Debe indicar una venta original válida');
+    for(const l of cart){const sold=(original.lineas||[]).find(x=>x.id===l.id);if(!sold||Math.abs(l.qty)>Number(sold.qty||0))return toast('La cantidad devuelta supera la cantidad facturada');}
+    if(applied<amount)return toast('El monto devuelto es insuficiente');
+  }
+  const pagos=[];
+  if(a1>0)pagos.push({metodo:document.getElementById('payMethod1')?.value||'Efectivo',monto:a1});
+  if(a2>0){const m2=document.getElementById('payMethod2')?.value||'Ninguno';if(m2==='Ninguno')return toast('Seleccione el método del segundo pago');pagos.push({metodo:m2,monto:a2});}
+  for(const l of cart){
+    const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+    if(!p)return toast('Artículo no encontrado: '+l.id);
+    if(!isReturn&&Number(l.qty)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
+    p.stock=Number(p.stock||0)+(isReturn?Math.abs(l.qty):-Number(l.qty));
+  }
+  const num=await reserveDocumentNumber(isReturn?'DEV':'VTA'),c=db.clientes.find(x=>x.id===saleCustomer),signedTotal=isReturn?-amount:amount,paid=isReturn?-applied:(saleType==='credito'?0:Math.min(applied,amount)),saldo=isReturn?0:amount-paid;
+  const v={numero:num,fecha:fmt(),cliente:c?.nombre||'Cliente general',clienteId:saleCustomer,total:signedTotal,subtotal:total/(1+db.config.impuesto/100),impuesto:total-(total/(1+db.config.impuesto/100)),pagado:paid,saldo,tipo:isReturn?'devolucion':saleType,metodo:pagos.length>1?'Mixto':(pagos[0]?.metodo||'Crédito'),pagos,documentoOrigen:isReturn?(document.getElementById('returnOrigin')?.value||''):null,lineas:cart.map(x=>({...x})),cajaId:cajaActual().id,operadorId:usuarioActual().id,entrega:db.posMeta?.delivery||null,destinoEnvio:db.posMeta?.shipping||null,claseCliente:db.posMeta?.customerClass||null,tarjetaRegalo:db.posMeta?.giftCard||null};
+  db.ventas.push(v);db.movimientos.push({fecha:fmt(),tipo:isReturn?'Devolución':'Venta',documento:num,detalle:v.cliente,monto:signedTotal,documentoOrigen:v.documentoOrigen||null});
+  if(activeOrderId && !isReturn && navigator.onLine){
+    try{
+      const rr=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'finalize',id:activeOrderId,actorId:usuarioActual().id,cajaId:cajaActual().id,saleNumber:num})});
+      const rd=await rr.json();
+      if(!rr.ok||!rd.ok){db.ventas.pop();db.movimientos.pop();return toast(rd.error||'No se pudo finalizar el pedido en Turso');}
+      const op=db.pedidos.find(x=>x.id===activeOrderId);if(op){op.estado='Facturado';op.saleNumber=num;}
+    }catch(e){db.ventas.pop();db.movimientos.pop();return toast('No se pudo confirmar el pedido en Turso');}
+  }  if(saldo){db.cxc.push({id:id('CXC','cxc'),fecha:fmt(),documento:num,clienteId:saleCustomer,cliente:v.cliente,total:amount,saldo,estado:'Pendiente'});if(c)c.saldo=(c.saldo||0)+saldo}else cajaActual().saldo+=paid;
+  save('sale-created');activeOrderId=null;cart=[];selected=null;db.posMeta=null;save('sale-created');closeModal();renderView();toast(num+(isReturn?' procesada correctamente':' registrada correctamente'));showTicketModal(v);
+}function listPage(head,sub,button,body){return `<div class="pagehead"><div><h2>${head}</h2><div class="sub">${sub}</div></div>${button||''}</div>${body}`}
+function productosView(){
+  const productos = Array.isArray(db.productos)?db.productos:[];
+  const repuestos = typeof getRepuestos==='function' ? getRepuestos() : [];
+  const inventario = [
+    ...productos.map(p=>({...p,_source:'Producto',_sourceId:p.id})),
+    ...repuestos.map(r=>({...r,_source:'Repuesto',_sourceId:r.id,codigo:r.sku||r.id,codigoOEM:r.codigoOEM,unidad:r.unidad||'Unidad'}))
+  ];
+  const totalUnidades=inventario.reduce((s,p)=>s+Number(p.stock||0),0);
+  const bajos=inventario.filter(p=>Number(p.stock||0)<=Number(p.min||0)).length;
+  return listPage(
+    'Inventario',
+    'Existencias reales de productos y repuestos registrados en SIFER. El Catálogo Máster es referencial y no representa stock.',
+    `<div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Agregar desde Catálogo Máster</button>
+      <button class="btn" onclick="openCommercialProductFormWithMaster(null)">➕ Nuevo Producto</button>
+      <button class="btn" onclick="go('repuestos')">🚗 Gestionar Repuestos</button>
+    </div>`,
+    `<div class="cards">
+      <div class="card">Ítems inventariados<b>${inventario.length}</b><span>productos + repuestos</span></div>
+      <div class="card">Existencias<b>${totalUnidades}</b><span>unidades registradas</span></div>
+      <div class="card">Stock bajo<b>${bajos}</b><span>requieren reposición</span></div>
+    </div>
+    <div class="searchbar"><input placeholder="🔍 Buscar por nombre, SKU, OEM, marca, categoría o ubicación..." oninput="filterTable(this,'unifiedInventoryTable')"></div>
+    <div class="panel"><div class="panelhead">Inventario real de SIFER — no incluye referencias solamente consultadas del Catálogo Máster</div>
+      <div class="panelbody" style="padding:0;overflow:auto">
+        <table id="unifiedInventoryTable">
+          <thead><tr>
+            <th>Origen</th><th>SKU / Código</th><th>Producto / Repuesto</th><th>Categoría</th><th>Marca</th><th>Ubicación</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acción</th>
+          </tr></thead>
+          <tbody>
+            ${inventario.map(p=>`<tr>
+              <td><span class="badge ${p._source==='Repuesto'?'ok':''}">${p._source}</span></td>
+              <td><b style="font-family:monospace;font-size:10px">${esc(p.codigo||p.sku||p.id)}</b><br><small>${esc(p.codigoOEM||'—')}</small></td>
+              <td><b>${esc(p.nombre)}</b><br><small>${esc(p.unidad||'Unidad')}</small></td>
+              <td>${esc(p.categoria||'—')}</td>
+              <td>${esc(p.marca||'Genérica')}</td>
+              <td>${esc(p.ubicacion||'Almacén')}</td>
+              <td>${money(p.costo)}</td>
+              <td><b>${money(p.precio)}</b></td>
+              <td class="num"><b>${Number(p.stock||0)}</b></td>
+              <td><span class="badge ${Number(p.stock||0)<=Number(p.min||0)?'warn':'ok'}">${Number(p.stock||0)<=Number(p.min||0)?'Stock bajo':'Disponible'}</span></td>
+              <td>${p._source==='Repuesto'
+                ? `<button class="btn" onclick="openRepuestoModal('${p._sourceId}')">Editar</button>`
+                : `<button class="btn" onclick="openProduct('${p._sourceId}')">Editar</button>`}
+              </td>
+            </tr>`).join('')||'<tr><td colspan="11" style="text-align:center;padding:20px">No hay productos ni repuestos registrados.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`
+  );
+}
+function viewProductPhotoZoom(pid){
+  let p=db.productos.find(x=>x.id===pid);
+  if(!p) return;
+  openModal(`Foto: ${p.nombre}`,`
+    <div style="text-align:center;padding:10px">
+      <img src="${p.imagen||'/icon.svg'}" style="max-width:100%;max-height:340px;object-fit:contain;border:1px solid #ddd;border-radius:4px" onerror="this.src='/icon.svg'">
+      <div style="font-size:15px;font-weight:bold;margin-top:10px">${esc(p.nombre)}</div>
+      <div style="font-size:11px;color:#555">Código: ${esc(p.codigo)} · Marca: ${esc(p.marca)} · Precio: ${money(p.precio)}</div>
+    </div>
+  `,`<button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="closeModal();openProduct('${p.id}')">Editar Producto</button>`);
+}
+function openProduct(pid){
+  if(!pid){
+    openMasterCatalogSelectorModal('producto');
+    return;
+  }
+  let p=db.productos.find(x=>x.id===pid);
+  if(!p) return;
+  openModal('Editar Producto Comercial — ' + p.codigo, `
+    <div class="formgrid">
+      <div class="field"><label>Código de barras / SKU</label><input id="pCodigo" value="${esc(p.codigo)}"></div>
+      <div class="field"><label>Código OEM / Fábrica</label><input id="pOEM" value="${esc(p.codigoOEM||'')}"></div>
+      <div class="field full"><label>Nombre del Producto</label><input id="pNombre" value="${esc(p.nombre)}"></div>
+      <div class="field"><label>Categoría</label><input id="pCat" value="${esc(p.categoria)}"></div>
+      <div class="field"><label>Marca</label><input id="pMarca" value="${esc(p.marca||'')}"></div>
+      <div class="field"><label>Unidad</label><input id="pUnidad" value="${esc(p.unidad||'Unidad')}"></div>
+      <div class="field"><label>Ubicación Almacén</label><input id="pUbicacion" value="${esc(p.ubicacion||'Almacén')}"></div>
+      <div class="field" style="background:#fffbe6;padding:4px"><label style="color:#874d00">Costo Compra USD</label><input id="pCosto" type="number" step=".01" value="${p.costo}" oninput="updateEditProductPricing()"></div>
+      <div class="field" style="background:#e6f7ff;padding:4px"><label style="color:#0050b3">Precio Detal (USD)</label><input id="pPrecio" type="number" step=".01" value="${p.precio}"></div>
+      <div class="field"><label>Precio Taller (-15%)</label><input id="pPrecioTaller" type="number" step=".01" value="${p.precioTaller||(p.precio*0.88).toFixed(2)}"></div>
+      <div class="field"><label>Precio Mayor (-25%)</label><input id="pPrecioMayor" type="number" step=".01" value="${p.precioMayor||(p.precio*0.78).toFixed(2)}"></div>
+      <div class="field"><label>Existencia Actual</label><input id="pStock" type="number" value="${p.stock}"></div>
+      <div class="field"><label>Stock Mínimo</label><input id="pMin" type="number" value="${p.min}"></div>
+      <div class="field"><label>Punto de Reorden</label><input id="pReorder" type="number" value="${p.reorderPoint||(p.min*2)}"></div>
+      <div class="field full"><label>URL de Foto Real</label><input id="pImagen" value="${esc(p.imagen||'')}" placeholder="/images/..."></div>
+    </div>
+  `, `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveEditedProduct('${pid}')">Guardar Cambios</button>`);
+}
+function updateEditProductPricing(){
+  let c = Number(document.getElementById('pCosto')?.value) || 0;
+  if(c > 0){
+    let detal = (c * 1.35).toFixed(2);
+    let taller = (c * 1.20).toFixed(2);
+    let mayor = (c * 1.12).toFixed(2);
+    let elP = document.getElementById('pPrecio');
+    let elPT = document.getElementById('pPrecioTaller');
+    let elPM = document.getElementById('pPrecioMayor');
+    if(elP) elP.value = detal;
+    if(elPT) elPT.value = taller;
+    if(elPM) elPM.value = mayor;
+  }
+}
+function saveEditedProduct(pid){
+  let p = db.productos.find(x=>x.id===pid);
+  if(!p) return;
+  p.codigo = document.getElementById('pCodigo').value.trim();
+  p.codigoOEM = document.getElementById('pOEM').value.trim();
+  p.nombre = document.getElementById('pNombre').value.trim();
+  p.categoria = document.getElementById('pCat').value.trim();
+  p.marca = document.getElementById('pMarca').value.trim();
+  p.unidad = document.getElementById('pUnidad').value.trim();
+  p.ubicacion = document.getElementById('pUbicacion').value.trim();
+  p.costo = Number(document.getElementById('pCosto').value) || 0;
+  p.precio = Number(document.getElementById('pPrecio').value) || 0;
+  p.precioTaller = Number(document.getElementById('pPrecioTaller').value) || (p.precio * 0.88);
+  p.precioMayor = Number(document.getElementById('pPrecioMayor').value) || (p.precio * 0.78);
+  p.stock = Number(document.getElementById('pStock').value) || 0;
+  p.min = Number(document.getElementById('pMin').value) || 0;
+  p.reorderPoint = Number(document.getElementById('pReorder').value) || 0;
+  p.imagen = document.getElementById('pImagen')?.value.trim() || p.imagen || '/icon.svg';
+  save();
+  closeModal();
+  renderView();
+  toast('Producto actualizado correctamente');
+}
+const views={inicio:dashboard,pos:posView,pedidos:pedidosView,usuarios:usuariosCajasView,master_catalog:masterCatalogView,repuestos:repuestosView,productos:productosView,compras:comprasView,clientes:clientesView,proveedores:proveedoresView,cxc:()=>accountView('cxc'),cxp:()=>accountView('cxp'),presupuestos:presupuestosView,reportes:reportesView,caja:cajaView,config:configView};
+function pedidosView(){
+ const pendientes=(db.pedidos||[]).filter(p=>p.estado==='Pendiente');
+ return listPage('Pedidos de clientes','Los operadores cargan pedidos; caja los recupera, cobra y factura.',
+  '<button class="btn primary" onclick="nuevoPedido()">➕ Nuevo pedido</button>',
+  '<div class="cards"><div class="card">Pendientes<b>'+pendientes.length+'</b><span>esperando cobro en caja</span></div><div class="card">Hoy<b>'+((db.pedidos||[]).filter(p=>p.fecha?.slice(0,10)===new Date().toISOString().slice(0,10)).length)+'</b><span>pedidos registrados</span></div></div>'+
+  '<div class="panel"><div class="panelhead">Pedidos pendientes</div><div class="panelbody"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Operador</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>'+
+  (pendientes.map(p=>'<tr><td><b>'+p.numero+'</b></td><td>'+esc(p.cliente)+'</td><td>'+esc(p.operador)+'</td><td>'+money(p.total)+'</td><td>'+p.estado+'</td><td><button class="btn primary" onclick="cobrarPedido(\''+p.id+'\')">Enviar a caja</button></td></tr>').join('')||'<tr><td colspan="6">No hay pedidos pendientes.</td></tr>')+
+  '</tbody></table></div></div>');
+}
+function nuevoPedido(){
+ const p=db.productos[0],u=usuarioActual();
+ openModal('Nuevo pedido',`<div class="formgrid"><div class="field"><label>Cliente</label><select id="ordClient">${db.clientes.map(x=>'<option value="'+x.id+'">'+esc(x.nombre)+'</option>').join('')}</select></div><div class="field"><label>Producto</label><select id="ordProduct">${db.productos.map(x=>'<option value="'+x.id+'">'+esc(x.nombre)+' — '+money(x.precio)+'</option>').join('')}</select></div><div class="field"><label>Cantidad</label><input id="ordQty" type="number" min="1" value="1"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="guardarPedido()">Guardar pedido</button>`);
+}
+function guardarPedido(){
+ const cid=document.getElementById('ordClient').value,pid=document.getElementById('ordProduct').value,q=Number(document.getElementById('ordQty').value)||0,p=db.productos.find(x=>x.id===pid),cl=db.clientes.find(x=>x.id===cid);
+ if(!p||q<=0)return toast('Producto o cantidad inválida');
+ if(q>Number(p.stock||0))return toast('Stock insuficiente');
+ const subtotal=q*Number(p.precio||0),total=subtotal*(1+db.config.impuesto/100);
+ db.pedidos.push({id:'PED-'+String(db.seq.pedido++).padStart(5,'0'),numero:'PED-'+String(db.seq.pedido-1).padStart(5,'0'),fecha:fmt(),clienteId:cid,cliente:cl?.nombre||'Cliente general',operadorId:usuarioActual().id,operador:usuarioActual().nombre,cajaId:cajaActual().id,estado:'Pendiente',total,lineas:[{id:pid,qty:q,price:Number(p.precio||0),disc:0}]});
+ save('order-created');closeModal();renderView();toast('Pedido enviado a caja');
+}
+async function cobrarPedido(pid){
+ const p=(db.pedidos||[]).find(x=>x.id===pid&&x.estado==='Pendiente');if(!p)return toast('Pedido no disponible');
+ if(navigator.onLine){
+   try{
+     const r=await fetch('/api/turso-orders',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'claim',id:p.id,actorId:usuarioActual().id,cajaId:cajaActual().id})});
+     const data=await r.json();
+     if(!r.ok||!data.ok)return toast(data.error||'No se pudo tomar el pedido');
+   }catch(e){return toast('No se pudo verificar el pedido en Turso');}
+ }
+ activeOrderId=p.id; cart=p.lineas.map(x=>({...x}));saleCustomer=p.clienteId||saleCustomer;saleType='contado';p.estado='En caja';p.cajaId=cajaActual().id;p.claimedBy=usuarioActual().id;p.claimedAt=new Date().toISOString();p.enviadoCajaAt=fmt();save();go('pos');setTimeout(()=>checkout(),0);
+}
+function usuariosCajasView(){
+ return listPage('Usuarios y Cajas','Operadores, cajeros, terminales y numeración independiente.',
+  '<button class="btn primary" onclick="nuevoUsuario()">➕ Usuario</button><button class="btn" onclick="nuevaCaja()">➕ Caja</button>',
+  '<div class="panel"><div class="panelhead">Usuario activo</div><div class="panelbody"><select onchange="cambiarUsuario(this.value)">'+(db.usuarios||[]).map(u=>'<option value="'+u.id+'" '+(u.id===db.usuarioActualId?'selected':'')+'>'+esc(u.nombre)+' — '+u.rol+'</option>').join('')+'</select></div></div>'+
+  '<div class="panel"><div class="panelhead">Cajas / terminales</div><div class="panelbody"><table><thead><tr><th>Caja</th><th>Estado</th><th>Saldo</th><th>Próxima venta</th><th></th></tr></thead><tbody>'+db.cajas.map(c=>'<tr><td>'+esc(c.nombre)+'<br><small>'+c.id+'</small></td><td>'+ (c.abierta?'ABIERTA':'CERRADA')+'</td><td>'+money(c.saldo)+'</td><td>VTA-'+String(c.seqVenta).padStart(5,'0')+'</td><td><button class="btn" onclick="seleccionarCaja(\''+c.id+'\')">Usar esta caja</button></td></tr>').join('')+'</tbody></table></div></div>');
+}
+function cambiarUsuario(id){if(!db.usuarios.find(x=>x.id===id))return;db.usuarioActualId=id;save();renderShell();toast('Usuario activo: '+usuarioActual().nombre)}
+function seleccionarCaja(id){if(!db.cajas.find(x=>x.id===id))return;db.terminalId=id;save();renderShell();toast('Caja activa: '+cajaActual().nombre)}
+function nuevoUsuario(){openModal('Nuevo operador',`<div class="formgrid"><div class="field"><label>Nombre</label><input id="newUserName"></div><div class="field"><label>Rol</label><select id="newUserRole"><option>Operador</option><option>Cajero</option><option>Supervisor</option></select></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="guardarUsuario()">Crear</button>`)}
+function guardarUsuario(){const n=document.getElementById('newUserName').value.trim();if(!n)return toast('Indique el nombre');db.usuarios.push({id:'USR-'+String(db.seq.usuario++).padStart(3,'0'),nombre:n,rol:document.getElementById('newUserRole').value,activo:true});save();closeModal();renderView();toast('Usuario creado')}
+function nuevaCaja(){const n=prompt('Nombre de la nueva caja');if(!n?.trim())return;const num=db.seq.caja++;db.cajas.push({id:'CAJA-'+String(num).padStart(2,'0'),nombre:n.trim(),abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1});save();renderView();toast('Caja creada')}
+function comprasView(){let total=db.compras.reduce((s,x)=>s+x.total,0);return listPage('Compras','Órdenes, recepción y cuentas por pagar',`<button class="btn primary" onclick="openPurchase()">➕ Registrar compra</button>`,`<div class="cards"><div class="card">Compras<b>${money(total)}</b><span>${db.compras.length} documentos</span></div><div class="card">CxP<b>${money(db.cxp.reduce((s,x)=>s+x.saldo,0))}</b><span>saldo pendiente</span></div></div><div class="panel"><div class="panelbody"><table><thead><tr><th>Documento</th><th>Proveedor</th><th>Fecha</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>${db.compras.map(x=>`<tr><td>${x.numero}</td><td>${esc(x.proveedor)}</td><td>${x.fecha}</td><td>${money(x.total)}</td><td>${money(x.pagado)}</td><td>${money(x.saldo)}</td></tr>`).join('')||'<tr><td colspan="6">No hay compras.</td></tr>'}</tbody></table></div></div>`)}
+function openPurchase(){let p=db.productos[0],s=db.proveedores[0];openModal('Registrar compra',`<div class="formgrid"><div class="field"><label>Proveedor</label><select id="buySupplier">${db.proveedores.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select></div><div class="field"><label>Producto</label><select id="buyProduct">${db.productos.map(x=>`<option value="${x.id}">${esc(x.nombre)} — ${money(x.costo)}</option>`).join('')}</select></div><div class="field"><label>Cantidad</label><input id="buyQty" type="number" min="1" value="1"></div><div class="field"><label>Costo unitario</label><input id="buyCost" type="number" step=".01" value="${p?.costo||0}"></div><div class="field"><label>Condición</label><select id="buyType"><option value="contado">Contado</option><option value="credito">Crédito</option></select></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="savePurchase()">Registrar</button>`)}
+function savePurchase(){
+  const sid=document.getElementById('buySupplier').value,pid=document.getElementById('buyProduct').value,q=Number(document.getElementById('buyQty').value)||0,cost=Number(document.getElementById('buyCost').value)||0,type=document.getElementById('buyType').value;
+  if(q<=0||cost<0)return toast('Cantidad o costo inválido');
+  if(type==='contado'&&!cajaActual().abierta)return toast('Abra la caja antes de registrar una compra de contado');
+  const total=q*cost,s=db.proveedores.find(x=>x.id===sid),p=db.productos.find(x=>x.id===pid),num=id('CMP','compra'),paid=type==='contado'?total:0,saldo=total-paid;
+  if(!s||!p)return toast('Proveedor o producto no encontrado');
+  p.stock+=q;
+  const x={numero:num,fecha:fmt(),proveedor:s.nombre,proveedorId:sid,total,pagado:paid,saldo,tipo:type,lineas:[{id:pid,qty:q,costo:cost}]};
+  db.compras.push(x);
+  if(saldo){db.cxp.push({id:id('CXP','cxp'),fecha:fmt(),documento:num,proveedorId:sid,proveedor:s.nombre,total,saldo,estado:'Pendiente'});s.saldo=(s.saldo||0)+saldo}else cajaActual().saldo-=paid;
+  db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:num,detalle:s.nombre,monto:paid? -paid:0});
+  save('purchase-created');closeModal();renderView();toast(num+' registrada');
+}
+function clientesView(){return listPage('Clientes','Maestro de clientes, crédito y estados de cuenta',`<button class="btn primary" onclick="openClient()">➕ Nuevo cliente</button>`,`<div class="searchbar"><input placeholder="Buscar cliente o documento" oninput="filterTable(this,'clientsTable')"></div><div class="panel"><div class="panelbody"><table id="clientsTable"><thead><tr><th>Cliente</th><th>Documento</th><th>Teléfono</th><th>Límite</th><th>Saldo CxC</th><th></th></tr></thead><tbody>${db.clientes.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${esc(c.telefono)}</td><td>${money(c.limite)}</td><td>${money(c.saldo||0)}</td><td><button class="btn" onclick="openClient('${c.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`)}
+function openClient(cid){let c=cid?db.clientes.find(x=>x.id===cid):{id:'',nombre:'',documento:'',telefono:'',email:'',direccion:'',limite:0,saldo:0};openModal(cid?'Editar cliente':'Nuevo cliente',`<div class="formgrid"><div class="field"><label>Nombre / Razón social</label><input id="cNombre" value="${esc(c.nombre)}"></div><div class="field"><label>Documento</label><input id="cDoc" value="${esc(c.documento)}"></div><div class="field"><label>Teléfono</label><input id="cTel" value="${esc(c.telefono)}"></div><div class="field"><label>Correo</label><input id="cEmail" value="${esc(c.email)}"></div><div class="field"><label>Límite de crédito</label><input id="cLim" type="number" step=".01" value="${c.limite}"></div><div class="field full"><label>Dirección</label><textarea id="cDir">${esc(c.direccion)}</textarea></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveClient('${cid||''}')">Guardar</button>`)}
+function saveClient(cid){let c=cid?db.clientes.find(x=>x.id===cid):{id:id('CL','cliente'),saldo:0};Object.assign(c,{nombre:document.getElementById('cNombre').value.trim(),documento:document.getElementById('cDoc').value.trim(),telefono:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),limite:Number(document.getElementById('cLim').value)||0,direccion:document.getElementById('cDir').value.trim()});if(!cid)db.clientes.push(c);save();closeModal();renderView();toast('Cliente guardado')}
+function newCustomerFromPOS(){openClient()}
+function proveedoresView(){return listPage('Proveedores','Maestro de proveedores y obligaciones',`<button class="btn primary" onclick="openSupplier()">➕ Nuevo proveedor</button>`,`<div class="panel"><div class="panelbody"><table><thead><tr><th>Proveedor</th><th>Documento</th><th>Teléfono</th><th>Saldo CxP</th><th></th></tr></thead><tbody>${db.proveedores.map(s=>`<tr><td>${esc(s.nombre)}</td><td>${esc(s.documento)}</td><td>${esc(s.telefono)}</td><td>${money(s.saldo||0)}</td><td><button class="btn" onclick="openSupplier('${s.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`)}
+function openSupplier(sid){let s=sid?db.proveedores.find(x=>x.id===sid):{id:'',nombre:'',documento:'',telefono:'',email:'',direccion:'',saldo:0};openModal(sid?'Editar proveedor':'Nuevo proveedor',`<div class="formgrid"><div class="field"><label>Nombre / Razón social</label><input id="sNombre" value="${esc(s.nombre)}"></div><div class="field"><label>Documento</label><input id="sDoc" value="${esc(s.documento)}"></div><div class="field"><label>Teléfono</label><input id="sTel" value="${esc(s.telefono)}"></div><div class="field"><label>Correo</label><input id="sEmail" value="${esc(s.email)}"></div><div class="field full"><label>Dirección</label><textarea id="sDir">${esc(s.direccion)}</textarea></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveSupplier('${sid||''}')">Guardar</button>`)}
+function saveSupplier(sid){let s=sid?db.proveedores.find(x=>x.id===sid):{id:id('PV','proveedor'),saldo:0};Object.assign(s,{nombre:document.getElementById('sNombre').value.trim(),documento:document.getElementById('sDoc').value.trim(),telefono:document.getElementById('sTel').value.trim(),email:document.getElementById('sEmail').value.trim(),direccion:document.getElementById('sDir').value.trim()});if(!sid)db.proveedores.push(s);save();closeModal();renderView();toast('Proveedor guardado')}
+function accountView(type){let isC=type==='cxc',a=isC?db.cxc:db.cxp;return listPage(isC?'Cuentas por Cobrar':'Cuentas por Pagar',isC?'Facturas a crédito, abonos y vencimientos':'Obligaciones con proveedores, abonos y vencimientos',null,`<div class="cards"><div class="card">Documentos<b>${a.length}</b><span>registrados</span></div><div class="card">Saldo pendiente<b>${money(a.reduce((s,x)=>s+x.saldo,0))}</b><span>por cobrar/pagar</span></div></div><div class="panel"><div class="panelbody"><table><thead><tr><th>Documento</th><th>${isC?'Cliente':'Proveedor'}</th><th>Fecha</th><th>Total</th><th>Saldo</th><th>Estado</th><th></th></tr></thead><tbody>${a.map(x=>`<tr><td>${x.documento}</td><td>${esc(isC?x.cliente:x.proveedor)}</td><td>${x.fecha}</td><td>${money(x.total)}</td><td>${money(x.saldo)}</td><td><span class="badge ${x.saldo?'warn':'ok'}">${x.saldo?'Pendiente':'Pagado'}</span></td><td>${x.saldo?`<button class="btn primary" onclick="payAccount('${type}','${x.id}')">Registrar pago</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7">No hay saldos.</td></tr>'}</tbody></table></div></div>`)}
+function payAccount(type,rid){let a=(type==='cxc'?db.cxc:db.cxp).find(x=>x.id===rid);if(!a)return;openModal(type==='cxc'?'Cobro de cliente':'Pago a proveedor',`<div class="formgrid"><div class="field"><label>Documento</label><input readonly value="${a.documento}"></div><div class="field"><label>Saldo</label><input readonly value="${money(a.saldo)}"></div><div class="field"><label>Monto a aplicar</label><input id="payAccountAmt" type="number" min=".01" max="${a.saldo}" step=".01" value="${a.saldo}"></div><div class="field"><label>Método</label><select id="accountMethod"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="finishAccountPay('${type}','${rid}')">Aplicar pago</button>`)}
+function finishAccountPay(type,rid){if(!cajaActual().abierta)return toast('Abra la caja antes de registrar cobros o pagos');let a=(type==='cxc'?db.cxc:db.cxp).find(x=>x.id===rid),amt=Math.min(a.saldo,Math.max(0,Number(document.getElementById('payAccountAmt').value)||0));if(!amt)return toast('Monto inválido');a.saldo-=amt;a.estado=a.saldo?'Pendiente':'Pagado';let party=type==='cxc'?db.clientes.find(x=>x.id===a.clienteId):db.proveedores.find(x=>x.id===a.proveedorId);if(party)party.saldo=Math.max(0,(party.saldo||0)-(type==='cxc'?amt:amt));if(type==='cxc')cajaActual().saldo+=amt;else cajaActual().saldo-=amt;db.movimientos.push({fecha:fmt(),tipo:type==='cxc'?'Cobro CxC':'Pago CxP',documento:a.documento,detalle:type==='cxc'?a.cliente:a.proveedor,monto:amt});save();closeModal();renderView();toast('Pago aplicado')}
+function presupuestosView(){return listPage('Presupuestos','Cotizaciones con conversión a venta',`<button class="btn primary" onclick="openQuote()">➕ Nuevo presupuesto</button>`,`<div class="panel"><div class="panelbody"><table><thead><tr><th>Número</th><th>Cliente</th><th>Fecha</th><th>Vigencia</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>${db.presupuestos.map(q=>`<tr><td>${q.numero}</td><td>${esc(q.cliente)}</td><td>${q.fecha}</td><td>${q.vigencia}</td><td>${money(q.total)}</td><td><span class="badge">${q.estado}</span></td><td><button class="btn primary" onclick="quoteToSale('${q.numero}')">Convertir a venta</button></td></tr>`).join('')||'<tr><td colspan="7">No hay presupuestos.</td></tr>'}</tbody></table></div></div>`)}
+function openQuote(){openModal('Nuevo presupuesto',`<div class="formgrid"><div class="field"><label>Cliente</label><select id="qClient">${db.clientes.map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div><div class="field"><label>Producto</label><select id="qProduct">${db.productos.map(p=>`<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}</select></div><div class="field"><label>Cantidad</label><input id="qQty" type="number" value="1" min="1"></div><div class="field"><label>Vigencia (días)</label><input id="qDays" type="number" value="15" min="1"></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveQuote()">Guardar</button>`)}
+function saveQuote(){let c=db.clientes.find(x=>x.id===document.getElementById('qClient').value),p=db.productos.find(x=>x.id===document.getElementById('qProduct').value),q=Number(document.getElementById('qQty').value)||1,days=Number(document.getElementById('qDays').value)||15,sub=q*p.precio,tax=sub*db.config.impuesto/100,total=sub+tax;let d=new Date();d.setDate(d.getDate()+days);db.presupuestos.push({numero:id('PRE','presupuesto'),fecha:fmt(),vigencia:d.toLocaleDateString('es-ES'),cliente:c.nombre,clienteId:c.id,total,estado:'Pendiente',lineas:[{id:p.id,qty:q,price:p.precio}]});save();closeModal();renderView();toast('Presupuesto guardado')}
+function quoteToSale(num){
+  const q=db.presupuestos.find(x=>x.numero===num);
+  if(!q)return toast('Presupuesto no encontrado');
+  if(q.estado==='Convertido')return toast('Este presupuesto ya fue convertido a venta');
+  const vig=new Date(q.vigencia);
+  if(!Number.isNaN(vig.getTime())&&vig.getTime()<Date.now()&&q.estado!=='Vencido'){q.estado='Vencido';save();return toast('El presupuesto está vencido');}
+  for(const l of q.lineas||[]){
+    const p=db.productos.find(x=>x.id===l.id)||((typeof getRepuestos==='function')?getRepuestos().find(x=>x.id===l.id):null);
+    if(!p)return toast('El artículo del presupuesto ya no existe');
+    if(Number(l.qty||0)>Number(p.stock||0))return toast('Stock insuficiente para '+(p.nombre||l.id));
+  }
+  saleCustomer=q.clienteId;cart=(q.lineas||[]).map(l=>({...l,disc:Number(l.disc||0)}));saleType='contado';q.estado='Convertido';q.convertidoAt=fmt();save('quote-converted');go('pos');toast('Presupuesto cargado en el POS');
+}
+function reportesView(){let ventas=db.ventas.reduce((s,x)=>s+x.total,0),compras=db.compras.reduce((s,x)=>s+x.total,0),util=ventas-compras;return listPage('Reportes','Indicadores y movimientos del sistema',null,`<div class="cards"><div class="card">Ventas<b>${money(ventas)}</b><span>total registrado</span></div><div class="card">Compras<b>${money(compras)}</b><span>total registrado</span></div><div class="card">Margen bruto<b>${money(util)}</b><span>estimado sobre movimientos</span></div><div class="card">Clientes<b>${db.clientes.length}</b><span>registrados</span></div><div class="card">Proveedores<b>${db.proveedores.length}</b><span>registrados</span></div></div><div class="grid2"><div class="panel"><div class="panelhead">Ventas por documento</div><div class="panelbody">${salesTable(db.ventas.slice().reverse())}</div></div><div class="panel"><div class="panelhead">Kardex / movimientos recientes</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice(-20).reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div></div>`)}
+function cajaPeriodoMovimientos(){
+  const since=cajaActual().ultimoCorteAt?new Date(cajaActual().ultimoCorteAt).getTime():0;
+  return db.movimientos.filter(x=>{const t=new Date(x.fecha).getTime();return !since||Number.isNaN(t)||t>=since;});
+}
+function cajaResumen(){
+  const since=cajaActual().ultimoCorteAt?new Date(cajaActual().ultimoCorteAt).getTime():0;
+  const inPeriod=x=>{const t=new Date(x.fecha).getTime();return !since||Number.isNaN(t)||t>=since;};
+  const ventas=db.ventas.filter(inPeriod),movs=db.movimientos.filter(inPeriod);
+  const contado=ventas.filter(v=>v.tipo==='contado').reduce((s,v)=>s+(v.pagado||0),0);
+  const credito=ventas.filter(v=>v.tipo==='credito').reduce((s,v)=>s+v.total,0);
+  const devol=ventas.filter(v=>v.tipo==='devolucion').reduce((s,v)=>s+Math.abs(v.total),0);
+  const cobros=movs.filter(x=>x.tipo==='Cobro CxC').reduce((s,x)=>s+Number(x.monto||0),0);
+  const compras=movs.filter(x=>x.tipo==='Compra').reduce((s,x)=>s+Number(x.monto||0),0);
+  const pagos=movs.filter(x=>x.tipo==='Pago CxP').reduce((s,x)=>s+Number(x.monto||0),0);
+  return {ventas,contado,credito,devol,cobros,compras,pagos};
+}
+function showCorteX(){
+  const r=cajaResumen();
+  openModal('Corte X — Consulta de caja',`<div class="cards">
+    <div class="card">Ventas contado<b>${money(r.contado)}</b><span>cobrado en ventas</span></div>
+    <div class="card">Cobros CxC<b>${money(r.cobros)}</b><span>ingresos por cuentas</span></div>
+    <div class="card">Devoluciones<b>${money(r.devol)}</b><span>reembolsos registrados</span></div>
+    <div class="card">Compras/Pagos<b>${money(r.compras+r.pagos)}</b><span>salidas registradas</span></div>
+  </div><div class="panel"><div class="panelbody"><b>Saldo actual de caja:</b> ${money(cajaActual().saldo)}<br><small>El Corte X no cierra ni modifica la caja.</small></div></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="printView()">Imprimir</button>`);
+}
+function showCorteZ(){
+  if(!cajaActual().abierta)return toast('Abra la caja para ejecutar Corte Z');
+  const r=cajaResumen();
+  openModal('Corte Z — Cierre de caja',`<div class="cards">
+    <div class="card">Ventas contado<b>${money(r.contado)}</b></div>
+    <div class="card">Cobros CxC<b>${money(r.cobros)}</b></div>
+    <div class="card">Devoluciones<b>${money(r.devol)}</b></div>
+    <div class="card">Saldo caja<b>${money(cajaActual().saldo)}</b></div>
+  </div><div style="padding:9px;background:#fff8e6;border:1px solid #e6c36a;font-size:11px">El Corte Z guarda un snapshot del período y cierra la caja. Esta operación no borra ventas, inventario ni movimientos.</div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executeCorteZ()">Ejecutar Corte Z</button>`);
+}
+async function executeCorteZ(){
+  if(!cajaActual().abierta)return toast('La caja ya está cerrada');
+  const r=cajaResumen(),now=new Date(),numero=await reserveDocumentNumber('Z');
+  cajaActual().cortes=cajaActual().cortes||[];
+  cajaActual().cortes.push({numero,fecha:fmt(),saldoFinal:cajaActual().saldo,ventasContado:r.contado,cobros:r.cobros,devoluciones:r.devol,ventasCredito:r.credito});
+  cajaActual().ultimoCorteAt=now.toISOString();cajaActual().abierta=false;cajaActual().apertura=null;save('cash-register-upsert');closeModal();renderView();toast(numero+' ejecutado. Caja cerrada.');
+}
+function cajaView(){
+  return listPage('Caja y Finanzas','Apertura, movimientos y cortes X/Z',
+    `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn ${cajaActual().abierta?'danger':'green'}" onclick="toggleCaja()">${cajaActual().abierta?'Cerrar caja':'Abrir caja'}</button><button class="btn" onclick="showCorteX()">Corte X</button><button class="btn primary" onclick="showCorteZ()">Corte Z</button></div>`,
+    `<div class="cards"><div class="card">Estado<b>${cajaActual().abierta?'ABIERTA':'CERRADA'}</b><span>${cajaActual().apertura||'Sin apertura'}</span></div><div class="card">Saldo de caja<b>${money(cajaActual().saldo)}</b><span>movimiento neto</span></div><div class="card">Cortes Z<b>${cajaActual().cortes?.length||0}</b><span>cierres registrados</span></div></div>
+    <div class="panel"><div class="panelhead">Historial de Cortes Z</div><div class="panelbody"><table><thead><tr><th>Corte</th><th>Fecha</th><th>Ventas contado</th><th>Cobros</th><th>Devoluciones</th><th>Saldo final</th></tr></thead><tbody>${(cajaActual().cortes||[]).slice().reverse().map(z=>`<tr><td><b>${z.numero}</b></td><td>${z.fecha}</td><td>${money(z.ventasContado)}</td><td>${money(z.cobros)}</td><td>${money(z.devoluciones)}</td><td>${money(z.saldoFinal)}</td></tr>`).join('')||'<tr><td colspan="6">No hay cortes Z.</td></tr>'}</tbody></table></div></div>
+    <div class="panel"><div class="panelhead">Movimientos de caja</div><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Documento</th><th>Detalle</th><th>Monto</th></tr></thead><tbody>${db.movimientos.slice().reverse().map(x=>`<tr><td>${x.fecha}</td><td>${x.tipo}</td><td>${x.documento}</td><td>${esc(x.detalle)}</td><td>${money(x.monto)}</td></tr>`).join('')||'<tr><td colspan="5">Sin movimientos.</td></tr>'}</tbody></table></div></div>`);
+}
+function toggleCaja(){if(cajaActual().abierta){return toast('Use Corte Z para cerrar la caja y registrar el cierre')}cajaActual().abierta=true;cajaActual().apertura=fmt();save('cash-register-upsert');renderView();toast('Caja abierta')}
+async function syncOrdersFromTurso(){
+ if(!navigator.onLine)return;
+ try{
+   const r=await fetch('/api/turso-orders',{cache:'no-store'});
+   if(!r.ok)return;
+   const data=await r.json(); if(!data.ok||!Array.isArray(data.orders))return;
+   let changed=false;
+   const remoteMap=new Map(data.orders.map(x=>[String(x.id),x]));
+   db.pedidos=(db.pedidos||[]).map(local=>{
+     const x=remoteMap.get(String(local.id)); if(!x)return local;
+     let payload={}; try{payload=JSON.parse(x.payload_json||'{}')}catch(e){}
+     const next={...local,...payload,estado:x.estado,cajaId:x.caja_id||local.cajaId,claimedBy:x.claimed_by||null,claimedAt:x.claimed_at||null,updatedAt:x.updated_at||local.updatedAt,saleNumber:payload.saleNumber||local.saleNumber};
+     if(JSON.stringify(next)!==JSON.stringify(local)){changed=true;return next} return local;
+   });
+   if(changed){
+     localStorage.setItem(KEY,JSON.stringify(db));
+     if(view==='pedidos')renderView();
+   }
+ }catch(e){}
+}
+setInterval(syncOrdersFromTurso,7000);
+window.addEventListener('online',syncOrdersFromTurso);
+function configView(){return listPage('Configuración','Parámetros generales del sistema',`<button class="btn primary" onclick="saveConfig()">Guardar configuración</button>`,`<div class="panel"><div class="panelbody"><div class="formgrid"><div class="field"><label>Nombre de empresa</label><input id="cfgEmpresa" value="${esc(db.config.empresa)}"></div><div class="field"><label>Moneda</label><select id="cfgMoneda"><option ${db.config.moneda==='USD'?'selected':''}>USD</option><option ${db.config.moneda==='EUR'?'selected':''}>EUR</option><option ${db.config.moneda==='VES'?'selected':''}>VES</option></select></div><div class="field"><label>Impuesto (%)</label><input id="cfgTax" type="number" step=".01" value="${db.config.impuesto}"></div></div></div></div><div class="panel"><div class="panelhead">Datos</div><div class="panelbody"><button class="btn danger" onclick="resetData()">Restablecer datos</button></div></div>`)}
+function saveConfig(){db.config.empresa=document.getElementById('cfgEmpresa').value.trim()||'SIFER 360';db.config.moneda=document.getElementById('cfgMoneda').value;db.config.impuesto=Number(document.getElementById('cfgTax').value)||0;save();renderShell();toast('Configuración guardada')}
+function resetData(){
+  const confirmation=prompt('Esta acción elimina los datos locales actuales y restaura datos de demostración. Escriba BORRAR SIFER para confirmar.');
+  if(confirmation!=='BORRAR SIFER')return toast('Restablecimiento cancelado');
+  db=structuredClone(seed);cart=[];selected=null;save();renderShell();toast('Datos de demostración restaurados');
+}
+function normalizeSearchText(s){return s?String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''):''}
+function matchKeywords(text,query){if(!query||!query.trim())return true;if(!text)return false;const normText=normalizeSearchText(text),tokens=normalizeSearchText(query).trim().split(/\s+/).filter(Boolean);return tokens.every(t=>normText.includes(t))}
+function filterTable(inp,id){let q=inp.value;document.querySelectorAll('#'+id+' tbody tr').forEach(r=>r.style.display=matchKeywords(r.textContent,q)?'':'none')}
+function openModal(title,body,foot){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modalFoot').innerHTML=foot||'';document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function fit(){document.getElementById('stage').style.transform='none'}
+function toggleFullScreen(){
+ if(!document.fullscreenElement){
+  (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen||document.documentElement.msRequestFullscreen)?.call(document.documentElement).catch(()=>{toast('No se pudo activar pantalla completa')});
+ }else{
+  (document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen)?.call(document);
+ }
+}
+document.addEventListener('fullscreenchange',()=>{
+ const b=document.getElementById('btnFullscreen');
+ if(b) b.innerHTML = document.fullscreenElement ? '🗗 Salir de Pantalla Completa' : '⛶ Pantalla Completa';
+});
+ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
+<script src="/sifer-assistant.js"></script>
+</body>
+</html>
