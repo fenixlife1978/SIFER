@@ -356,38 +356,48 @@
     return null;
   }
 
+  async function planWithSifer(command){
+    const readOnlyData=buildReadOnlyData();
+    const systemMap=buildSystemMap();
+    const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState()};
+    const history=messages.slice(-10).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
+    const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'plan',command,messages:history,context})});
+    if(!r.ok){let e='No pude consultar el núcleo de interpretación de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
+    const plan=await r.json();
+    if(!plan?.ok)throw new Error(plan?.error||'SIFER no pudo interpretar la solicitud.');
+    return plan;
+  }
+
   async function ask(text){
     const command=extractWakeWord(text);
     if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
     if(!command){ status.textContent='Dime qué necesitas después de “SIFER”.'; setTimeout(()=>{if(!busy)status.textContent='';},2200); return; }
-    busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
+    busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
-      const localAction=localActionFromCommand(command);
       if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
-      }else if(localAction){
-        const execution=await executeSiferAction(localAction);
-        if(execution?.cancelled){
-          messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'});
-        }else{
-          messages.push({role:'assistant',text:execution?.message||'Acción ejecutada por SIFER.'});
-        }
-        render(); return;
       }
-      const readOnlyData=buildReadOnlyData();
-      const systemMap=buildSystemMap();
-      const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState()};
-      const history=messages.slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
-      const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:history,context})});
-      if(!r.ok){let e='No pude conectar con el núcleo de inteligencia de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
-      if(!r.body)throw new Error('El servidor no devolvió un flujo de respuesta.');
-      const aiIndex=messages.push({role:'assistant',text:''})-1; render();
-      const reader=r.body.getReader(),decoder=new TextDecoder();
-      while(true){const {value,done}=await reader.read();if(done)break;messages[aiIndex].text+=decoder.decode(value,{stream:true});render();}
-      messages[aiIndex].text+=decoder.decode(); render();
+      let action=localActionFromCommand(command);
+      if(!action){
+        status.textContent='SIFER está entendiendo la solicitud…';
+        const plan=await planWithSifer(command);
+        if(plan.type==='answer'){
+          messages.push({role:'assistant',text:plan.answer||'Entendido.'}); render(); return;
+        }
+        if(plan.type!=='action'||!plan.action) throw new Error('No encontré una acción segura para esa solicitud.');
+        action=plan.action;
+      }
+      status.textContent='SIFER está validando y ejecutando…';
+      const execution=await executeSiferAction(action);
+      if(execution?.cancelled){
+        messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'});
+      }else{
+        messages.push({role:'assistant',text:execution?.message||'Acción ejecutada por SIFER.'});
+      }
+      render();
     }catch(e){
-      messages.push({role:'assistant',text:'No pude completar la respuesta: '+(e?.message||'error desconocido')+'\\n\\nEl POS permanece intacto.'});render();
+      messages.push({role:'assistant',text:'SIFER no pudo ejecutar la solicitud: '+(e?.message||'error desconocido')+'\\n\\nNo se realizó ningún cambio inseguro en el POS.'});render();
     }finally{
       busy=false;send.disabled=false;orb.classList.remove('active');status.textContent='';input.focus();
     }
