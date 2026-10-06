@@ -70,6 +70,7 @@
   // Portal de nivel raíz: evita que el layout del POS, overflow o transformaciones oculten la esfera.
   (document.documentElement || document.body).appendChild(root);
   root.setAttribute('data-sifer-mounted','true');
+  window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
   const particleFrag=document.createDocumentFragment();
