@@ -25,7 +25,7 @@
   #sifer-ai-orb.active:before{border-color:rgba(100,225,255,.55);box-shadow:0 0 12px rgba(0,177,255,.35)}
   #sifer-ai-orb.active .sifer-core{animation:siferPulse .65s ease-in-out infinite}
   #sifer-ai-orb.active .sifer-p{animation-duration:1.15s;box-shadow:0 0 7px #39d8ff,0 0 15px rgba(30,171,255,.85)}
-  #sifer-ai-panel{position:absolute;right:0;bottom:84px;width:min(410px,calc(100vw - 28px));height:min(600px,calc(100vh - 120px));background:linear-gradient(145deg,rgba(4,18,34,.98),rgba(1,10,22,.98));border:1px solid rgba(55,184,255,.48);border-radius:14px;box-shadow:0 0 30px rgba(0,115,220,.32),0 18px 60px rgba(0,0,0,.48);display:none;overflow:hidden;color:#e8f8ff;backdrop-filter:blur(12px)}
+  #sifer-ai-panel{position:fixed!important;right:12px!important;bottom:124px!important;z-index:2147483647!important;width:min(410px,calc(100vw - 28px));height:min(600px,calc(100vh - 120px));background:linear-gradient(145deg,rgba(4,18,34,.98),rgba(1,10,22,.98));border:1px solid rgba(55,184,255,.48);border-radius:14px;box-shadow:0 0 30px rgba(0,115,220,.32),0 18px 60px rgba(0,0,0,.48);display:none;overflow:hidden;color:#e8f8ff;backdrop-filter:blur(12px)}
   #sifer-ai-panel.show{display:flex;flex-direction:column}
   .sifer-ai-head{height:68px;display:flex;align-items:center;gap:11px;padding:10px 13px;border-bottom:1px solid rgba(83,185,255,.2);background:linear-gradient(90deg,rgba(0,92,170,.16),transparent)}
   .sifer-ai-mini{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle,#dffcff 0 7%,#36caff 16%,#0569b9 43%,#02152b 72%);box-shadow:0 0 15px rgba(28,190,255,.55);flex:0 0 auto}
@@ -46,13 +46,13 @@
   @keyframes siferOrbit{to{transform:rotate(360deg) scaleX(.72)}}
   @keyframes siferPulse{0%,100%{transform:scale(.78);opacity:.85}50%{transform:scale(1.18);opacity:1}}
   @keyframes siferFloat{0%,100%{transform:translate(0,0);opacity:.45}50%{transform:translate(4px,-7px);opacity:1}}
-  @media(max-width:700px){#sifer-ai-root{right:2px;bottom:12px}#sifer-ai-orb{width:86px;height:86px}#sifer-ai-orb:before{width:72px;margin-left:-36px}#sifer-ai-orb:after{width:48px;margin-left:-24px}#sifer-ai-panel{bottom:78px;height:min(560px,calc(100vh - 105px))}}
+  @media(max-width:700px){#sifer-ai-root{right:2px;bottom:12px}#sifer-ai-orb{width:86px;height:86px}#sifer-ai-orb:before{width:72px;margin-left:-36px}#sifer-ai-orb:after{width:48px;margin-left:-24px}#sifer-ai-panel{right:7px!important;bottom:100px!important;width:calc(100vw - 14px)!important;height:min(560px,calc(100vh - 115px))}}
   `;
   const style=document.createElement('style'); style.id='sifer-ai-style'; style.textContent=css; document.head.appendChild(style);
 
   const root=document.createElement('div'); root.id='sifer-ai-root';
   root.innerHTML=`
-    <div id="sifer-ai-panel">
+    <div id="sifer-ai-panel" hidden>
       <div class="sifer-ai-head">
         <div class="sifer-ai-mini"></div>
         <div><div class="sifer-ai-title">SIFER</div><div class="sifer-ai-sub">ASISTENTE INTELIGENTE · POS AUTOMOTRIZ</div></div>
@@ -125,6 +125,7 @@
     open=force===undefined?!open:force;
     if(open){
       panel.classList.add('show');
+      panel.hidden=false;
       panel.style.setProperty('display','flex','important');
       panel.style.setProperty('visibility','visible','important');
       panel.style.setProperty('opacity','1','important');
@@ -133,7 +134,8 @@
       setTimeout(()=>input.focus(),60);
     }else{
       panel.classList.remove('show');
-      panel.style.removeProperty('display');
+      panel.hidden=true;
+      panel.style.setProperty('display','none','important');
       stopVoice();
     }
   }
