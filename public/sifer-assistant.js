@@ -138,12 +138,59 @@
     return value.slice(match.index+match[0].length).replace(/^\s*[,;:.-]?\s*/,'').trim();
   }
 
+  function formatSalesAmount(value,currency){
+    const code=String(currency||'USD').toUpperCase();
+    try{return new Intl.NumberFormat('es-VE',{style:'currency',currency:code}).format(Number(value)||0);}
+    catch{return (Number(value)||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+code;}
+  }
+
+  function isTodaySalesQuery(text){
+    const value=String(text||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    return /(cuanto.*vend|vendimos|ventas.*hoy|venta.*hoy|vendido.*hoy|total.*ventas.*hoy|total.*vendido)/i.test(value);
+  }
+
+  function answerTodaySales(){
+    try{
+      const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
+      const list=Array.isArray(db.ventas)?db.ventas:[];
+      const todayKey=new Date().toLocaleDateString('es-ES');
+      const isToday=(value)=>{
+        if(!value)return false;
+        const text=String(value), direct=text.split(',')[0].trim();
+        if(direct===todayKey)return true;
+        const parsed=new Date(value);
+        return !Number.isNaN(parsed.getTime()) && parsed.toLocaleDateString('es-ES')===todayKey;
+      };
+      const sales=list.filter(v=>isToday(v.fecha)&&String(v.estado||'').toLowerCase()!=='anulada');
+      const total=sales.reduce((sum,v)=>sum+Number(v.total||0),0);
+      const cajas=Array.isArray(db.cajas)?db.cajas:[];
+      const current=cajas.find(x=>x.id===db.terminalId)||cajas[0]||null;
+      const currency=db.config?.moneda||'USD';
+      if(!sales.length){
+        return current && !current.abierta
+          ? 'La caja está cerrada y no se han registrado ventas hoy.'
+          : 'Hoy no se han registrado ventas hasta el momento.';
+      }
+      const base='Hoy se han registrado '+sales.length+' '+(sales.length===1?'venta':'ventas')+' por un total de '+formatSalesAmount(total,currency)+'.';
+      return current && !current.abierta ? base+' La caja actual está cerrada.' : base+' La caja está abierta.';
+    }catch{
+      return 'No pude consultar las ventas de hoy en el estado local del POS.';
+    }
+  }
+
   async function ask(text){
     const command=extractWakeWord(text);
     if(command===null){ status.textContent='SIFER está en espera…'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
     if(!command){ status.textContent='Dime qué necesitas después de “SIFER”.'; setTimeout(()=>{if(!busy)status.textContent='';},2200); return; }
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está procesando…';
     const userMsg={role:'user',text:'SIFER, '+command}; messages.push(userMsg); render();
+    if(isTodaySalesQuery(command)){
+      messages.push({role:'assistant',text:answerTodaySales()});
+      render();
+      busy=false; send.disabled=false; orb.classList.remove('active'); status.textContent=''; input.focus();
+      return;
+    }
+
     const aiIndex=messages.push({role:'assistant',text:''})-1; render();
     try{
       const readOnlyData=buildReadOnlyData();
