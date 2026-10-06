@@ -8,9 +8,9 @@
   let busy = false;
 
   const css = `
-  #sifer-ai-root{position:fixed;right:12px;bottom:20px;z-index:9999;font-family:Arial,Helvetica,sans-serif}
+  #sifer-ai-root{position:fixed!important;right:12px!important;bottom:20px!important;left:auto!important;top:auto!important;width:104px!important;height:104px!important;z-index:2147483647!important;font-family:Arial,Helvetica,sans-serif;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;overflow:visible!important;transform:none!important;contain:none!important}
   /* SIFER holographic core: transparent field only, no circular container. */
-  #sifer-ai-orb{width:104px;height:104px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;cursor:pointer;position:relative;overflow:visible;display:block;color:transparent;appearance:none;-webkit-appearance:none;outline:none}
+  #sifer-ai-orb{width:104px!important;height:104px!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;position:relative!important;overflow:visible!important;display:block!important;color:transparent!important;appearance:none;-webkit-appearance:none;outline:none!important;visibility:visible!important;opacity:1!important}
   #sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:30px;margin:-15px 0 0 -43px;border:1px solid rgba(67,202,255,.22);border-radius:50%;filter:blur(.2px);animation:siferOrbit 4.8s linear infinite;transform-origin:center}
   #sifer-ai-orb:after{width:58px;height:20px;margin:-10px 0 0 -29px;border-color:rgba(150,238,255,.18);animation-duration:3.1s;animation-direction:reverse}
   #sifer-ai-orb .sifer-core{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#e9fdff;box-shadow:0 0 5px #fff,0 0 13px #54dcff,0 0 28px rgba(0,148,255,.95);z-index:5;animation:siferPulse 1.6s ease-in-out infinite}
@@ -64,7 +64,9 @@
     <button id="sifer-ai-orb" title="Abrir SIFER">
       <i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i><i class="sifer-p p4"></i><i class="sifer-p p5"></i>
     </button>`;
-  document.body.appendChild(root);
+  // Portal de nivel raíz: evita que el layout del POS, overflow o transformaciones oculten la esfera.
+  (document.documentElement || document.body).appendChild(root);
+  root.setAttribute('data-sifer-mounted','true');
 
   // Genera una nube de partículas independiente del contenedor visual.
   // El botón solo conserva el área táctil transparente.
