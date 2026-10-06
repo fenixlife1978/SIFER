@@ -79,14 +79,22 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 <script>
 (function(){
   var boot=document.getElementById('sifer-boot-orb');
-  function openSifer(){
+  function openSifer(e){
+    if(e){e.preventDefault();e.stopPropagation();}
     var real=document.getElementById('sifer-ai-orb');
-    if(real){real.click();return;}
-    var s=document.querySelector('script[data-sifer-loader]');
+    if(real){real.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));return;}
+    var s=document.querySelector('script[data-sifer-main]');
     if(!s){
-      s=document.createElement('script');s.src='/sifer-assistant.js?v=20261006-voz-estable-boot';s.async=false;s.dataset.siferLoader='1';document.body.appendChild(s);
+      s=document.createElement('script');
+      s.src='/sifer-assistant.js?v=20261006-voz-estable-final';
+      s.async=false;
+      s.dataset.siferMain='1';
+      document.body.appendChild(s);
     }
-    setTimeout(function(){var r=document.getElementById('sifer-ai-orb');if(r)r.click();},500);
+    setTimeout(function(){
+      var r=document.getElementById('sifer-ai-orb');
+      if(r) r.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+    },300);
   }
   boot.addEventListener('click',openSifer);
   window.addEventListener('sifer:mounted',function(){boot.style.display='none';});
@@ -1026,38 +1034,24 @@ ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orien
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 <script>
 (function(){
-  // SIFER tiene un único motor. Este watchdog NO crea un segundo asistente.
-  // Solo garantiza que el motor principal se cargue si la red tarda o el script no llegó.
-  var started=false, retries=0, maxRetries=3;
-  function loadMain(){
-    if(started || document.getElementById('sifer-ai-root')) return;
-    if(retries>=maxRetries) return;
-    retries++;
+  // Un solo cargador del motor SIFER. Evita instancias duplicadas del asistente.
+  function loadSifer(){
+    if(document.getElementById('sifer-ai-root')) return true;
+    if(document.querySelector('script[data-sifer-main]')) return false;
     var s=document.createElement('script');
-    s.src='/sifer-assistant.js?v=20261006-voz-estable'+retries;
+    s.src='/sifer-assistant.js?v=20261006-voz-estable-final';
     s.async=false;
-    s.onload=function(){ started=true; };
-    s.onerror=function(){
-      started=false;
-      setTimeout(loadMain,1200*retries);
-    };
+    s.dataset.siferMain='1';
     document.body.appendChild(s);
+    return false;
   }
-  window.addEventListener('error',function(e){
-    if(String(e.filename||'').indexOf('sifer-assistant.js')!==-1){
-      setTimeout(function(){
-        if(!document.getElementById('sifer-ai-root')) loadMain();
-      },250);
-    }
+  window.addEventListener('sifer:mounted',function(){
+    var boot=document.getElementById('sifer-boot-orb');
+    if(boot && document.getElementById('sifer-ai-orb')) boot.remove();
   });
-  setTimeout(function(){
-    if(!document.getElementById('sifer-ai-root')){
-      // El script principal ya está declarado al final del documento; solo reintentamos si no montó.
-      loadMain();
-    }
-  },2200);
+  setTimeout(function(){loadSifer();},100);
 })();
 </script>
-<script src="/sifer-assistant.js?v=20261006-voz-estable"></script>
+<script src="/sifer-assistant.js?v=20261006-voz-estable-final" data-sifer-main="1"></script>
 </body>
 </html>
