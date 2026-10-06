@@ -1011,10 +1011,7 @@ ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orien
 <script>
 (function(){
  const shell=document.getElementById('sifer-emergency-shell');
- function sync(){
-   const real=document.getElementById('sifer-ai-root');
-   if(real) shell.remove();
- }
+ function sync(){}
  window.addEventListener('sifer:mounted',sync);
  shell.addEventListener('toggle',function(){
    if(!shell.open)return;
