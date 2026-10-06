@@ -996,81 +996,36 @@ ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orien
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
 <script>
 (function(){
-  function ensureSiferVisible(){
-    var root=document.getElementById('sifer-ai-root');
-    if(!root){
-      root=document.createElement('div');
-      root.id='sifer-ai-root';
-      root.setAttribute('data-sifer-watchdog','true');
-      var particles='';
-      for(var i=0;i<64;i++){
-        var a=(i/64)*Math.PI*2;
-        var radius=18+(i%8)*5;
-        var x=52+Math.cos(a*1.7)*radius;
-        var y=52+Math.sin(a*1.13)*radius*.72;
-        var z=(i%5);
-        particles+='<i class="sifer-wp" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;animation-delay:'+((i%17)*.11).toFixed(2)+'s;transform:scale('+(0.65+z*.12).toFixed(2)+')"></i>';
-      }
-      root.innerHTML='<div id="sifer-ai-panel" aria-label="Panel de SIFER"><div class="sifer-w-head"><div class="sifer-w-mini"></div><div><b>SIFER</b><small>ASISTENTE INTELIGENTE · POS AUTOMOTRIZ</small></div><button id="sifer-w-close" type="button">×</button></div><div id="sifer-w-chat"><div class="sifer-w-msg ai">Hola. Soy SIFER. Estoy conectado al POS. ¿Qué necesitas?</div></div><form id="sifer-w-form"><textarea id="sifer-w-input" rows="1" placeholder="Dile a SIFER qué necesitas…"></textarea><button type="submit">➤</button></form></div><button id="sifer-ai-orb" title="Abrir SIFER" aria-label="Abrir SIFER"><i class="sifer-core"></i>'+particles+'</button>';
-      document.body.appendChild(root);
-      var orb=root.querySelector('#sifer-ai-orb');
-      var panel=root.querySelector('#sifer-ai-panel');
-      var input=root.querySelector('#sifer-w-input');
-      var chat=root.querySelector('#sifer-w-chat');
-      function toggle(){panel.classList.toggle('show');if(panel.classList.contains('show'))input.focus();}
-      orb.addEventListener('click',toggle);
-      root.querySelector('#sifer-w-close').addEventListener('click',function(){panel.classList.remove('show');});
-      root.querySelector('#sifer-w-form').addEventListener('submit',async function(ev){
-        ev.preventDefault();
-        var command=String(input.value||'').trim();
-        if(!command)return;
-        chat.insertAdjacentHTML('beforeend','<div class="sifer-w-msg user">'+command.replace(/[&<>"]/g,function(x){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x];})+'</div>');
-        input.value='';
-        var pending=document.createElement('div');pending.className='sifer-w-msg ai';pending.textContent='SIFER está interpretando…';chat.appendChild(pending);chat.scrollTop=chat.scrollHeight;
-        try{
-          var clean=command.replace(/^sifer\\s*[,;:. -]?\\s*/i,'').trim();
-          var lower=clean.toLowerCase();
-          if(/^(cu[aá]nto|cu[aá]nto|cu[aá]ndo|cu[aá]nto se)?\\s*(vendimos|vend[ií]o|ventas).*(hoy|este d[ií]a)?$/.test(lower) || /ventas.*hoy/.test(lower) || /vend[ií]mos.*hoy/.test(lower)){
-            var raw=localStorage.getItem('sifer360_v1');var db=raw?JSON.parse(raw):{};var ventas=Array.isArray(db.ventas)?db.ventas:[];var now=new Date();var day=now.toLocaleDateString('es-ES');
-            var valid=ventas.filter(function(v){if(String(v.estado||'').toLowerCase()==='anulada')return false;var d=String(v.fecha||'');var p=new Date(v.fecha);return d.split(',')[0].trim()===day||(!isNaN(p.getTime())&&p.toLocaleDateString('es-ES')===day);});
-            var total=valid.reduce(function(s,v){return s+Number(v.total||0)},0);
-            pending.textContent=valid.length?'Hoy se han registrado '+valid.length+' venta'+(valid.length===1?'':'s')+' por un total de '+total.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+'.':'Hoy no se han registrado ventas hasta el momento.';
-          }else if(/(ll[eé]vame|lleva|ir|entra|entrar|abre|abrir|muestra|mostrar).*(pos|venta|ventas)/.test(lower) || /pos.*(venta|ventas)/.test(lower)){
-            var buttons=[].slice.call(document.querySelectorAll('button,[role="button"],a'));
-            var target=buttons.find(function(el){var t=String(el.innerText||el.getAttribute('aria-label')||el.title||'').toLowerCase().trim();return /^(pos|ventas|punto de venta)$/.test(t)||t.includes('punto de venta')||t==='venta';});
-            if(target){target.click();pending.textContent='Listo. Te llevé al POS de venta.';}else{pending.textContent='No encontré el acceso al POS de venta en esta pantalla.';}
-          }else{
-            var response=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'chat',messages:[{role:'user',content:command}],context:{module:'POS',readOnlyData:{},systemMap:{},capabilities:[]}})});
-            var text=await response.text();
-            pending.textContent=response.ok?(text||'No recibí una respuesta.'):(function(){try{return JSON.parse(text).error||'SIFER no pudo procesar la solicitud.'}catch(_){return 'SIFER no pudo procesar la solicitud.'}})();
-          }
-        }catch(err){pending.textContent='SIFER tuvo un error al procesar la solicitud. Las operaciones básicas siguen disponibles.';}
-        chat.scrollTop=chat.scrollHeight;
-      });
-      input.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();root.querySelector('#sifer-w-form').requestSubmit();}});
-    }
-    root.style.setProperty('position','fixed','important');
-    root.style.setProperty('right','12px','important');
-    root.style.setProperty('bottom','20px','important');
-    root.style.setProperty('z-index','2147483647','important');
-    root.style.setProperty('display','block','important');
-    root.style.setProperty('visibility','visible','important');
-    root.style.setProperty('opacity','1','important');
-    var orb=root.querySelector('#sifer-ai-orb');
-    if(orb){
-      orb.style.setProperty('display','block','important');
-      orb.style.setProperty('visibility','visible','important');
-      orb.style.setProperty('opacity','1','important');
-    }
+  // SIFER tiene un único motor. Este watchdog NO crea un segundo asistente.
+  // Solo garantiza que el motor principal se cargue si la red tarda o el script no llegó.
+  var started=false, retries=0, maxRetries=3;
+  function loadMain(){
+    if(started || document.getElementById('sifer-ai-root')) return;
+    if(retries>=maxRetries) return;
+    retries++;
+    var s=document.createElement('script');
+    s.src='/sifer-assistant.js?v=20261005f-r'+retries;
+    s.async=false;
+    s.onload=function(){ started=true; };
+    s.onerror=function(){
+      started=false;
+      setTimeout(loadMain,1200*retries);
+    };
+    document.body.appendChild(s);
   }
-  var style=document.createElement('style');
-  style.id='sifer-watchdog-style';
-  style.textContent='#sifer-ai-root{position:fixed!important;right:12px!important;bottom:20px!important;width:104px;min-height:104px;z-index:2147483647!important;font-family:Arial,Helvetica,sans-serif}#sifer-ai-orb{width:104px;height:104px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;cursor:pointer;position:relative;overflow:visible;display:block;color:transparent;appearance:none;-webkit-appearance:none;outline:none}#sifer-ai-orb:before,#sifer-ai-orb:after{content:"";position:absolute;left:50%;top:50%;width:94px;height:34px;margin:-17px 0 0 -47px;border:1px solid rgba(67,202,255,.28);border-radius:50%;filter:blur(.2px);animation:siferWatchOrbit 4.8s linear infinite;transform-origin:center}#sifer-ai-orb:after{width:64px;height:24px;margin:-12px 0 0 -32px;border-color:rgba(150,238,255,.24);animation-duration:3.1s;animation-direction:reverse}.sifer-core{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#e9fdff;box-shadow:0 0 5px #fff,0 0 13px #54dcff,0 0 28px rgba(0,148,255,.95);z-index:8}.sifer-wp{position:absolute;width:2px;height:2px;border-radius:50%;background:#baf5ff;box-shadow:0 0 5px #2acbff,0 0 11px rgba(30,171,255,.9);animation:siferWatchFloat 2.8s ease-in-out infinite;z-index:4}.sifer-wp:nth-child(3n){width:3px;height:3px}.sifer-wp:nth-child(5n){opacity:.65}.sifer-w-head{height:62px;display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(83,185,255,.2);background:linear-gradient(90deg,rgba(0,92,170,.18),transparent)}.sifer-w-head b{display:block;font-size:15px;letter-spacing:.08em;color:#e8f8ff}.sifer-w-head small{display:block;font-size:9px;color:#77cbed;margin-top:3px}.sifer-w-mini{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle,#dffcff 0 7%,#36caff 16%,#0569b9 43%,#02152b 72%);box-shadow:0 0 15px rgba(28,190,255,.55)}#sifer-w-close{margin-left:auto;border:0;background:transparent;color:#9bdcff;font-size:21px;cursor:pointer}#sifer-ai-panel{position:absolute;right:0;bottom:84px;width:min(410px,calc(100vw - 28px));height:min(600px,calc(100vh - 120px));background:linear-gradient(145deg,rgba(4,18,34,.98),rgba(1,10,22,.98));border:1px solid rgba(55,184,255,.48);border-radius:14px;box-shadow:0 0 30px rgba(0,115,220,.32),0 18px 60px rgba(0,0,0,.48);display:none;overflow:hidden;color:#e8f8ff;backdrop-filter:blur(12px)}#sifer-ai-panel.show{display:flex;flex-direction:column}.sifer-w-head+ #sifer-w-chat{flex:1}.sifer-w-head+ #sifer-w-chat,#sifer-w-chat{overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}.sifer-w-msg{max-width:88%;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.45;white-space:pre-wrap}.sifer-w-msg.ai{align-self:flex-start;background:rgba(12,61,94,.56);border:1px solid rgba(55,184,255,.18)}.sifer-w-msg.user{align-self:flex-end;background:rgba(0,117,180,.35);border:1px solid rgba(55,184,255,.28)}#sifer-w-form{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(83,185,255,.18)}#sifer-w-input{flex:1;resize:none;min-height:38px;max-height:110px;border:1px solid rgba(83,185,255,.28);border-radius:9px;background:rgba(0,10,20,.72);color:#e8f8ff;padding:10px;font:12px Arial;outline:none}#sifer-w-form button{width:40px;border:0;border-radius:9px;background:#087fc1;color:#fff;cursor:pointer}@keyframes siferWatchOrbit{to{transform:rotate(360deg) scaleX(.72)}}@keyframes siferWatchFloat{0%,100%{transform:translate(0,0);opacity:.4}50%{transform:translate(5px,-8px);opacity:1}}@media(max-width:700px){#sifer-ai-root{right:2px;bottom:12px}#sifer-ai-orb{width:86px;height:86px}#sifer-ai-panel{bottom:78px;height:min(560px,calc(100vh - 105px))}}';
-  document.head.appendChild(style);
   window.addEventListener('error',function(e){
-    if(String(e.filename||'').indexOf('sifer-assistant.js')!==-1) setTimeout(ensureSiferVisible,0);
+    if(String(e.filename||'').indexOf('sifer-assistant.js')!==-1){
+      setTimeout(function(){
+        if(!document.getElementById('sifer-ai-root')) loadMain();
+      },250);
+    }
   });
-  setTimeout(ensureSiferVisible,1200);
+  setTimeout(function(){
+    if(!document.getElementById('sifer-ai-root')){
+      // El script principal ya está declarado al final del documento; solo reintentamos si no montó.
+      loadMain();
+    }
+  },2200);
 })();
 </script>
 <script src="/sifer-assistant.js?v=20261005f"></script>
