@@ -3,6 +3,8 @@
  * without touching POS business logic.
  */
 (() => {
+  if(window.__SIFER_ASSISTANT_LOADED__) return;
+  window.__SIFER_ASSISTANT_LOADED__=true;
   const messages = [];
   let open = false;
   let busy = false;
