@@ -397,6 +397,7 @@
     navigate:{description:'Cambiar al módulo solicitado',mutating:false},
     add_to_cart:{description:'Agregar un producto o repuesto existente al carrito actual',mutating:false},
     search_catalog:{description:'Buscar productos o repuestos en el Catálogo Automotriz/Máster usando lenguaje natural y devolver coincidencias reales',mutating:false},
+    catalog_references:{description:'Mostrar las referencias equivalentes del último artículo identificado o de un artículo indicado',mutating:false},
     import_catalog_item:{description:'Buscar un artículo en el Catálogo Máster, incorporarlo al inventario real y establecer existencia, mínimo y punto de reorden indicados por el usuario',mutating:true,confirm:false},
     create_purchase:{description:'Registrar una compra real a un proveedor, con cantidad, artículo, costo y condición contado o crédito',mutating:true,confirm:true},
     remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
