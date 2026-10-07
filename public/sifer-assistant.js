@@ -456,12 +456,12 @@
         const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); setTimeout(rememberCurrentModule,300); return {ok:true,message:'Módulo abierto: '+target};
       }
       case 'create_purchase': {
-        if(typeof save!=='function') throw new Error('Persistencia del POS no disponible');
-        const raw=localStorage.getItem('sifer360_v1'), liveDb=raw?JSON.parse(raw):{};
-        const suppliers=Array.isArray(liveDb.proveedores)?liveDb.proveedores:[];
-        const supplierQuery=normalizeLocal(args.supplierQuery||args.proveedor||'');
+        if(typeof db==='undefined'||!db) throw new Error('Base de datos del POS no disponible');
+        const suppliers=Array.isArray(db.proveedores)?db.proveedores:[];
+        const supplierRaw=String(args.supplierQuery||args.proveedor||'');
+        const supplierQuery=normalizeLocal(supplierRaw);
         let supplier=null;
-        if(/^(ese|ese proveedor|el proveedor|el mismo)$/i.test(String(args.supplierQuery||'')) && suppliers.length===1) supplier=suppliers[0];
+        if(/^(ese|ese proveedor|el proveedor|el mismo)$/i.test(supplierRaw) && suppliers.length===1) supplier=suppliers[0];
         if(!supplier && supplierQuery) supplier=suppliers.find(s=>normalizeLocal([s.id,s.nombre,s.documento,s.telefono].filter(Boolean).join(' ')).includes(supplierQuery));
         if(!supplier && suppliers.length===1) supplier=suppliers[0];
         if(!supplier) throw new Error('No pude identificar el proveedor de la compra.');
@@ -475,23 +475,22 @@
         if(type==='contado' && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para una compra de contado primero debes abrir la caja.');
         const total=qty*cost, paid=type==='contado'?total:0, saldo=total-paid;
         const isRep=typeof getRepuestos==='function' && getRepuestos().some(x=>x.id===p.id);
-        const target=isRep?getRepuestos().find(x=>x.id===p.id):liveDb.productos.find(x=>x.id===p.id);
+        const target=isRep?getRepuestos().find(x=>x.id===p.id):(Array.isArray(db.productos)?db.productos.find(x=>x.id===p.id):null);
         if(!target) throw new Error('El artículo no está disponible en la base de inventario.');
         target.stock=Number(target.stock||0)+qty;
+        db.compras=Array.isArray(db.compras)?db.compras:[];
+        db.cxp=Array.isArray(db.cxp)?db.cxp:[];
+        db.movimientos=Array.isArray(db.movimientos)?db.movimientos:[];
         const num=typeof id==='function'?id('CMP','compra'):'CMP-'+Date.now();
-        liveDb.compras=Array.isArray(liveDb.compras)?liveDb.compras:[];
-        liveDb.cxp=Array.isArray(liveDb.cxp)?liveDb.cxp:[];
-        liveDb.movimientos=Array.isArray(liveDb.movimientos)?liveDb.movimientos:[];
-        liveDb.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
+        db.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
         if(saldo){
-          liveDb.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,estado:'Pendiente'});
+          db.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,estado:'Pendiente'});
           supplier.saldo=Number(supplier.saldo||0)+saldo;
         }else if(typeof cajaActual==='function'){cajaActual().saldo-=paid;}
-        liveDb.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
-        localStorage.setItem('sifer360_v1',JSON.stringify(liveDb));
+        db.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
         if(typeof save==='function') save('purchase-created');
         if(typeof renderView==='function') renderView();
-        return {ok:true,message:'Compra '+num+' registrada a crédito: '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+'. CxP creada por '+money(saldo)+'.'};
+        return {ok:true,message:'Compra '+num+' registrada a '+type+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+(saldo?'. CxP creada por '+money(saldo)+'.':'.')};
       }
       case 'search_catalog': {
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
