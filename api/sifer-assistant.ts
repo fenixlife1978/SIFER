@@ -122,7 +122,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
 
       let result;
       let lastError;
-      for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
+      for (const model of [MODEL,...FALLBACK_MODELS]) {
         try {
           result = await ai.models.generateContent({
             model,
