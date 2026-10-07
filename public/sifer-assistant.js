@@ -23,6 +23,16 @@
   .sifer-ai-chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}.sifer-msg{max-width:88%;padding:9px 11px;border-radius:10px;font-size:12px;line-height:1.4;white-space:pre-wrap}.sifer-msg.ai{align-self:flex-start;background:#0c3d5e}.sifer-msg.user{align-self:flex-end;background:#086fbf}
   .sifer-ai-voice{padding:7px;text-align:center;font-size:10px;color:#72d8ff;border-top:1px solid #19445b}.sifer-ai-status{min-height:16px;padding:0 10px 5px;font-size:9px;color:#6fc9ef}.sifer-ai-form{display:flex;gap:6px;padding:8px;border-top:1px solid #19445b}.sifer-ai-input{flex:1;height:42px;resize:none;background:#031526;border:1px solid #2b6985;border-radius:7px;color:#fff;padding:9px;font-size:12px}.sifer-ai-send{width:46px;border:1px solid #168ac5;border-radius:7px;background:#087fc0;color:#fff;font-weight:800}
   @keyframes siferOrbit{to{transform:translate(-50%,-50%) rotate(360deg) scaleX(.7)}}
+  #sifer-ai-orb[data-state="listening"] .sifer-core{animation:siferListen 1s ease-in-out infinite}
+  #sifer-ai-orb[data-state="thinking"] .sifer-core{animation:siferThink .75s ease-in-out infinite}
+  #sifer-ai-orb[data-state="executing"] .sifer-core{animation:siferExec .42s linear infinite}
+  #sifer-ai-orb[data-state="speaking"] .sifer-core{animation:siferSpeak .5s ease-in-out infinite}
+  #sifer-ai-orb[data-state="error"] .sifer-core{animation:siferError .7s ease-in-out 2}
+  @keyframes siferListen{50%{transform:translate(-50%,-50%) scale(1.65);box-shadow:0 0 10px #fff,0 0 32px #39cfff,0 0 62px #168cff}}
+  @keyframes siferThink{50%{transform:translate(-50%,-50%) scale(.55);box-shadow:0 0 8px #fff,0 0 30px #9d72ff,0 0 65px #6b42ff}}
+  @keyframes siferExec{to{transform:translate(-50%,-50%) rotate(360deg);box-shadow:0 0 10px #fff,0 0 35px #ffd45a,0 0 70px #ff9f1c}}
+  @keyframes siferSpeak{50%{transform:translate(-50%,-50%) scale(1.45);box-shadow:0 0 10px #fff,0 0 35px #55ffb0,0 0 65px #16c77a}}
+  @keyframes siferError{25%,75%{transform:translate(-56%,-50%)}50%{transform:translate(-44%,-50%);box-shadow:0 0 8px #fff,0 0 30px #ff5c6c,0 0 58px #c61f3c}}
   @media(max-width:700px){#sifer-ai-root{right:3px;bottom:8px}#sifer-ai-panel{right:7px;bottom:96px;width:calc(100vw - 14px);height:min(560px,calc(100vh - 110px))}}
   `;
   const oldStyle=document.getElementById('sifer-ai-style'); if(oldStyle)oldStyle.remove();
