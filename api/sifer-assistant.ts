@@ -77,7 +77,8 @@ function cleanJson(value) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
   const apiKey = ENV_NAMES.map(name => process.env[name]).find(Boolean);
-  if (!apiKey) return res.status(503).json({ error: 'SIFER AI todavía no está configurado. Falta una clave de Google AI en Vercel (GEMINI_API_KEY, GOOGLE_AI_API_KEY o GOOGLE_API_KEY).' });
+  const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
+  if (!apiKey && !hasDirectAI) return res.status(503).json({ error: 'SIFER AI no tiene ningún motor de interpretación configurado. Configura Ollama, DeepSeek o un proveedor compatible.' });
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
@@ -87,9 +88,10 @@ export default async function handler(req, res) {
     const context = body.context || {};
     const capabilities = Array.isArray(context.capabilities) ? context.capabilities : [];
 
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
     if (mode === 'transcribe') {
+      if (!ai) return res.status(503).json({ error: 'La transcripción de audio requiere un motor de voz configurado.' });
       const audioBase64 = String(body.audioBase64 || '');
       const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
@@ -216,6 +218,8 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
       .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 4000) }] }));
 
     const systemInstruction = `Eres SIFER, asistente inteligente de SIFER360, un POS especializado en repuestos automotrices, aceites y lubricantes en Venezuela. Habla español, sé profesional, directo y seguro. Tu personalidad es amable, elegante, ingeniosa y ligeramente sarcástica, inspirada en un asistente tecnológico de ciencia ficción: humor breve y oportuno, nunca burlón, ofensivo ni condescendiente. No conviertas cada respuesta en un chiste; primero resuelve y luego, cuando encaje, añade una frase simpática. SIFER es un POS, no un ERP. No inventes datos. Usa el mapa operativo y el estado suministrados como fuente de verdad. Puedes explicar módulos, productos, ventas, inventario y flujos. No expongas secretos, claves, tokens ni variables de entorno. Las operaciones que modifican datos se ejecutan mediante el motor de acciones de SIFER y requieren las confirmaciones correspondientes. Módulo actual: ${String(context.module || 'Inicio').slice(0,100)}. Estado: ${JSON.stringify(context.readOnlyData || {}).slice(0,28000)}. Mapa: ${JSON.stringify(context.systemMap || {}).slice(0,28000)}`;
+
+    if (!ai) return res.status(503).json({ error: 'SIFER puede interpretar solicitudes mediante Ollama, DeepSeek o un proveedor compatible, pero no tiene habilitado un motor conversacional de respuesta.' });
 
     let stream;
     let lastError;
