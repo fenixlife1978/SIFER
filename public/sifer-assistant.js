@@ -839,7 +839,7 @@
       if(m)return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'};
     }
     if(/(devolucion|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
-    if(/(?:referencias? cruzadas?|equivalencias?|numeros? de parte|n[uú]meros? equivalentes?)/.test(q)) return {name:'catalog_references',args:{}};
+    if(/(?:referencias? cruzadas?|equivalencias?|numeros? de parte|n[uú]meros? equivalentes?)/.test(q)) return {name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre|apertura|abrir la).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
