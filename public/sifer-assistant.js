@@ -8,6 +8,7 @@
   const messages = [];
   let open = false;
   let busy = false;
+  let orbDocked = false;
   // SIFER: conserva el último artículo de catálogo para consultas contextuales.
   let lastCatalogItem = (()=>{try{return JSON.parse(localStorage.getItem('sifer360_last_catalog_item_v1')||'null')}catch{return null}})();
 
@@ -53,6 +54,7 @@
   // Blindaje solo visual de la esfera. No tocar el DOM/atributos del panel.
   function keepOrbAlive(){
     if(!document.body.contains(root)) document.body.appendChild(root);
+    if(orbDocked) dockOrbToCart();
     root.style.setProperty('position','fixed','important');
     root.style.setProperty('z-index','2147483647','important');
     orb.style.setProperty('display','block','important');
@@ -93,6 +95,34 @@
   siferOrbObserver.observe(document.body,{childList:true});
   orb.style.display='block';
   const panel=root.querySelector('#sifer-ai-panel');
+  function dockOrbToCart(){
+    const host=document.querySelector('.posscreen .postable') || document.querySelector('.posscreen .posleft');
+    if(!host){ orbDocked=false; root.style.removeProperty('position'); return false; }
+    if(getComputedStyle(host).position==='static') host.style.position='relative';
+    const r=host.getBoundingClientRect();
+    root.style.setProperty('position','absolute','important');
+    root.style.setProperty('left',(r.width-108)+'px','important');
+    root.style.setProperty('top','12px','important');
+    root.style.setProperty('right','auto','important');
+    root.style.setProperty('bottom','auto','important');
+    root.style.setProperty('z-index','2147483647','important');
+    root.title='SIFER · ubicación en el carrito';
+    return true;
+  }
+  function undockOrb(){
+    orbDocked=false;
+    root.style.setProperty('position','fixed','important');
+    root.style.setProperty('left','auto','important');
+    root.style.setProperty('right','16px','important');
+    root.style.setProperty('top','auto','important');
+    root.style.setProperty('bottom','16px','important');
+    root.style.setProperty('z-index','2147483647','important');
+    root.title='SIFER';
+  }
+  function moveOrbToCart(){
+    if(dockOrbToCart()){ orbDocked=true; dockOrbToCart(); return true; }
+    return false;
+  }
   const chat=root.querySelector('#sifer-ai-chat');
   const form=root.querySelector('#sifer-ai-form');
   const input=root.querySelector('#sifer-ai-input');
@@ -116,7 +146,7 @@
     localStorage.setItem('sifer360_sifer_continuous_voice_v1',continuousListening?'1':'0');
     continuousBtn.classList.toggle('on',continuousListening);
     continuousBtn.textContent='♾️ Escucha continua: '+(continuousListening?'ON':'OFF');
-    if(continuousListening) startVoice(); else { try{voice.recognition?.stop()}catch{}; if(voice.recorder?.state==='recording')try{voice.recorder.stop()}catch{}; setVoice('off','Escucha continua desactivada'); }
+    if(continuousListening){ forceClose(); startVoice(); } else { try{voice.recognition?.stop()}catch{}; if(voice.recorder?.state==='recording')try{voice.recorder.stop()}catch{}; setVoice('off','Escucha continua desactivada'); }
   });
   const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   const voice={recognition:null,stream:null,recorder:null,chunks:[],listening:false,processing:false,timer:null,restartTimer:null,buffer:'',audioContext:null,analyser:null,startedAt:0,session:0};
@@ -129,7 +159,7 @@
   function speak(text){const value=String(text||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();if(!value||!('speechSynthesis'in window)){restartVoice(120);return;}try{voice.recognition?.stop()}catch{}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='es-VE';u.rate=1.02;u.pitch=1;u.volume=1;u.onend=()=>restartVoice(120);u.onerror=()=>restartVoice(120);window.speechSynthesis.speak(u);}
   async function ensureMic(){if(voice.stream)return true;if(!navigator.mediaDevices?.getUserMedia){setVoice('off','Micrófono no disponible');return false;}try{voice.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});return true;}catch{setVoice('off','Activa el permiso del micrófono');return false;}}
   function restartVoice(delay=180){if(!open||voice.processing||!continuousListening)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(startVoice,delay);}
-  async function startVoice(){if(!open||voice.processing||voice.listening)return;const ok=await ensureMic();if(!ok||!open||voice.processing||voice.listening)return;if(SpeechRecognition)startSpeech();else startRecorder();}
+  async function startVoice(){if((!open&&!continuousListening)||voice.processing||voice.listening)return;const ok=await ensureMic();if(!ok||!open||voice.processing||voice.listening)return;if(SpeechRecognition)startSpeech();else startRecorder();}
   function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if(open&&!voice.processing)restartVoice(150)};rec.onerror=e=>{voice.listening=false;voice.recognition=null;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setVoice('off','Permiso de micrófono requerido');return}if(open&&!voice.processing)restartVoice(400)};rec.onresult=e=>{if(session!==voice.session||voice.processing)return;let t='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=(e.results[i][0]?.transcript||'')+' ';if(!t.trim())return;voice.buffer=(voice.buffer+' '+t).trim();clearTimeout(voice.timer);voice.timer=setTimeout(commitVoice,800)};voice.recognition=rec;rec.start()}catch{voice.listening=false;startRecorder()}}
   function commitVoice(){const text=voice.buffer.trim();voice.buffer='';clearTimeout(voice.timer);if(!text){restartVoice(100);return}try{voice.recognition?.stop()}catch{}voice.listening=false;voice.processing=true;setVoice('processing','Procesando…');ask(text).then(()=>{const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}).finally(()=>{voice.processing=false})}
   function startRecorder(){if(!voice.stream||voice.processing||voice.listening)return;const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':(MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4');try{const rec=new MediaRecorder(voice.stream,{mimeType:mime});voice.recorder=rec;voice.chunks=[];voice.listening=true;voice.startedAt=Date.now();setVoice('listening','Escuchando…');const AC=window.AudioContext||window.webkitAudioContext;if(AC){voice.audioContext=new AC();const src=voice.audioContext.createMediaStreamSource(voice.stream);voice.analyser=voice.audioContext.createAnalyser();voice.analyser.fftSize=1024;src.connect(voice.analyser);monitorSilence()}rec.ondataavailable=e=>{if(e.data?.size)voice.chunks.push(e.data)};rec.onstop=async()=>{voice.listening=false;voice.recorder=null;clearTimeout(voice.timer);try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;const blob=new Blob(voice.chunks,{type:rec.mimeType||mime});voice.chunks=[];if(blob.size>1200)await transcribeVoice(blob);else restartVoice(120)};rec.onerror=()=>{voice.listening=false;voice.recorder=null;restartVoice(500)};rec.start(200);setTimeout(()=>{if(voice.recorder===rec&&rec.state==='recording')rec.stop()},10000)}catch{voice.listening=false;voice.recorder=null;restartVoice(500)}}
@@ -144,8 +174,14 @@
     panel.style.setProperty('display','none','important');
     panel.style.setProperty('visibility','hidden','important');
     panel.style.setProperty('opacity','0','important');
+    if(continuousListening) setVoice('listening','Escucha continua activa');
   }
   function toggle(force){
+    if(continuousListening && force!==false){
+      forceClose();
+      startVoice();
+      return;
+    }
     const next=force===undefined?!open:Boolean(force);
     const emergency=document.getElementById('sifer-emergency-shell');
     if(next && emergency) emergency.removeAttribute('open');
@@ -486,7 +522,7 @@
     const t=siferUiText(el);
     return /(guardar|crear|registrar|finalizar|cobrar|pagar|eliminar|borrar|anular|cancelar|devolver|ejecutar|cerrar|actualizar|confirmar|aplicar|convertir|reset|restablecer)/.test(t);
   }
-  async function executeSiferAction(action){
+  async function executeSiferActionOriginal(action){
     const name=String(action?.name||'').trim(),args=action?.args&&typeof action.args==='object'?action.args:{},cap=SIFER_CAPABILITIES[name];
     if(!cap) throw new Error('Acción no permitida por SIFER: '+name);
     if(cap.confirm && !window.confirm('SIFER solicita confirmación\\n\\n'+String(action.confirmationText||cap.description)+'\\n\\n¿Deseas ejecutar esta operación?')) return {cancelled:true};
@@ -873,6 +909,9 @@
   }
   function localActionFromCommand(command){
     const q=normalizeLocal(command);
+    if(/\b(?:muevete|muevete de sitio|cambia de sitio|ponte en el carrito|colocate en el carrito|colocate ahi|ve al carrito)\b/.test(q)) return {name:'move_orb_to_cart',args:{}};
+    if(/\b(?:vuelve|regresa|vuelve a tu sitio|regresa a tu sitio|ponte donde estabas)\b/.test(q)) return {name:'move_orb_home',args:{}};
+
 
     const navigation=resolveNavigationIntent(q);
     if(navigation)return navigation;
@@ -949,6 +988,18 @@
     if(/(actualiza|refresca|sincroniza).*(modulo|pantalla|datos)/.test(q)) return {name:'refresh',args:{}};
     if(/imprime|imprimir/.test(q)) return {name:'print',args:{}};
     return null;
+  }
+
+  async function executeSiferAction(action){
+    if(action?.name==='move_orb_to_cart'){
+      const ok=moveOrbToCart();
+      return {message:ok?'Listo. Me moví al área del carrito para no taparte la vista. 😏':'No encuentro ahora el área del carrito en pantalla.'};
+    }
+    if(action?.name==='move_orb_home'){
+      undockOrb();
+      return {message:'He vuelto a mi sitio. La esfera queda fuera del área de trabajo.'};
+    }
+    return await executeSiferActionOriginal(action);
   }
 
   async function planWithSifer(command){
