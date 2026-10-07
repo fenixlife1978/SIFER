@@ -95,6 +95,8 @@
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function add(role,text){messages.push({role,text});render();}
   const voiceUi=root.querySelector('#sifer-ai-voice'), voiceText=root.querySelector('#sifer-ai-voice-text');
+  voiceUi.style.cursor='pointer'; voiceUi.title='Toca para activar el micrófono';
+  voiceUi.addEventListener('click',()=>{startVoice();});
   const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   const voice={recognition:null,stream:null,recorder:null,chunks:[],listening:false,processing:false,timer:null,restartTimer:null,buffer:'',audioContext:null,analyser:null,startedAt:0,session:0};
   function setVoice(mode,text){voiceUi.className='sifer-ai-voice '+(mode||'');voiceText.textContent=text||'Micrófono inactivo';}
@@ -126,7 +128,7 @@
     panel.setAttribute('aria-hidden',open?'false':'true');
     if(open){
       if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
-      render(); startVoice(); setTimeout(()=>input.focus(),50);
+      render(); setVoice('off','Micrófono inactivo · toca aquí para activarlo'); setTimeout(()=>input.focus(),50);
     }else{
       forceClose();
     }
@@ -135,7 +137,7 @@
   window.SIFER_CLOSE=()=>toggle(false);
   document.addEventListener('sifer:open',()=>toggle(true));
   document.addEventListener('sifer:close',()=>toggle(false));
-  const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setTimeout(()=>input.focus(),30);startVoice();};
+  const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setVoice('off','Micrófono inactivo · toca aquí para activarlo');setTimeout(()=>input.focus(),30);};
   document.addEventListener('click',e=>{const target=e.target?.closest?.('#sifer-ai-orb,#sifer-emergency-orb');if(!target)return;e.preventDefault();e.stopPropagation();forceOpen();},true);
   orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceOpen();});
   root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceClose();});
@@ -398,6 +400,7 @@
     add_to_cart:{description:'Agregar un producto o repuesto existente al carrito actual',mutating:false},
     search_catalog:{description:'Buscar productos o repuestos en el Catálogo Automotriz/Máster usando lenguaje natural y devolver coincidencias reales',mutating:false},
     catalog_references:{description:'Mostrar las referencias equivalentes del último artículo identificado o de un artículo indicado',mutating:false},
+    catalog_ficha:{description:'Mostrar en pantalla la ficha técnica del artículo identificado en el Catálogo Máster',mutating:false},
     import_catalog_item:{description:'Buscar un artículo en el Catálogo Máster, incorporarlo al inventario real y establecer existencia, mínimo y punto de reorden indicados por el usuario',mutating:true,confirm:false},
     create_purchase:{description:'Registrar una compra real a un proveedor, con cantidad, artículo, costo y condición contado o crédito',mutating:true,confirm:true},
     remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
@@ -526,6 +529,36 @@
         lastCatalogItem=item;
         try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
         return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · costo referencial '+money(item.costoReferencial)};
+      }
+      case 'catalog_ficha': {
+        const query=String(args.query||args.search||'').trim();
+        let item=lastCatalogItem;
+        if(query) item=findMasterCatalogItemForCommand(query);
+        if(!item) throw new Error('No tengo un artículo identificado. Dime cuál artículo quieres consultar.');
+        lastCatalogItem=item;
+        try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
+        const refs=Array.isArray(item.referenciasCruzadas)?item.referenciasCruzadas:[];
+        const fit=Array.isArray(item.compatibilidad)?item.compatibilidad:[];
+        const refHtml=refs.length?refs.map((r,i)=>{
+          if(typeof r==='string') return '<div style="padding:4px 0">'+(i+1)+'. '+esc(r)+'</div>';
+          return '<div style="padding:4px 0">'+(i+1)+'. <b>'+esc(r?.marca||r?.brand||'')+'</b> · '+esc(r?.codigo||r?.code||r?.numeroParte||r?.partNumber||'')+'</div>';
+        }).join(''):'<div style="color:#666">Sin referencias cruzadas registradas.</div>';
+        const fitHtml=fit.length?fit.map(x=>'<div style="padding:4px 0"><b>'+esc(x.marca||'')+'</b> '+esc(x.modelo||'')+' · '+esc(x.anios||'')+' · '+esc(x.motor||'')+'</div>').join(''):'<div style="color:#666">Sin compatibilidades registradas.</div>';
+        const photo=item.fotoReal||item.fotoFallback||'/icon.svg';
+        const body='<div style="display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start">'+
+          '<div><img src="'+esc(photo)+'" style="width:105px;height:105px;object-fit:cover;border:1px solid #ccc;border-radius:6px" onerror="this.src=\'/icon.svg\'"></div>'+
+          '<div><div style="font-size:16px;font-weight:800;color:#0b4f85">'+esc(item.nombre||'Artículo')+'</div>'+
+          '<div style="font-size:11px;color:#666;margin-top:4px">'+esc(item.descripcionTecnica||'')+'</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;font-size:11px">'+
+          '<div><b>Marca:</b> '+esc(item.marca||'—')+'</div><div><b>Origen:</b> '+esc(item.origenMarca||'—')+'</div>'+
+          '<div><b>OEM:</b> '+esc(item.codigoOEM||'—')+'</div><div><b>Proveedor:</b> '+esc(item.codigoProveedor||'—')+'</div>'+
+          '<div><b>Categoría:</b> '+esc(item.categoria||'—')+'</div><div><b>Costo ref.:</b> '+money(item.costoReferencial)+'</div></div></div></div>'+
+          '<div style="margin-top:12px;border-top:1px solid #ddd;padding-top:8px"><b>Especificaciones</b><div style="font-size:11px;margin-top:4px">'+esc(item.especificaciones||'—')+'</div></div>'+
+          '<div style="margin-top:10px;border-top:1px solid #ddd;padding-top:8px"><b>Compatibilidad</b><div style="font-size:11px;margin-top:4px">'+fitHtml+'</div></div>'+
+          '<div style="margin-top:10px;border-top:1px solid #ddd;padding-top:8px"><b>Referencias cruzadas</b><div style="font-size:11px;margin-top:4px">'+refHtml+'</div></div>';
+        if(typeof openModal!=='function') throw new Error('Ventana de ficha no disponible');
+        openModal('📋 Ficha técnica del artículo',body,'<button class="btn" onclick="closeModal()">Cerrar</button>');
+        return {ok:true,message:'Mostré en pantalla la ficha de '+item.nombre+'.'};
       }
       case 'catalog_references': {
         let item=lastCatalogItem;
@@ -842,6 +875,7 @@
     }
     if(/(devolucion|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
     if(/(?:referencias? cruzadas?|equivalencias?|numeros? de parte|n[uú]meros? equivalentes?)/.test(q)) return {name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
+    if(/(?:muestra|mostrar|ensena|enseña|ver|dame|abre|abrir).*(?:ficha|ficha tecnica|ficha técnica|detalles?)/.test(q) || /ficha.*(?:sensor|repuesto|producto|articulo|aveo|chevrolet)/.test(q)) return {name:'catalog_ficha',args:{query:deriveCatalogQuery(command)}};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre|apertura|abrir la).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
@@ -933,7 +967,10 @@
       // nueva ni delegadas al LLM.
       const referenceIntent=/(?:referencias? cruzadas?|referencias?|equivalencias?|numeros? de parte|numeros? equivalentes?)/i.test(normalizeLocal(command));
       let action;
-      if(referenceIntent){
+      const fichaIntent=/(?:muestra|mostrar|ensena|enseña|ver|dame|abre|abrir).*(?:ficha|ficha tecnica|ficha técnica|detalles?)|ficha.*(?:sensor|repuesto|producto|articulo|aveo|chevrolet)/i.test(normalizeLocal(command));
+      if(fichaIntent){
+        action={name:'catalog_ficha',args:{query:deriveCatalogQuery(command)}};
+      }else if(referenceIntent){
         action={name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
       }else{
         action=localNavigationFromCommand(command) || localActionFromCommand(command);
