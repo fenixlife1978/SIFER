@@ -385,6 +385,8 @@
   const SIFER_CAPABILITIES = {
     navigate:{description:'Cambiar al módulo solicitado',mutating:false},
     add_to_cart:{description:'Agregar un producto o repuesto existente al carrito actual',mutating:false},
+    search_catalog:{description:'Buscar productos o repuestos en el Catálogo Automotriz/Máster usando lenguaje natural y devolver coincidencias reales',mutating:false},
+    import_catalog_item:{description:'Buscar un artículo en el Catálogo Máster, incorporarlo al inventario real y establecer existencia, mínimo y punto de reorden indicados por el usuario',mutating:true,confirm:false},
     remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
     cancel_sale:{description:'Cancelar la venta actual sin registrarla',mutating:true,confirm:true},
     open_cash:{description:'Abrir la caja actual',mutating:true,confirm:true},
@@ -451,6 +453,50 @@
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
         const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
         const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); setTimeout(rememberCurrentModule,300); return {ok:true,message:'Módulo abierto: '+target};
+      }
+      case 'search_catalog': {
+        const item=findMasterCatalogItemForCommand(args.query||args.search||'');
+        if(!item) throw new Error('No encontré una coincidencia suficientemente clara en el Catálogo Máster.');
+        return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · costo referencial '+money(item.costoReferencial)};
+      }
+      case 'import_catalog_item': {
+        if(typeof queryMasterCatalog!=='function') throw new Error('Catálogo Máster no disponible');
+        const item=findMasterCatalogItemForCommand(args.query||args.search||command||'');
+        if(!item) throw new Error('No encontré el artículo solicitado en el Catálogo Máster.');
+        const stock=Math.max(0,Math.floor(Number(args.stock??args.quantity??1)));
+        const min=args.min===undefined?0:Math.max(0,Math.floor(Number(args.min)));
+        const reorderPoint=args.reorderPoint===undefined?Math.max(min,Math.ceil(min*1.6)):Math.max(0,Math.floor(Number(args.reorderPoint)));
+        const reps=typeof getRepuestos==='function'?getRepuestos():[];
+        const products=Array.isArray(db?.productos)?db.productos:[];
+        const norm=s=>normalizeLocal(s);
+        const existingRep=reps.find(r=>norm(r.sku)===norm(item.codigoProveedor)||norm(r.codigoOEM)===norm(item.codigoOEM));
+        const existingProd=products.find(p=>norm(p.codigo)===norm(item.codigoProveedor)||norm(p.codigoOEM)===norm(item.codigoOEM));
+        if(existingRep||existingProd) throw new Error('Ese artículo ya existe en el inventario: '+(existingRep||existingProd).nombre);
+        const r={
+          id:'AUT-'+String((db.seq?.producto||1)).padStart(5,'0'),
+          sku:item.codigoProveedor||generateUniqueSKU(item.categoria,item.marca,item.codigoOEM),
+          nombre:item.nombre,
+          categoria:item.categoria,
+          marca:item.marca,
+          codigoOEM:item.codigoOEM,
+          referenciasCruzadas:Array.isArray(item.referenciasCruzadas)?item.referenciasCruzadas:[],
+          compatibilidad:Array.isArray(item.compatibilidad)?item.compatibilidad:[],
+          costo:Number(item.costoReferencial)||0,
+          precio:Number((Number(item.costoReferencial||0)*(1+(Number(item.margenSugerido||35)/100))).toFixed(2)),
+          stock,
+          min,
+          reorderPoint,
+          ubicacion:'Almacén Principal',
+          garantia:'12 meses',
+          especificaciones:item.especificaciones||item.descripcionTecnica||'',
+          imagen:item.fotoReal||item.fotoFallback||'/icon.svg'
+        };
+        if(!Array.isArray(db.seq)){} 
+        if(db.seq) db.seq.producto=Number(db.seq.producto||1)+1;
+        reps.push(r);
+        save('sifer-catalog-import');
+        if(typeof renderView==='function') renderView();
+        return {ok:true,message:'Importado al inventario: '+r.nombre+' · '+stock+' unidades · mínimo '+min+' · reorden '+reorderPoint};
       }
       case 'add_to_cart': {
         if(typeof addToCart!=='function') throw new Error('Carrito no disponible');
@@ -539,6 +585,69 @@
       }
       default: throw new Error('Acción no implementada');
     }
+  }
+
+  function deriveCatalogQuery(command){
+    const raw=String(command||'').trim();
+    const q=normalizeLocal(raw);
+    const removeFiller=s=>String(s||'')
+      .replace(/\b(?:sifer|por favor|please|busca|buscar|buscame|búscame|buscalo|búscalo|importa|importalo|importalo|incorpora|incorporalo|incorporar|a mi inventario|en mi inventario|a la tienda|a mi tienda|desde el catalogo|del catalogo|catalogo|catalog)\b/gi,' ')
+      .replace(/\s+/g,' ').trim();
+    const direct=removeFiller(q)
+      .replace(/\b(?:100|\d+)\s*(?:unidades?|uds?|piezas?)\b/g,' ')
+      .replace(/\b(?:minimo|minima|min|reorden|reordenar|reordenacion)\s*\d+(?:[.,]\d+)?\b/g,' ')
+      .replace(/\s+/g,' ').trim();
+    if(direct && !/^(el|la|los|las|ese|esa|eso|esto|lo|la)$/i.test(direct)) return direct;
+    const recent=messages.slice().reverse().find(m=>m.role==='user' && /(?:sensor|repuesto|producto|articulo|pieza|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|bujia|bujia)/i.test(String(m.text||'')));
+    if(recent) return removeFiller(String(recent.text||''))
+      .replace(/\b(?:cuanto|cuantos|tenemos|hay|en inventario|inventario|tienda|disponemos|disponible|disponibles)\b/gi,' ')
+      .replace(/\s+/g,' ').trim();
+    return direct;
+  }
+
+  function findMasterCatalogItemForCommand(command){
+    try{
+      if(typeof queryMasterCatalog!=='function') return null;
+      const query=deriveCatalogQuery(command);
+      if(!query) return null;
+      const variants=[query];
+      const q=normalizeLocal(query);
+      if(q.includes('sensor') && q.includes('oxigen')) variants.push('sensor oxigeno aveo');
+      if(q.includes('aveo') && q.includes('sensor')) variants.push('sensor aveo');
+      const unique=[...new Set(variants.filter(Boolean))];
+      const candidates=[];
+      for(const v of unique){
+        const res=queryMasterCatalog(v,'Todos',1,40);
+        for(const item of (res?.items||[])) candidates.push(item);
+      }
+      const toks=normalizeLocal(query).split(/\s+/).filter(t=>t.length>2);
+      const score=item=>{
+        const hay=normalizeLocal([item.nombre,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,item.subcategoria,item.descripcionTecnica,item.especificaciones].filter(Boolean).join(' '));
+        return toks.reduce((s,t)=>s+(hay.includes(t)?1:0),0);
+      };
+      return [...new Map(candidates.map(x=>[x.masterId,x])).values()].sort((a,b)=>score(b)-score(a))[0]||null;
+    }catch{return null;}
+  }
+
+  function extractImportParams(command){
+    const q=normalizeLocal(command);
+    const numberAfter=(patterns, fallback)=>{
+      for(const re of patterns){const m=q.match(re);if(m){const n=Number(String(m[1]).replace(',','.'));if(Number.isFinite(n))return n;}}
+      return fallback;
+    };
+    const stock=numberAfter([
+      /(?:importa|incorpora|agrega|mete|pon)\s+(\d+(?:[.]\d+)?)\s*(?:unidades?|uds?|piezas?)/,
+      /(\d+(?:[.]\d+)?)\s*(?:unidades?|uds?)\s*(?:en\s+existencia|de\s+existencia|de\s+stock)/
+    ],1);
+    const min=numberAfter([
+      /(?:minimo|minima|mínimo|mínima)\s*(?:de|en)?\s*(\d+(?:[.]\d+)?)/,
+      /(?:stock\s+minimo|stock\s+m[iní]nimo)\s*[:=]?\s*(\d+(?:[.]\d+)?)/
+    ],null);
+    const reorder=numberAfter([
+      /(?:reorden|punto\s+de\s+reorden|reordenar)\s*(?:de|en)?\s*(\d+(?:[.]\d+)?)/,
+      /(?:reorder\s*point)\s*[:=]?\s*(\d+(?:[.]\d+)?)/
+    ],null);
+    return {stock:Math.max(0,stock),min:min===null?undefined:Math.max(0,min),reorderPoint:reorder===null?undefined:Math.max(0,reorder)};
   }
 
   function findProductForCommand(command){
@@ -643,6 +752,12 @@
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
+    if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
+      const params=extractImportParams(q);
+      const query=deriveCatalogQuery(command);
+      return {name:'import_catalog_item',args:{query,stock:params.stock,min:params.min,reorderPoint:params.reorderPoint}};
+    }
+
     if(/(agrega|añade|mete|pon|echa|incorpora).*(al carrito|carrito)/.test(q)){
       const clean=q.replace(/.*?(agrega|añade|mete|pon|echa|incorpora)\s+/,'').replace(/\s+(al carrito|carrito).*$/,'').trim();
       const p=findProductForCommand(clean);
