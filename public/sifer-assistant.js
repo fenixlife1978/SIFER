@@ -926,11 +926,17 @@
       if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
-      let action=localNavigationFromCommand(command) || localActionFromCommand(command);
-      // Consultas de referencias son deterministas: no deben depender del planificador
-      // cuando SIFER ya tiene un artículo identificado en contexto.
-      if(!action && /(?:referencias? cruzadas?|equivalencias?|n[uú]meros? de parte|n[uú]meros? equivalentes?)/i.test(normalizeLocal(command))){
+      // Las consultas de referencias cruzadas/equivalencias son consultas de datos:
+      // deben resolverse SIEMPRE de forma determinística antes del planificador.
+      // Así frases como "esas son las referencias?", "dame las referencias de ese artículo"
+      // o "revisa las referencias cruzadas" no pueden ser interpretadas como una búsqueda
+      // nueva ni delegadas al LLM.
+      const referenceIntent=/(?:referencias? cruzadas?|referencias?|equivalencias?|numeros? de parte|numeros? equivalentes?)/i.test(normalizeLocal(command));
+      let action;
+      if(referenceIntent){
         action={name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
+      }else{
+        action=localNavigationFromCommand(command) || localActionFromCommand(command);
       }
       if(!action){
         status.textContent='SIFER está entendiendo la solicitud…';
