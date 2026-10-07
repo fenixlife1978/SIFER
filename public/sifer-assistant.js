@@ -37,6 +37,7 @@
       <form class="sifer-ai-form" id="sifer-ai-form"><textarea class="sifer-ai-input" id="sifer-ai-input" placeholder="Dile a SIFER qué necesitas…" rows="1"></textarea><button class="sifer-ai-send" id="sifer-ai-send" type="submit">➤</button></form>
     </section>`;
   document.body.appendChild(root);
+  const orb=root.querySelector('#sifer-ai-orb');
   // Blindaje solo visual de la esfera. No tocar el DOM/atributos del panel.
   function keepOrbAlive(){
     if(!document.body.contains(root)) document.body.appendChild(root);
@@ -50,8 +51,6 @@
   }
   root.setAttribute('data-sifer-mounted','true');
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
-
-  const orb=root.querySelector('#sifer-ai-orb');
   // La esfera debe ser visible por sí misma, sin depender de estilos externos del POS.
   Object.assign(orb.style,{
     display:'block',
