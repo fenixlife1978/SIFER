@@ -969,7 +969,7 @@
     // Dentro del panel SIFER ya está activo: no obligamos al usuario a repetir su nombre.
     const command=awakened===null ? rawText : awakened;
     if(!command){ status.textContent='Dime qué necesitas.'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
-    busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
+    busy=true; send.disabled=true; orb.classList.add('active'); setVoice('thinking','SIFER está pensando…'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
       if(isExploreSystemQuery(command)){
@@ -1009,7 +1009,7 @@
         }
         if(plan.type==='plan'&&Array.isArray(plan.actions)){
           for(const step of plan.actions){
-            status.textContent='SIFER está ejecutando el siguiente paso…';
+            setVoice('executing','SIFER está ejecutando…'); status.textContent='SIFER está ejecutando el siguiente paso…';
             const execution=await executeSiferAction(step);
             if(execution?.cancelled){ messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'}); render(); return; }
             if(execution?.message) messages.push({role:'assistant',text:execution.message});
@@ -1020,7 +1020,7 @@
         if(plan.type!=='action'||!plan.action) throw new Error('No encontré una acción segura para esa solicitud.');
         action=plan.action;
       }
-      status.textContent='SIFER está validando y ejecutando…';
+      setVoice('executing','SIFER está ejecutando…'); status.textContent='SIFER está validando y ejecutando…';
       const execution=await executeSiferAction(action);
       if(execution?.cancelled){
         messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'});
@@ -1031,7 +1031,7 @@
     }catch(e){
       messages.push({role:'assistant',text:'SIFER no pudo ejecutar la solicitud: '+(e?.message||'error desconocido')+'\\n\\nNo se realizó ningún cambio inseguro en el POS.'});render();
     }finally{
-      busy=false;send.disabled=false;orb.classList.remove('active');status.textContent='';input.focus();
+      busy=false;send.disabled=false;orb.classList.remove('active');if(!voice.listening&&!voice.processing)setVoice('off',continuousListening?'Escucha continua activa':'Listo cuando quieras');status.textContent='';input.focus();
     }
   }
   form.addEventListener('submit',e=>{e.preventDefault();const text=input.value.trim();if(!text||busy)return;input.value='';ask(text);});
