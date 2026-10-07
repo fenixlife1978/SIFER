@@ -466,7 +466,13 @@
         if(!supplier && suppliers.length===1) supplier=suppliers[0];
         if(!supplier) throw new Error('No pude identificar el proveedor de la compra.');
         const query=String(args.productQuery||args.producto||args.query||'').trim();
-        const p=findProductForCommand(query);
+        let p=findProductForCommand(query);
+        if(!p && typeof queryMasterCatalog==='function'){
+          const catalog=await queryMasterCatalog(query);
+          const rows=Array.isArray(catalog)?catalog:(Array.isArray(catalog?.items)?catalog.items:[]);
+          const nq=normalizeLocal(query);
+          p=rows.find(x=>normalizeLocal([x.nombre,x.sku,x.codigo,x.marca,x.categoria,x.codigoOEM].filter(Boolean).join(' ')).includes(nq))||rows[0]||null;
+        }
         if(!p) throw new Error('No encontré el artículo solicitado para la compra.');
         const qty=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
         const costRaw=String(args.cost??'').toLowerCase()==='current'?Number(p.costo??p.precio??0):Number(args.cost??p.costo??p.precio??0);
@@ -480,7 +486,7 @@
         const paidRaw=Number(args.cashAmount??args.contado??args.paid??0);
         const paid=isMixed?Math.min(total,Math.max(0,Number.isFinite(paidRaw)?paidRaw:0)):(isCash?total:0);
         const saldo=Math.max(0,total-paid);
-        if(paid>0 && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para registrar el componente de contado de una compra primero debes abrir la caja.');
+        if(paid>0 && !args.cashOutsideBox && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para registrar el componente de contado de una compra primero debes abrir la caja.');
         const dueDate=saldo&&creditDays?new Date(Date.now()+creditDays*86400000).toLocaleDateString('es-VE'):null;
         const isRep=typeof getRepuestos==='function' && getRepuestos().some(x=>x.id===p.id);
         const target=isRep?getRepuestos().find(x=>x.id===p.id):(Array.isArray(db.productos)?db.productos.find(x=>x.id===p.id):null);
@@ -814,13 +820,14 @@
       const qty=extractRequestedQuantity(q);
       const isMixed=/\bmixt[oa]\b/.test(q);
       const type=isMixed?'mixto':(/\b(?:a|de)\s+credito\b|\bcredito\b/.test(q)?'credito':'contado');
+      const cashOutsideBox=/no.*\b(?:descontar|descuente|descontado|descontada)\b.*\bcaja\b|pago.*directamente.*(?:sin|fuera).*caja/.test(q);
       const supplierQuery=/\b(?:con|al|a)\s+(?:el\s+)?(?:proveedor\s+)?(?:existente|actual|mismo|ese proveedor)\b/.test(q)?'ese proveedor':((q.match(/\b(?:con|al|a)\s+(?:el\s+)?proveedor\s+([^,]+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|\s+mixto|$)/)||[])[1]||'ese proveedor').trim();
       const productQuery=q.replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|contado|mixto|mixta|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|dia|monto|por|unidad|unidades?|mismo|actual|efectivo|cash|saldo|resto)\b/g,' ').replace(/\b\d+(?:[.,]\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
       const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/);
       const daysMatch=q.match(/(?:a|de|por)\s+(\d+)\s+d[ií]as?/);
       const cashMatch=q.match(/(\d+(?:[.,]\d+)?)\s+(?:de\s+)?(?:contado|efectivo|cash)\b/);
       const cashAmount=cashMatch?Number(String(cashMatch[1]).replace(',','.')):0;
-      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cashAmount,cost:'current',creditDays:daysMatch?Number(daysMatch[1]):0},confirmationText:'Preparar una compra '+(isMixed?'mixta':type)+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+(isMixed?' con '+cashAmount+' de contado y el saldo a crédito.':'')+(daysMatch?' A crédito a '+daysMatch[1]+' días.':'')+'.'};
+      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cashAmount,cost:'current',creditDays:daysMatch?Number(daysMatch[1]):0,cashOutsideBox},confirmationText:'Preparar una compra '+(isMixed?'mixta':type)+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+(isMixed?' con '+cashAmount+' de contado y el saldo a crédito.':'')+(daysMatch?' A crédito a '+daysMatch[1]+' días.':'')+'.'};
     }
     if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
       const params=extractImportParams(q);
