@@ -9,10 +9,40 @@ async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
   try { return await Promise.race([promise, new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error('Google AI tardó demasiado en responder.')),ms); })]); }
   finally { clearTimeout(timer); }
 }
-const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
-const GATEWAY_MODELS = ['openai/gpt-5.6-sol-fast','google/gemini-3.8-flash','anthropic/claude-fable-5.1'];
 
-async function gatewayGenerate(prompt, opts:any = {}) {
+// Proveedores directos opcionales. No usa Vercel AI Gateway.
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/,'');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-reasoner';
+
+async function directOpenAICompatible(baseUrl:string, apiKey:string|undefined, model:string, prompt:string) {
+  if(!baseUrl) return null;
+  const response=await withTimeout(fetch(baseUrl.replace(/\/$/,'')+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',...(apiKey?{'Authorization':'Bearer '+apiKey}:{})},
+    body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.2,max_tokens:1800,response_format:{type:'json_object'}})
+  }));
+  if(!response.ok) throw new Error('Proveedor IA '+response.status);
+  const data=await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
+async function tryFreeProviders(prompt:string){
+  const providers=[
+    {name:'ollama',base:OLLAMA_BASE_URL,model:OLLAMA_MODEL,key:undefined},
+    {name:'deepseek',base:process.env.DEEPSEEK_API_KEY?'https://api.deepseek.com/v1':'',model:DEEPSEEK_MODEL,key:process.env.DEEPSEEK_API_KEY},
+    {name:'compatible',base:process.env.AI_COMPATIBLE_BASE_URL,model:process.env.AI_COMPATIBLE_MODEL||'qwen3:8b',key:process.env.AI_COMPATIBLE_API_KEY}
+  ];
+  for(const p of providers){
+    if(!p.base) continue;
+    try{
+      const text=await directOpenAICompatible(p.base,p.key,p.model,prompt);
+      if(text) return {text,provider:p.name,model:p.model};
+    }catch{}
+  }
+  return null;
+}
+const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
   const key = process.env.AI_GATEWAY_API_KEY;
   if (!key) return null;
   let lastError:any;
@@ -65,8 +95,10 @@ export default async function handler(req, res) {
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
       if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
       if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
+      const direct=await tryFreeProviders(plannerPrompt);
       let result;
       let lastError;
+      if(direct?.text){ result={text:direct.text}; } else {
       for (const model of [MODEL,...FALLBACK_MODELS]) {
         try {
           result = await withTimeout(ai.models.generateContent({
@@ -143,23 +175,20 @@ ${command}
 HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
-      let gatewayResult:any=null;
-      if(process.env.AI_GATEWAY_API_KEY) gatewayResult=await gatewayGenerate(plannerPrompt,{json:true,maxTokens:1800});
       let result;
       let lastError;
-      if(!gatewayResult){
-        for (const model of [MODEL,...FALLBACK_MODELS]) {
-          try {
-            result = await withTimeout(ai.models.generateContent({
-              model,
-              contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-              config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-            }));
-            if (result?.text) break;
-          } catch (err) { lastError = err; }
-        }
+      for (const model of [MODEL,...FALLBACK_MODELS]) {
+        try {
+          result = await withTimeout(ai.models.generateContent({
+            model,
+            contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
+            config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
+          }));
+          if (result?.text) break;
+        } catch (err) { lastError = err; }
       }
-      const planText=gatewayResult?.text||result?.text;
+      }
+      const planText=result?.text;
       if (!planText) throw lastError || new Error('Ningún motor de IA devolvió un plan.');
       const plan = cleanJson(planText || '');
       if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
