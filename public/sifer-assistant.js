@@ -698,10 +698,11 @@
       const cleaned=q.replace(/\b(?:cantidad|cant|unidades|unidad|uds?|piezas|pieza|x)\s*[:=]?\s*\d+(?:[.,]\d+)?\b/g,' ')
         .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?|x)?\b/g,' ').trim();
       const singular=t=>String(t||'').replace(/(es|s)$/,'').replace(/ias$/,'ia').replace(/os$/,'o').replace(/as$/,'a');
-      const tokens=cleaned.split(/\s+/).map(singular).filter(x=>x.length>2);
+      const stop=new Set(['registra','registrar','realiza','realizar','compra','compra','compra','proveedor','existente','credito','credito','dias','dia','monto','unidad','actual','mismo','misma','precio','costo','por','con','ese','ese']);
+      const tokens=cleaned.split(/\s+/).map(singular).filter(x=>x.length>2&&!stop.has(x));
       if(!tokens.length)return null;
       const scored=items.map(p=>{
-        const parts=[p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM,...(Array.isArray(p.referenciasCruzadas)?p.referenciasCruzadas.flatMap(x=>[x.marca,x.codigo]):[])];
+        const parts=[p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM,p.descripcion,...(Array.isArray(p.referenciasCruzadas)?p.referenciasCruzadas.flatMap(x=>[x.marca,x.codigo]):[])];
         const hay=normalizeLocal(parts.filter(Boolean).join(' '));
         const hayTokens=hay.split(/\s+/).map(singular);
         const score=tokens.reduce((s,t)=>{
@@ -710,7 +711,7 @@
           return s;
         },0);
         return {p,score};
-      }).filter(x=>x.score>=Math.max(1,tokens.length-0.2))
+      }).filter(x=>x.score>=Math.max(1,tokens.length-0.6))
        .sort((a,b)=>b.score-a.score||String(a.p.nombre||'').length-String(b.p.nombre||'').length);
       return scored[0]?.p||null;
     }catch{return null;}
@@ -792,16 +793,16 @@
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
-    if(/(?:realiza|haz|registra|crear|crea|genera|compr[aá]|compra).*(?:compra|adquisicion|adquisición).*(?:credito|cr[eé]dito|contado)|(?:compra|adquiere).*(?:credito|cr[eé]dito|contado)/.test(q)){
+    if(/(?:realiza|haz|registra|registrar|crear|crea|genera|compra).*(?:compra|adquisicion|adquisición).*(?:credito|cr[eé]dito|contado)|(?:compra|adquiere).*(?:credito|cr[eé]dito|contado)/.test(q)){
       const qty=extractRequestedQuantity(q);
       const type=/(?:a|de)\s+credito|cr[eé]dito/.test(q)?'credito':'contado';
-      const supplierMatch=q.match(/(?:con|a|al|para)\s+(?:el\s+)?(?:proveedor\s+)?(.+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|$)/);
-      const supplierQuery=supplierMatch?.[1]&&supplierMatch[1].trim()!=='ese proveedor'?supplierMatch[1].trim():'ese proveedor';
+      const supplierQuery=/\b(?:con|al|a)\s+(?:el\s+)?(?:proveedor\s+)?(?:existente|actual|mismo|ese proveedor)\b/.test(q)?'ese proveedor':((q.match(/\b(?:con|al|a)\s+(?:el\s+)?proveedor\s+([^,]+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|$)/)||[])[1]||'ese proveedor').trim();
       const productQuery=q
-        .replace(/(?:sifer|realiza|haz|registra|crear|crea|genera|una|la|compra|adquisicion|adquisicion|a|de|credito|cr[eé]dito|contado|con|ese proveedor)/g,' ')
-        .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?)?\b/g,' ')
+        .replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|cr[eé]dito|contado|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|monto|por|unidad|unidades?|mismo|actual)\b/g,' ')
+        .replace(/\b\d+(?:[.,]\d+)?\b/g,' ')
         .replace(/\s+/g,' ').trim();
-      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type},confirmationText:'Registrar una compra '+type+' de '+qty+' unidades de '+productQuery+' al proveedor '+supplierQuery+'. SIFER actualizará inventario y, si es a crédito, creará la CxP.'};
+      const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/);
+      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cost:'current'},confirmationText:'Preparar una compra a '+type+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+'. A crédito se registrará la CxP correspondiente.'};
     }
 
     if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
