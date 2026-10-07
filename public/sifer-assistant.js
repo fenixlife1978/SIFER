@@ -502,8 +502,8 @@
           db.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,diasCredito:creditDays,fechaVencimiento:dueDate,estado:'Pendiente'});
           supplier.saldo=Number(supplier.saldo||0)+saldo;
         }
-        if(paid>0 && typeof cajaActual==='function') cajaActual().saldo-=paid;
-        db.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
+        if(paid>0 && !args.cashOutsideBox && typeof cajaActual==='function') cajaActual().saldo-=paid;
+        db.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre+(args.cashOutsideBox?' (contado pagado directamente fuera de caja)':''),monto:(paid>0&&!args.cashOutsideBox)?-paid:0});
         if(typeof save==='function') save('purchase-created');
         if(typeof renderView==='function') renderView();
         return {ok:true,message:'Compra '+num+' registrada '+(isMixed?'como mixta':('a '+(isCash?'contado':'credito')))+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+'. Contado '+money(paid)+'.'+(saldo?' Saldo a crédito '+money(saldo)+(creditDays?' con vencimiento a '+creditDays+' días.':''):' Sin saldo pendiente.')};
