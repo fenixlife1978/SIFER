@@ -9,7 +9,7 @@
   let open = false;
   let busy = false;
   // SIFER: conserva el último artículo de catálogo para consultas contextuales.
-  let lastCatalogItem = null;
+  let lastCatalogItem = (()=>{try{return JSON.parse(localStorage.getItem('sifer360_last_catalog_item_v1')||'null')}catch{return null}})();
 
   const css = `
   #sifer-ai-root{position:fixed;right:16px;bottom:16px;width:92px;height:92px;z-index:2147483647;font-family:Arial,sans-serif;pointer-events:none}
@@ -524,6 +524,7 @@
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
         if(!item) throw new Error('No encontré una coincidencia suficientemente clara en el Catálogo Máster.');
         lastCatalogItem=item;
+        try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
         return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · costo referencial '+money(item.costoReferencial)};
       }
       case 'catalog_references': {
@@ -534,6 +535,7 @@
         }
         if(!item) throw new Error('No tengo un artículo identificado recientemente. Dime cuál artículo quieres consultar.');
         lastCatalogItem=item;
+        try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
         const refs=Array.isArray(item.referenciasCruzadas)?item.referenciasCruzadas:[];
         if(!refs.length) return {ok:true,message:'El artículo '+item.nombre+' no tiene referencias equivalentes registradas en el Catálogo Máster.'};
         const lines=refs.map((r,i)=>{
@@ -925,6 +927,11 @@
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
       let action=localNavigationFromCommand(command) || localActionFromCommand(command);
+      // Consultas de referencias son deterministas: no deben depender del planificador
+      // cuando SIFER ya tiene un artículo identificado en contexto.
+      if(!action && /(?:referencias? cruzadas?|equivalencias?|n[uú]meros? de parte|n[uú]meros? equivalentes?)/i.test(normalizeLocal(command))){
+        action={name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
+      }
       if(!action){
         status.textContent='SIFER está entendiendo la solicitud…';
         const plan=await planWithSifer(command);
