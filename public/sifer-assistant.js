@@ -523,7 +523,26 @@
       case 'search_catalog': {
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
         if(!item) throw new Error('No encontré una coincidencia suficientemente clara en el Catálogo Máster.');
+        lastCatalogItem=item;
         return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · costo referencial '+money(item.costoReferencial)};
+      }
+      case 'catalog_references': {
+        let item=lastCatalogItem;
+        if(!item){
+          const query=String(args.query||args.search||'').trim();
+          if(query) item=findMasterCatalogItemForCommand(query);
+        }
+        if(!item) throw new Error('No tengo un artículo identificado recientemente. Dime cuál artículo quieres consultar.');
+        lastCatalogItem=item;
+        const refs=Array.isArray(item.referenciasCruzadas)?item.referenciasCruzadas:[];
+        if(!refs.length) return {ok:true,message:'El artículo '+item.nombre+' no tiene referencias equivalentes registradas en el Catálogo Máster.'};
+        const lines=refs.map((r,i)=>{
+          if(typeof r==='string') return (i+1)+'. '+r;
+          const brand=r && (r.marca||r.brand) || '';
+          const code=r && (r.codigo||r.code||r.numeroParte||r.partNumber) || '';
+          return (i+1)+'. '+[brand,code].filter(Boolean).join(' · ');
+        });
+        return {ok:true,message:'Referencias de '+item.nombre+' (OEM '+(item.codigoOEM||'N/D')+'):\n'+lines.join('\n')};
       }
       case 'import_catalog_item': {
         if(typeof queryMasterCatalog!=='function') throw new Error('Catálogo Máster no disponible');
