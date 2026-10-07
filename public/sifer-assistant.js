@@ -302,15 +302,6 @@
     map.__explorationVersion=2;
     localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
     return 'Exploración completada. SIFER recorrió '+visited+' de '+modules.length+' módulos y guardó botones, acciones, campos, selectores, diálogos y navegación visibles en su memoria persistente.'+(failed?' No pudo observar '+failed+' módulo(s).':'');
-  }atch{}
-    }
-    try{navigate(originalView);await new Promise(r=>setTimeout(r,250));rememberCurrentModule();}catch{}
-    const map=loadLearnedMap();
-    map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index')));
-    map.__lastFullExploreAt=new Date().toISOString();
-    map.__exploredViews=modules;
-    localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
-    return 'Exploración completada. SIFER recorrió '+visited+' módulos accesibles y guardó en memoria su mapa de botones, campos, selectores y diálogos visibles. El mapa quedó disponible para futuras órdenes.';
   }
 
   function isTodaySalesQuery(text){
