@@ -1040,14 +1040,42 @@
     return plan;
   }
 
+  // Respuestas atómicas: preguntas conversacionales simples no deben consumir Gemini.
+  // El asistente debe reaccionar en milisegundos cuando la intención no requiere razonamiento externo.
+  function localConversationalAnswer(command){
+    const q=normalizeLocal(command);
+    if(/^(me estas escuchando|me estas oyendo|me escuchas|me oyes|estas escuchando|estas ahi|estas ahi sifer|sifer estas ahi|funcionas|estas activa|estas activo)\\??$/.test(q)){
+      return continuousListening && voice.listening
+        ? 'Sí. Te escucho perfectamente. La escucha continua está activa.'
+        : (continuousListening ? 'Sí. Estoy activa; la escucha continua está encendida y estoy intentando mantener el micrófono conectado.' : 'Sí. Estoy aquí. Toca el micrófono o activa la escucha continua y dime qué necesitas.');
+    }
+    if(/^(que puedes hacer|que puedes hacer tu|que sabes hacer|para que sirves|cuales son tus funciones|que funciones tienes|como puedes ayudarme|en que puedes ayudarme)\\??$/.test(q)){
+      return 'Puedo ayudarte directamente con el POS: buscar productos y repuestos, mostrar fichas y equivalencias, consultar inventario y ventas, navegar módulos, trabajar con el carrito, clientes, compras, caja, pedidos, presupuestos y reportes, además de ejecutar operaciones seguras cuando estén disponibles. Háblame como le hablarías a una persona; no necesitas memorizar comandos.';
+    }
+    if(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey|epa|epa sifer)\\??$/.test(q)){
+      return 'Aquí estoy. Lista para trabajar. ¿Qué necesitas?';
+    }
+    if(/^(gracias|muchas gracias|perfecto|excelente|ok|okay)\\??$/.test(q)){
+      return 'A la orden. Seguimos cuando quieras.';
+    }
+    return null;
+  }
+
   async function ask(text){
     const rawText=String(text||'').trim();
     const awakened=extractWakeWord(rawText);
     // Dentro del panel SIFER ya está activo: no obligamos al usuario a repetir su nombre.
     const command=awakened===null ? rawText : awakened;
     if(!command){ status.textContent='Dime qué necesitas.'; setTimeout(()=>{if(!busy)status.textContent='';},1800); return; }
-    busy=true; send.disabled=true; orb.classList.add('active'); setVoice('thinking','SIFER está pensando…'); status.textContent='SIFER está interpretando…';
+    // Ruta atómica: responde sin red, Gemini ni espera cuando la solicitud es trivial.
+    const instant=localConversationalAnswer(command);
     messages.push({role:'user',text:'SIFER, '+command}); render();
+    if(instant){
+      messages.push({role:'assistant',text:instant}); render();
+      if(voice.processing){ speak(instant); }
+      return;
+    }
+    busy=true; send.disabled=true; orb.classList.add('active'); setVoice('thinking','SIFER está pensando…'); status.textContent='SIFER está interpretando…';
     try{
       if(isExploreSystemQuery(command)){
         status.textContent='SIFER está recorriendo y aprendiendo el sistema…';
