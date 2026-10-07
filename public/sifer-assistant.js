@@ -258,20 +258,27 @@
   }
 
   async function exploreSystem(){
-    const modules=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
+    const discovered=typeof navItems==='function'?navItems():[];
+    const modules=Array.from(new Map([...discovered,['pedidos','📝 Pedidos'],['usuarios','👥 Usuarios/Cajas']].map(x=>[x[0],x])).values());
     const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null);
     if(!navigate)throw new Error('Navegación no disponible para explorar el sistema.');
-    const original=document.getElementById('windowTitle')?.textContent||'Inicio';
-    const originalView=({Inicio:'inicio',POS:'pos','Pedidos':'pedidos','Usuarios':'usuarios','Catálogo':'master_catalog','Repuestos':'repuestos','Productos':'productos','Compras':'compras','Clientes':'clientes','Proveedores':'proveedores','Cuentas por cobrar':'cxc','Cuentas por pagar':'cxp','Presupuestos':'presupuestos','Reportes':'reportes','Caja':'caja','Configuración':'config'})[original]||'inicio';
-    const learned=loadLearnedMap();
-    let visited=0;
-    for(const view of modules){
-      try{
-        navigate(view);
-        await new Promise(r=>setTimeout(r,300));
-        rememberCurrentModule();
-        visited++;
-      }catch{}
+    const active=document.querySelector('.module.active');
+    const originalText=active?.innerText?.trim()||document.getElementById('windowTitle')?.textContent||'Inicio';
+    const cleanLabel=s=>String(s||'').replace(/^\S+\s*/,'').trim();
+    const original=modules.find(([k,l])=>cleanLabel(l)===cleanLabel(originalText))?.[0]||'inicio';
+    let visited=0,failed=0;
+    for(const [view] of modules){
+      try{navigate(view);await new Promise(r=>setTimeout(r,350));rememberCurrentModule();visited++;}catch{failed++;}
+    }
+    try{navigate(original);await new Promise(r=>setTimeout(r,300));rememberCurrentModule();}catch{}
+    const map=loadLearnedMap();
+    map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index'&&!k.startsWith('__'))));
+    map.__lastFullExploreAt=new Date().toISOString();
+    map.__exploredViews=modules.map(x=>x[0]);
+    map.__explorationVersion=2;
+    localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
+    return 'Exploración completada. SIFER recorrió '+visited+' de '+modules.length+' módulos y guardó botones, acciones, campos, selectores, diálogos y navegación visibles en su memoria persistente.'+(failed?' No pudo observar '+failed+' módulo(s).':'');
+  }atch{}
     }
     try{navigate(originalView);await new Promise(r=>setTimeout(r,250));rememberCurrentModule();}catch{}
     const map=loadLearnedMap();
@@ -322,22 +329,27 @@
   function rememberCurrentModule(){
     try{
       const map=loadLearnedMap();
-      const module=String(document.getElementById('windowTitle')?.textContent||'Inicio').trim();
+      const title=String(document.getElementById('windowTitle')?.textContent||'Inicio').trim();
       const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\s+/g,' ').trim();
-      map[module]={module,learnedAt:new Date().toISOString(),buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',title:el.title||''})).filter(x=>x.text||x.id||x.title).slice(0,700),fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,80).map(o=>({value:o.value,text:txt(o)})):[]})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),dialogs:[...document.querySelectorAll('.modal,[role="dialog"]')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,500)})).filter(x=>x.id||x.text).slice(0,120)};
+      const describe=el=>({n:0,text:txt(el),id:el.id||'',name:el.name||'',title:el.title||'',aria:el.getAttribute?.('aria-label')||'',type:el.type||'',disabled:!!el.disabled,onclick:el.getAttribute?.('onclick')||'',tag:el.tagName?.toLowerCase()||'',value:el.tagName?.toLowerCase()==='button'?'':String(el.value||'').slice(0,200)});
+      const buttons=[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a')].map((el,i)=>({...describe(el),n:i+1})).filter(x=>x.text||x.id||x.title||x.aria||x.onclick).slice(0,1000);
+      const fields=[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({...describe(el),n:i+1,placeholder:el.placeholder||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,100).map(o=>({value:o.value,text:txt(o)})):[]})).filter(x=>x.id||x.name||x.placeholder||x.aria).slice(0,1000);
+      const dialogs=[...document.querySelectorAll('.modal,[role="dialog"],.modal-backdrop')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,1000),buttons:[...el.querySelectorAll('button,[role="button"]')].map(txt).filter(Boolean).slice(0,100)})).filter(x=>x.id||x.text).slice(0,120);
+      const nav=[...document.querySelectorAll('.module')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',onclick:el.getAttribute('onclick')||'',active:el.classList.contains('active')}));
+      map[title]={module:title,learnedAt:new Date().toISOString(),buttons,fields,dialogs,navigation:nav,counts:{buttons:buttons.length,fields:fields.length,dialogs:dialogs.length,navigation:nav.length}};
       localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
       return map;
-    }catch{return {};}
+    }catch{return loadLearnedMap();}
   }
   function learnKnownModules(){
     try{
       rememberCurrentModule();
       const map=loadLearnedMap();
-      map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index')));
+      map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index'&&!k.startsWith('__'))));
+      map.__lastObservedAt=new Date().toISOString();
       localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
     }catch{}
   }
-
   function buildSystemMap(){
     try{
       const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\\s+/g,' ').trim();
