@@ -160,9 +160,21 @@
   }
   function speak(text){const value=String(text||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();if(!value||!('speechSynthesis'in window)){restartVoice(120);return;}try{voice.recognition?.stop()}catch{}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='es-VE';u.rate=1.02;u.pitch=1;u.volume=1;u.onend=()=>restartVoice(120);u.onerror=()=>restartVoice(120);window.speechSynthesis.speak(u);}
   async function ensureMic(){if(voice.stream)return true;if(!navigator.mediaDevices?.getUserMedia){setVoice('off','Micrófono no disponible');return false;}try{voice.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});return true;}catch{setVoice('off','Activa el permiso del micrófono');return false;}}
-  function restartVoice(delay=180){if((!open&&!continuousListening)||voice.processing||!continuousListening)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(startVoice,delay);}
-  async function startVoice(){if((!open&&!continuousListening)||voice.processing||voice.listening)return;const ok=await ensureMic();if(!ok||!open||voice.processing||voice.listening)return;if(SpeechRecognition)startSpeech();else startRecorder();}
-  function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if(open&&!voice.processing)restartVoice(150)};rec.onerror=e=>{voice.listening=false;voice.recognition=null;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setVoice('off','Permiso de micrófono requerido');return}if(open&&!voice.processing)restartVoice(400)};rec.onresult=e=>{if(session!==voice.session||voice.processing)return;let t='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=(e.results[i][0]?.transcript||'')+' ';if(!t.trim())return;voice.buffer=(voice.buffer+' '+t).trim();clearTimeout(voice.timer);voice.timer=setTimeout(commitVoice,800)};voice.recognition=rec;rec.start()}catch{voice.listening=false;startRecorder()}}
+  function restartVoice(delay=180){if((!open&&!continuousListening)||voice.processing||voice.listening||!continuousListening)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(()=>startVoice(),delay);}
+  async function startVoice(){
+    if((!open&&!continuousListening)||voice.processing||voice.listening)return;
+    const ok=await ensureMic();
+    if(!ok||voice.processing||voice.listening)return;
+    // En escucha continua SIFER permanece sin panel: no exigir que el panel esté abierto.
+    if(SpeechRecognition)startSpeech();else startRecorder();
+  }
+  function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if((open||continuousListening)&&!voice.processing)restartVoice(150)};
+      rec.onerror=e=>{voice.listening=false;voice.recognition=null;
+        if(e.error==='not-allowed'||e.error==='service-not-allowed'){setVoice('error','Chrome no permite el micrófono. Revisa el permiso de este sitio.');if(continuousListening)setTimeout(()=>{if(continuousListening&&!voice.processing)startVoice()},1200);return}
+        if(e.error==='audio-capture'){setVoice('error','No se pudo capturar el micrófono del teléfono.');}
+        else if(e.error!=='no-speech'&&e.error!=='aborted')setVoice('error','La escucha se interrumpió. Reintentando…');
+        if((open||continuousListening)&&!voice.processing)restartVoice(e.error==='no-speech'?180:500)
+      };rec.onresult=e=>{if(session!==voice.session||voice.processing)return;let t='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=(e.results[i][0]?.transcript||'')+' ';if(!t.trim())return;voice.buffer=(voice.buffer+' '+t).trim();clearTimeout(voice.timer);voice.timer=setTimeout(commitVoice,800)};voice.recognition=rec;rec.start()}catch{voice.listening=false;startRecorder()}}
   function commitVoice(){const text=voice.buffer.trim();voice.buffer='';clearTimeout(voice.timer);if(!text){restartVoice(100);return}try{voice.recognition?.stop()}catch{}voice.listening=false;voice.processing=true;setVoice('processing','Procesando…');ask(text).then(()=>{const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}).finally(()=>{voice.processing=false})}
   function startRecorder(){if(!voice.stream||voice.processing||voice.listening)return;const mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':(MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4');try{const rec=new MediaRecorder(voice.stream,{mimeType:mime});voice.recorder=rec;voice.chunks=[];voice.listening=true;voice.startedAt=Date.now();setVoice('listening','Escuchando…');const AC=window.AudioContext||window.webkitAudioContext;if(AC){voice.audioContext=new AC();const src=voice.audioContext.createMediaStreamSource(voice.stream);voice.analyser=voice.audioContext.createAnalyser();voice.analyser.fftSize=1024;src.connect(voice.analyser);monitorSilence()}rec.ondataavailable=e=>{if(e.data?.size)voice.chunks.push(e.data)};rec.onstop=async()=>{voice.listening=false;voice.recorder=null;clearTimeout(voice.timer);try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;const blob=new Blob(voice.chunks,{type:rec.mimeType||mime});voice.chunks=[];if(blob.size>1200)await transcribeVoice(blob);else restartVoice(120)};rec.onerror=()=>{voice.listening=false;voice.recorder=null;restartVoice(500)};rec.start(200);setTimeout(()=>{if(voice.recorder===rec&&rec.state==='recording')rec.stop()},10000)}catch{voice.listening=false;voice.recorder=null;restartVoice(500)}}
   function monitorSilence(){const a=voice.analyser;if(!a||!voice.recorder)return;const data=new Uint8Array(a.fftSize);a.getByteTimeDomainData(data);let sum=0;for(const n of data){const v=(n-128)/128;sum+=v*v}const rms=Math.sqrt(sum/data.length),elapsed=Date.now()-voice.startedAt;if(elapsed>700&&rms<0.018){clearTimeout(voice.timer);voice.timer=setTimeout(()=>{if(voice.recorder?.state==='recording')voice.recorder.stop()},750)}else clearTimeout(voice.timer);if(voice.recorder?.state==='recording')requestAnimationFrame(monitorSilence)}
@@ -170,7 +182,16 @@
   function stopVoice(){voice.session++;clearTimeout(voice.timer);clearTimeout(voice.restartTimer);try{voice.recognition?.stop()}catch{}try{voice.recorder?.stop()}catch{}voice.recognition=null;voice.recorder=null;voice.listening=false;voice.processing=false;if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null}try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;setVoice('off','Micrófono inactivo')}
   function forceClose(){
     open=false;
-    stopVoice();
+    // Si la escucha continua está activa, cerrar el panel NO debe detener el reconocimiento.
+    // stopVoice() se reserva para cuando realmente se apaga la escucha.
+    if(!continuousListening) stopVoice();
+    else {
+      clearTimeout(voice.timer); clearTimeout(voice.restartTimer);
+      try{voice.recorder?.stop()}catch{}
+      voice.recorder=null;
+      voice.processing=false;
+      voice.listening=false;
+    }
     panel.classList.remove('show');
     panel.setAttribute('aria-hidden','true');
     panel.style.setProperty('display','none','important');
