@@ -189,6 +189,31 @@
     catch{return (Number(value)||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+code;}
   }
 
+  function localNavigationFromCommand(text){
+    const q=normalizeLocal(text);
+    if(!/(abre|abrir|abreme|llevame|llévame|ve a|ir a|entra|entrar|muestra|mostrar|ponme|lleva|accede|acceder|abre el|abre la)/.test(q)) return null;
+    const aliases=[
+      ['productos',/(inventario|inventarios|existencias|stock|productos|articulos|artículos)/],
+      ['pos',/(pos|punto de venta|ventas|vender|facturacion|facturación|factura)/],
+      ['repuestos',/(repuestos|repuesto|partes automotrices|autopartes)/],
+      ['master_catalog',/(catalogo automotriz|catálogo automotriz|catalogo maestro|catálogo maestro)/],
+      ['compras',/(compras|compra)/],
+      ['clientes',/(clientes|cliente)/],
+      ['proveedores',/(proveedores|proveedor)/],
+      ['cxc',/(cuentas por cobrar|cuentas por cobrar|cxc|cobros)/],
+      ['cxp',/(cuentas por pagar|cxp|pagos a proveedores)/],
+      ['presupuestos',/(presupuestos|presupuesto|cotizaciones|cotizacion|cotización)/],
+      ['reportes',/(reportes|reportes generales|informes|estadisticas|estadísticas)/],
+      ['caja',/(caja|arqueo|corte x|corte z)/],
+      ['config',/(configuracion|configuración|ajustes|preferencias)/],
+      ['pedidos',/(pedidos|pedido|ordenes|órdenes)/],
+      ['usuarios',/(usuarios|cajas y usuarios|usuarios y cajas)/],
+      ['inicio',/(inicio|principal|pantalla inicial)/]
+    ];
+    for(const [view,re] of aliases) if(re.test(q)) return {name:'navigate',args:{view}};
+    return null;
+  }
+
   function isInventoryQuery(text){
     const q=normalizeLocal(text);
     return /(cuantos|cuantas|cuanto).*(producto|productos|articulo|articulos|repuesto|repuestos).*(inventario|stock|existencia|existencias)/.test(q)
@@ -650,7 +675,7 @@
       if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
-      let action=localActionFromCommand(command);
+      let action=localNavigationFromCommand(command) || localActionFromCommand(command);
       if(!action){
         status.textContent='SIFER está entendiendo la solicitud…';
         const plan=await planWithSifer(command);
