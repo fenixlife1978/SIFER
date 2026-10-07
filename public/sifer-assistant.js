@@ -469,11 +469,11 @@
         const p=findProductForCommand(query);
         if(!p) throw new Error('No encontré el artículo solicitado para la compra.');
         const qty=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
-        const cost=Number(args.cost??p.costo??p.precio??0);
+        const costRaw=String(args.cost??'').toLowerCase()==='current'?Number(p.costo??p.precio??0):Number(args.cost??p.costo??p.precio??0); const cost=Number.isFinite(costRaw)?costRaw:0;
         if(!Number.isFinite(cost)||cost<0) throw new Error('No pude determinar un costo unitario válido para la compra.');
         const type=String(args.type||'credito').toLowerCase()==='contado'?'contado':'credito';
         if(type==='contado' && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para una compra de contado primero debes abrir la caja.');
-        const total=qty*cost, paid=type==='contado'?total:0, saldo=total-paid;
+        const total=qty*cost, paid=type==='contado'?total:0, saldo=total-paid; const creditDays=Math.max(0,Math.floor(Number(args.creditDays||0))); const dueDate=saldo&&creditDays?new Date(Date.now()+creditDays*86400000).toLocaleDateString('es-VE'):null;
         const isRep=typeof getRepuestos==='function' && getRepuestos().some(x=>x.id===p.id);
         const target=isRep?getRepuestos().find(x=>x.id===p.id):(Array.isArray(db.productos)?db.productos.find(x=>x.id===p.id):null);
         if(!target) throw new Error('El artículo no está disponible en la base de inventario.');
@@ -482,15 +482,15 @@
         db.cxp=Array.isArray(db.cxp)?db.cxp:[];
         db.movimientos=Array.isArray(db.movimientos)?db.movimientos:[];
         const num=typeof id==='function'?id('CMP','compra'):'CMP-'+Date.now();
-        db.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
+        db.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,diasCredito:creditDays,fechaVencimiento:dueDate,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
         if(saldo){
-          db.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,estado:'Pendiente'});
+          db.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,diasCredito:creditDays,fechaVencimiento:dueDate,estado:'Pendiente'});
           supplier.saldo=Number(supplier.saldo||0)+saldo;
         }else if(typeof cajaActual==='function'){cajaActual().saldo-=paid;}
         db.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
         if(typeof save==='function') save('purchase-created');
         if(typeof renderView==='function') renderView();
-        return {ok:true,message:'Compra '+num+' registrada a '+type+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+(saldo?'. CxP creada por '+money(saldo)+'.':'.')};
+        return {ok:true,message:'Compra '+num+' registrada a '+type+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+(saldo?'. CxP creada por '+money(saldo)+(creditDays?' con vencimiento a '+creditDays+' días.':'.'):'.')};
       }
       case 'search_catalog': {
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
@@ -801,8 +801,8 @@
         .replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|cr[eé]dito|contado|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|monto|por|unidad|unidades?|mismo|actual)\b/g,' ')
         .replace(/\b\d+(?:[.,]\d+)?\b/g,' ')
         .replace(/\s+/g,' ').trim();
-      const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/);
-      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cost:'current'},confirmationText:'Preparar una compra a '+type+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+'. A crédito se registrará la CxP correspondiente.'};
+      const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/); const daysMatch=q.match(/(?:a|de|por)\s+(\d+)\s+d[ií]as?/);
+      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cost:'current',creditDays:daysMatch?Number(daysMatch[1]):0},confirmationText:'Preparar una compra a '+type+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+'. A crédito se registrará la CxP correspondiente.'};
     }
 
     if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
