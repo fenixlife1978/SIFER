@@ -98,6 +98,15 @@
   function monitorSilence(){const a=voice.analyser;if(!a||!voice.recorder)return;const data=new Uint8Array(a.fftSize);a.getByteTimeDomainData(data);let sum=0;for(const n of data){const v=(n-128)/128;sum+=v*v}const rms=Math.sqrt(sum/data.length),elapsed=Date.now()-voice.startedAt;if(elapsed>700&&rms<0.018){clearTimeout(voice.timer);voice.timer=setTimeout(()=>{if(voice.recorder?.state==='recording')voice.recorder.stop()},750)}else clearTimeout(voice.timer);if(voice.recorder?.state==='recording')requestAnimationFrame(monitorSilence)}
   async function transcribeVoice(blob){voice.processing=true;setVoice('processing','Transcribiendo…');try{const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const audioBase64=btoa(binary);const r=await fetch('/api/sifer-assistant?mode=transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'transcribe',audioBase64,mimeType:blob.type||'audio/webm'})});const data=await r.json();if(!r.ok)throw new Error(data?.error||'No pude transcribir la frase');const text=String(data?.text||'').trim();if(!text)throw new Error('No pude entenderte.');await ask(text);const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}catch(e){speak(e?.message||'No pude entenderte.')}finally{voice.processing=false}}
   function stopVoice(){voice.session++;clearTimeout(voice.timer);clearTimeout(voice.restartTimer);try{voice.recognition?.stop()}catch{}try{voice.recorder?.stop()}catch{}voice.recognition=null;voice.recorder=null;voice.listening=false;voice.processing=false;if(voice.stream){voice.stream.getTracks().forEach(t=>t.stop());voice.stream=null}try{voice.audioContext?.close()}catch{}voice.audioContext=null;voice.analyser=null;setVoice('off','Micrófono inactivo')}
+  function forceClose(){
+    open=false;
+    stopVoice();
+    panel.classList.remove('show');
+    panel.setAttribute('aria-hidden','true');
+    panel.style.setProperty('display','none','important');
+    panel.style.setProperty('visibility','hidden','important');
+    panel.style.setProperty('opacity','0','important');
+  }
   function toggle(force){
     const next=force===undefined?!open:Boolean(force);
     const emergency=document.getElementById('sifer-emergency-shell');
@@ -109,7 +118,7 @@
       if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
       render(); startVoice(); setTimeout(()=>input.focus(),50);
     }else{
-      stopVoice();
+      forceClose();
     }
   }
   window.SIFER_OPEN=()=>toggle(true);
@@ -119,7 +128,8 @@
   const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setTimeout(()=>input.focus(),30);startVoice();};
   document.addEventListener('click',e=>{const target=e.target?.closest?.('#sifer-ai-orb,#sifer-emergency-orb');if(!target)return;e.preventDefault();e.stopPropagation();forceOpen();},true);
   orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceOpen();});
-  root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggle(false);});
+  root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceClose();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){e.preventDefault();forceClose();}});
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
   function buildReadOnlyData(){
@@ -242,11 +252,34 @@
     }
   }
 
+  function loadLearnedMap(){
+    try{return JSON.parse(localStorage.getItem('sifer360_learned_map_v1')||'{}')||{};}catch{return {};}
+  }
+  function rememberCurrentModule(){
+    try{
+      const map=loadLearnedMap();
+      const module=String(document.getElementById('windowTitle')?.textContent||'Inicio').trim();
+      const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\s+/g,' ').trim();
+      map[module]={module,learnedAt:new Date().toISOString(),buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',title:el.title||''})).filter(x=>x.text||x.id||x.title).slice(0,700),fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,80).map(o=>({value:o.value,text:txt(o)})):[]})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),dialogs:[...document.querySelectorAll('.modal,[role="dialog"]')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,500)})).filter(x=>x.id||x.text).slice(0,120)};
+      localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
+      return map;
+    }catch{return {};}
+  }
+  function learnKnownModules(){
+    try{
+      rememberCurrentModule();
+      const map=loadLearnedMap();
+      map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index')));
+      localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
+    }catch{}
+  }
+
   function buildSystemMap(){
     try{
       const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\\s+/g,' ').trim();
       return {
         generatedAt:new Date().toISOString(),
+        learnedModules:loadLearnedMap(),
         pageTitle:document.title,
         currentModule:txt(document.getElementById('windowTitle'))||'Inicio',
         buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',onclick:el.getAttribute('onclick')||''})).filter(x=>x.text||x.id||x.onclick).slice(0,700),
@@ -383,7 +416,7 @@
       case 'ui_click': {
         const el=siferFindButton(args.target||args.text||args.id); if(!el) throw new Error('No encontré el botón o control visible: '+String(args.target||args.text||args.id||''));
         if(siferSensitiveClick(el) && !window.confirm('SIFER solicita confirmación\\n\\n'+String(action.confirmationText||el.innerText||el.value||'Ejecutar esta operación')+'\\n\\n¿Deseas continuar?')) return {cancelled:true};
-        el.click(); return {ok:true,message:'Control ejecutado: '+(el.innerText||el.value||el.title||el.id)};
+        el.click(); setTimeout(rememberCurrentModule,250); return {ok:true,message:'Control ejecutado: '+(el.innerText||el.value||el.title||el.id)};
       }
       case 'ui_fill': {
         const el=siferFindField(args.field||args.target||args.id); if(!el) throw new Error('No encontré el campo visible: '+String(args.field||args.target||args.id||''));
@@ -395,7 +428,7 @@
       case 'ui_select': {
         const el=siferFindField(args.field||args.target||args.id); if(!el||el.tagName.toLowerCase()!=='select') throw new Error('No encontré el selector visible: '+String(args.field||args.target||args.id||''));
         const wanted=normalizeLocal(args.value??args.option??''); const opt=[...el.options].find(o=>normalizeLocal(o.value)===wanted||normalizeLocal(o.textContent)===wanted||normalizeLocal(o.textContent).includes(wanted));
-        if(!opt) throw new Error('No encontré la opción solicitada en el selector'); el.value=opt.value; el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true,message:'Opción seleccionada: '+opt.textContent.trim()};
+        if(!opt) throw new Error('No encontré la opción solicitada en el selector'); el.value=opt.value; el.dispatchEvent(new Event('change',{bubbles:true})); rememberCurrentModule(); return {ok:true,message:'Opción seleccionada: '+opt.textContent.trim()};
       }
       default: throw new Error('Acción no implementada');
     }
@@ -499,7 +532,7 @@
   async function planWithSifer(command){
     const readOnlyData=buildReadOnlyData();
     const systemMap=buildSystemMap();
-    const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState()};
+    const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState(),learnedMap:loadLearnedMap()};
     const history=messages.slice(-10).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
     const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'plan',command,messages:history,context})});
     if(!r.ok){let e='No pude consultar el núcleo de interpretación de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
