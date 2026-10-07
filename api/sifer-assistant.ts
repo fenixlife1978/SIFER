@@ -95,10 +95,8 @@ export default async function handler(req, res) {
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
       if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
       if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
-      const direct=await tryFreeProviders(plannerPrompt);
       let result;
       let lastError;
-      if(direct?.text){ result={text:direct.text}; } else {
       for (const model of [MODEL,...FALLBACK_MODELS]) {
         try {
           result = await withTimeout(ai.models.generateContent({
@@ -175,18 +173,22 @@ ${command}
 HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
+      const direct=await tryFreeProviders(plannerPrompt);
       let result;
       let lastError;
-      for (const model of [MODEL,...FALLBACK_MODELS]) {
-        try {
-          result = await withTimeout(ai.models.generateContent({
-            model,
-            contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-            config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-          }));
-          if (result?.text) break;
-        } catch (err) { lastError = err; }
-      }
+      if(direct?.text){
+        result={text:direct.text};
+      }else{
+        for (const model of [MODEL,...FALLBACK_MODELS]) {
+          try {
+            result = await withTimeout(ai.models.generateContent({
+              model,
+              contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
+              config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
+            }));
+            if (result?.text) break;
+          } catch (err) { lastError = err; }
+        }
       }
       const planText=result?.text;
       if (!planText) throw lastError || new Error('Ningún motor de IA devolvió un plan.');
