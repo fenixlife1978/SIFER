@@ -10,6 +10,29 @@ async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
   finally { clearTimeout(timer); }
 }
 const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
+const GATEWAY_MODELS = ['openai/gpt-5.6-sol-fast','google/gemini-3.8-flash','anthropic/claude-fable-5.1'];
+
+async function gatewayGenerate(prompt, opts:any = {}) {
+  const key = process.env.AI_GATEWAY_API_KEY;
+  if (!key) return null;
+  let lastError:any;
+  for (const model of GATEWAY_MODELS) {
+    try {
+      const response = await withTimeout(fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method:'POST',
+        headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+        body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.2,max_tokens:opts.maxTokens||1800,...(opts.json?{response_format:{type:'json_object'}}:{})})
+      }));
+      if (!response.ok) throw new Error('Gateway '+response.status);
+      const data=await response.json();
+      const text=data?.choices?.[0]?.message?.content;
+      if(text) return {text,model};
+    } catch(err) { lastError=err; }
+  }
+  if(lastError) throw lastError;
+  return null;
+}
+
 
 function cleanJson(value) {
   const text = String(value || '').trim().replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/,'').replace(/\s*\`\`\`$/,'');
@@ -120,20 +143,25 @@ ${command}
 HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
+      let gatewayResult:any=null;
+      if(process.env.AI_GATEWAY_API_KEY) gatewayResult=await gatewayGenerate(plannerPrompt,{json:true,maxTokens:1800});
       let result;
       let lastError;
-      for (const model of [MODEL,...FALLBACK_MODELS]) {
-        try {
-          result = await ai.models.generateContent({
-            model,
-            contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-            config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-          }));
-          if (result?.text) break;
-        } catch (err) { lastError = err; }
+      if(!gatewayResult){
+        for (const model of [MODEL,...FALLBACK_MODELS]) {
+          try {
+            result = await withTimeout(ai.models.generateContent({
+              model,
+              contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
+              config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
+            }));
+            if (result?.text) break;
+          } catch (err) { lastError = err; }
+        }
       }
-      if (!result?.text) throw lastError || new Error('Google AI no devolvió un plan.');
-      const plan = cleanJson(result.text || '');
+      const planText=gatewayResult?.text||result?.text;
+      if (!planText) throw lastError || new Error('Ningún motor de IA devolvió un plan.');
+      const plan = cleanJson(planText || '');
       if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
 
       if (plan.type === 'action') {
