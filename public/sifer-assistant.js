@@ -153,8 +153,8 @@
     panel.classList.toggle('show',open);
     panel.setAttribute('aria-hidden',open?'false':'true');
     if(open){
-      if(!messages.length)add('assistant','Hola. Soy SIFER. Estoy conectado al POS y puedo navegar por sus módulos y ejecutar acciones operativas autorizadas. Las operaciones sensibles siempre requieren tu confirmación.');
-      render(); setVoice('off','Micrófono inactivo · toca aquí para activarlo'); setTimeout(()=>input.focus(),50);
+      if(!messages.length)add('assistant','Buenos días. Soy SIFER. Ya estoy en línea. Dime qué necesitas y procuraré que el trabajo pesado parezca sencillo. Prometo no juzgar tus instrucciones… demasiado. 😏');
+      render(); setVoice('off',continuousListening?'Escucha continua preparada':'Micrófono inactivo · toca 🎙️ para activarlo'); if(continuousListening)setTimeout(()=>startVoice(),120); setTimeout(()=>input.focus(),50);
     }else{
       forceClose();
     }
@@ -163,7 +163,7 @@
   window.SIFER_CLOSE=()=>toggle(false);
   document.addEventListener('sifer:open',()=>toggle(true));
   document.addEventListener('sifer:close',()=>toggle(false));
-  const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setVoice('off','Micrófono inactivo · toca aquí para activarlo');setTimeout(()=>input.focus(),30);};
+  const forceOpen=()=>{open=true;panel.classList.add('show');panel.style.setProperty('display','flex','important');panel.style.setProperty('visibility','visible','important');panel.style.setProperty('opacity','1','important');panel.setAttribute('aria-hidden','false');render();setVoice('off',continuousListening?'Escucha continua preparada':'Micrófono inactivo · toca 🎙️ para activarlo');if(continuousListening)setTimeout(()=>startVoice(),120);setTimeout(()=>input.focus(),30);};
   document.addEventListener('click',e=>{const target=e.target?.closest?.('#sifer-ai-orb,#sifer-emergency-orb');if(!target)return;e.preventDefault();e.stopPropagation();forceOpen();},true);
   orb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceOpen();});
   root.querySelector('.sifer-ai-close').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();forceClose();});
