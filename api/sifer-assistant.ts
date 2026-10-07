@@ -1,6 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
 const MODEL = 'gemini-3.8-flash';
+const FALLBACK_MODELS = ['gemini-3.7-flash','gemini-3.6-flash'];
+const REQUEST_TIMEOUT_MS = 45000;
+
+async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
+  let timer:any;
+  try { return await Promise.race([promise, new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error('Google AI tardó demasiado en responder.')),ms); })]); }
+  finally { clearTimeout(timer); }
+}
 const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
 
 function cleanJson(value) {
@@ -36,16 +44,16 @@ export default async function handler(req, res) {
       if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
       let result;
       let lastError;
-      for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
+      for (const model of [MODEL,...FALLBACK_MODELS]) {
         try {
-          result = await ai.models.generateContent({
+          result = await withTimeout(ai.models.generateContent({
             model,
             contents: [{ role: 'user', parts: [
               { text: 'Transcribe exactamente lo que dice el usuario en este audio. Devuelve SOLO la transcripción en español, sin explicación. Conserva nombres, números, productos, cantidades y expresiones coloquiales venezolanas.' },
               { inlineData: { mimeType, data: audioBase64 } }
             ] }],
             config: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: 'low' } }
-          });
+          }));
           if (result?.text) break;
         } catch (err) { lastError = err; }
       }
@@ -120,7 +128,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
             model,
             contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
             config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-          });
+          }));
           if (result?.text) break;
         } catch (err) { lastError = err; }
       }
@@ -154,7 +162,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
     let lastError;
     for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
       try {
-        stream = await ai.models.generateContentStream({
+        stream = await withTimeout(ai.models.generateContentStream({
           model,
           contents: contents.length ? contents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
           config: { systemInstruction, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } }
@@ -174,7 +182,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
     return res.end();
   } catch (error) {
     console.error('SIFER assistant error:', error);
-    if (!res.headersSent) return res.status(500).json({ error: 'Error interno del asistente SIFER.' });
+    if (!res.headersSent) return res.status(502).json({ error: 'SIFER no pudo comunicarse con el motor de IA. Verifica la clave de Google AI y vuelve a intentar.' });
     return res.end();
   }
 }
