@@ -594,10 +594,12 @@
       .replace(/\b(?:sifer|por favor|please|busca|buscar|buscame|búscame|buscalo|búscalo|importa|importalo|importalo|incorpora|incorporalo|incorporar|a mi inventario|en mi inventario|a la tienda|a mi tienda|desde el catalogo|del catalogo|catalogo|catalog)\b/gi,' ')
       .replace(/\s+/g,' ').trim();
     const direct=removeFiller(q)
+      .replace(/\ben\s*importalo\b|\benimportalo\b|\bimportalo\b/gi,' ')
       .replace(/\b(?:100|\d+)\s*(?:unidades?|uds?|piezas?)\b/g,' ')
       .replace(/\b(?:minimo|minima|min|reorden|reordenar|reordenacion)\s*\d+(?:[.,]\d+)?\b/g,' ')
       .replace(/\s+/g,' ').trim();
-    if(direct && !/^(el|la|los|las|ese|esa|eso|esto|lo|la)$/i.test(direct)) return direct;
+    const hasEntity=/(sensor|repuesto|producto|articulo|pieza|bujia|bujia|aceite|filtro|bateria|bombillo|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|corolla|sentra|tiida)/i.test(direct);
+    if(direct && hasEntity && !/^(el|la|los|las|ese|esa|eso|esto|lo|la)$/i.test(direct)) return direct;
     const recent=messages.slice().reverse().find(m=>m.role==='user' && /(?:sensor|repuesto|producto|articulo|pieza|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|bujia|bujia)/i.test(String(m.text||'')));
     if(recent) return removeFiller(String(recent.text||''))
       .replace(/\b(?:cuanto|cuantos|tenemos|hay|en inventario|inventario|tienda|disponemos|disponible|disponibles)\b/gi,' ')
