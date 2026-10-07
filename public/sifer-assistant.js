@@ -517,7 +517,8 @@
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
-      if(isInventoryQuery(command)){\n        messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;\n      }\n      if(isTodaySalesQuery(command)){
+      if(isInventoryQuery(command)){
+        messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;\n      }\n      if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
       let action=localActionFromCommand(command);
