@@ -218,6 +218,70 @@
     }
   }
 
+  function isLowStockQuery(text){
+    const q=normalizeLocal(text);
+    return /(por debajo|debajo|bajo|bajos|bajas|menor|menos).*(minimo|minima|minimo de|existencia|stock)/
+      .test(q) || /(minimo|minimos|minimas).*(inventario|stock|productos|articulos|repuestos)/.test(q);
+  }
+
+  function answerLowStockQuery(){
+    try{
+      const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
+      const productos=Array.isArray(db.productos)?db.productos:[];
+      const repuestos=typeof getRepuestos==='function'?(getRepuestos()||[]):[];
+      const all=[...productos,...repuestos], seen=new Set();
+      const unique=all.filter(p=>{
+        const key=String(p.id||p.codigo||p.sku||p.nombre||'');
+        if(!key||seen.has(key))return false; seen.add(key); return true;
+      });
+      const low=unique.filter(p=>{
+        const stock=Number(p.stock??0);
+        const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
+        return Number.isFinite(stock)&&Number.isFinite(minimo)&&minimo>0&&stock<minimo;
+      });
+      if(!low.length)return 'No hay artículos por debajo del mínimo configurado.';
+      const detail=low.slice(0,30).map(p=>{
+        const stock=Number(p.stock??0);
+        const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
+        return (p.nombre||p.codigo||p.id)+' — existencia '+stock+', mínimo '+minimo;
+      }).join('; ');
+      return 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' por debajo del mínimo. '+detail+(low.length>30?' …':'');
+    }catch{
+      return 'No pude consultar los mínimos del inventario real en este momento.';
+    }
+  }
+
+  function isExploreSystemQuery(text){
+    const q=normalizeLocal(text);
+    return /(explora|explorar|recorre|recorrer|map(ea|ear)|mapea|mapear|conoce|aprende).*(sistema|pos|modulos|modulo|botones|acciones)/.test(q)
+      || /(sistema completo|todo el sistema|todos los modulos|mapa.*operativo)/.test(q);
+  }
+
+  async function exploreSystem(){
+    const modules=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
+    const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null);
+    if(!navigate)throw new Error('Navegación no disponible para explorar el sistema.');
+    const original=document.getElementById('windowTitle')?.textContent||'Inicio';
+    const originalView=({Inicio:'inicio',POS:'pos','Pedidos':'pedidos','Usuarios':'usuarios','Catálogo':'master_catalog','Repuestos':'repuestos','Productos':'productos','Compras':'compras','Clientes':'clientes','Proveedores':'proveedores','Cuentas por cobrar':'cxc','Cuentas por pagar':'cxp','Presupuestos':'presupuestos','Reportes':'reportes','Caja':'caja','Configuración':'config'})[original]||'inicio';
+    const learned=loadLearnedMap();
+    let visited=0;
+    for(const view of modules){
+      try{
+        navigate(view);
+        await new Promise(r=>setTimeout(r,300));
+        rememberCurrentModule();
+        visited++;
+      }catch{}
+    }
+    try{navigate(originalView);await new Promise(r=>setTimeout(r,250));rememberCurrentModule();}catch{}
+    const map=loadLearnedMap();
+    map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index')));
+    map.__lastFullExploreAt=new Date().toISOString();
+    map.__exploredViews=modules;
+    localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
+    return 'Exploración completada. SIFER recorrió '+visited+' módulos accesibles y guardó en memoria su mapa de botones, campos, selectores y diálogos visibles. El mapa quedó disponible para futuras órdenes.';
+  }
+
   function isTodaySalesQuery(text){
     const value=String(text||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     return /(cuanto.*vend|vendimos|ventas.*hoy|venta.*hoy|vendido.*hoy|total.*ventas.*hoy|total.*vendido)/i.test(value);
@@ -359,9 +423,18 @@
       case 'navigate': {
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
         const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
-        const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); return {ok:true,message:'Módulo abierto: '+target};
+        const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); setTimeout(rememberCurrentModule,300); return {ok:true,message:'Módulo abierto: '+target};
       }
-      case 'add_to_cart': if(typeof addToCart!=='function') throw new Error('Carrito no disponible'); addToCart(String(args.id||''),args.type==='repuesto'?'repuesto':'producto'); return {ok:true,message:'Artículo agregado al carrito'};
+      case 'add_to_cart': {
+        if(typeof addToCart!=='function') throw new Error('Carrito no disponible');
+        let id=String(args.id||''), type=args.type==='repuesto'?'repuesto':'producto';
+        if(!id){
+          const p=findProductForCommand(args.query||args.nombre||args.producto||'');
+          if(!p) throw new Error('No encontré el artículo solicitado en el catálogo.');
+          id=String(p.id); type=(p.sku&&!p.codigo?'repuesto':'producto');
+        }
+        addToCart(id,type); return {ok:true,message:'Artículo agregado al carrito'};
+      }
       case 'remove_cart_line': if(typeof selected!=='undefined') selected=Number(args.index); if(typeof removeCart!=='function') throw new Error('Carrito no disponible'); removeCart(); return {ok:true,message:'Línea eliminada del carrito'};
       case 'cancel_sale': if(typeof cancelSale!=='function') throw new Error('Cancelación no disponible'); cancelSale(); return {ok:true,message:'Venta cancelada'};
       case 'open_cash': if(typeof toggleCaja!=='function') throw new Error('Caja no disponible'); if(!currentActionState().cajaAbierta) toggleCaja(); return {ok:true,message:'Caja abierta'};
@@ -423,7 +496,7 @@
         if(el.tagName.toLowerCase()==='select') throw new Error('Para un selector utiliza ui_select');
         const value=String(args.value??''); const proto=el.tagName.toLowerCase()==='textarea'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
         const setter=Object.getOwnPropertyDescriptor(proto,'value')?.set; if(setter) setter.call(el,value); else el.value=value;
-        el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true,message:'Campo actualizado: '+(args.field||args.target||args.id)};
+        el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); rememberCurrentModule(); return {ok:true,message:'Campo actualizado: '+(args.field||args.target||args.id)};
       }
       case 'ui_select': {
         const el=siferFindField(args.field||args.target||args.id); if(!el||el.tagName.toLowerCase()!=='select') throw new Error('No encontré el selector visible: '+String(args.field||args.target||args.id||''));
@@ -519,10 +592,11 @@
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
-    if(/(agrega|añade|mete|pon).*(al carrito|carrito)/.test(q)){
-      const clean=q.replace(/.*?(agrega|añade|mete|pon)\s+/,'').replace(/\s+(al carrito|carrito).*$/,'').trim();
+    if(/(agrega|añade|mete|pon|echa|incorpora).*(al carrito|carrito)/.test(q)){
+      const clean=q.replace(/.*?(agrega|añade|mete|pon|echa|incorpora)\s+/,'').replace(/\s+(al carrito|carrito).*$/,'').trim();
       const p=findProductForCommand(clean);
       if(p)return {name:'add_to_cart',args:{id:p.id,type:(p.sku&&!p.codigo?'repuesto':'producto')}};
+      if(clean)return {name:'add_to_cart',args:{query:clean}};
     }
     if(/(actualiza|refresca|sincroniza).*(modulo|pantalla|datos)/.test(q)) return {name:'refresh',args:{}};
     if(/imprime|imprimir/.test(q)) return {name:'print',args:{}};
@@ -550,6 +624,14 @@
     busy=true; send.disabled=true; orb.classList.add('active'); status.textContent='SIFER está interpretando…';
     messages.push({role:'user',text:'SIFER, '+command}); render();
     try{
+      if(isExploreSystemQuery(command)){
+        status.textContent='SIFER está recorriendo y aprendiendo el sistema…';
+        const result=await exploreSystem();
+        messages.push({role:'assistant',text:result}); render(); return;
+      }
+      if(isLowStockQuery(command)){
+        messages.push({role:'assistant',text:answerLowStockQuery()}); render(); return;
+      }
       if(isInventoryQuery(command)){
         messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;
       }
