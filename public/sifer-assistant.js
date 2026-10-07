@@ -343,13 +343,24 @@
     }
   }
 
-  function isLowStockQuery(text){
-    const q=normalizeLocal(text);
-    return /(por debajo|debajo|bajo|bajos|bajas|menor|menos).*(minimo|minima|minimo de|existencia|stock)/
-      .test(q) || /(minimo|minimos|minimas).*(inventario|stock|productos|articulos|repuestos)/.test(q);
+  function extractStockThreshold(text){
+    const q=normalizeLocal(text).replace(/,/g,'.');
+    const patterns=[
+      /(?:por debajo|debajo|menos de|menor que|menores que|inferior a|hasta|menos a)\\s+(?:las?\\s+)?(\\d+(?:\\.\\d+)?)\\s*(?:unidades?|uds?|existencias?|en stock)?/i,
+      /(?:stock|existencia|existencias)\\s*(?:menor|inferior|por debajo)\\s*(?:de|a)?\\s*(\\d+(?:\\.\\d+)?)/i
+    ];
+    for(const re of patterns){const m=q.match(re);if(m)return Number(m[1]);}
+    return null;
   }
 
-  function answerLowStockQuery(){
+  function isLowStockQuery(text){
+    const q=normalizeLocal(text);
+    return extractStockThreshold(q)!==null
+      || /(por debajo|debajo|bajo|bajos|bajas|menor|menos|inferior).*(minimo|minima|minimo de|existencia|stock|unidades)/.test(q)
+      || /(minimo|minimos|minimas).*(inventario|stock|productos|articulos|repuestos)/.test(q);
+  }
+
+  function answerLowStockQuery(text){
     try{
       const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
       const productos=Array.isArray(db.productos)?db.productos:[];
@@ -359,21 +370,27 @@
         const key=String(p.id||p.codigo||p.sku||p.nombre||'');
         if(!key||seen.has(key))return false; seen.add(key); return true;
       });
+      const threshold=extractStockThreshold(text);
       const low=unique.filter(p=>{
         const stock=Number(p.stock??0);
+        if(!Number.isFinite(stock))return false;
+        if(threshold!==null)return stock<threshold;
         const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
-        return Number.isFinite(stock)&&Number.isFinite(minimo)&&minimo>0&&stock<minimo;
+        return Number.isFinite(minimo)&&minimo>0&&stock<minimo;
       });
-      if(!low.length)return 'No hay artículos por debajo del mínimo configurado.';
+      if(!low.length)return threshold!==null
+        ? 'No hay artículos con menos de '+threshold+' unidades de existencia.'
+        : 'No hay artículos por debajo del mínimo configurado.';
       const detail=low.slice(0,30).map(p=>{
         const stock=Number(p.stock??0);
         const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
-        return (p.nombre||p.codigo||p.id)+' — existencia '+stock+', mínimo '+minimo;
+        return (p.nombre||p.codigo||p.id)+' — existencia '+stock+(threshold===null?' — mínimo '+minimo:'');
       }).join('; ');
-      return 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' por debajo del mínimo. '+detail+(low.length>30?' …':'');
-    }catch{
-      return 'No pude consultar los mínimos del inventario real en este momento.';
-    }
+      const intro=threshold!==null
+        ? 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' con menos de '+threshold+' unidades.'
+        : 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' por debajo del mínimo.';
+      return intro+' '+detail+(low.length>30?' …':'');
+    }catch{return 'No pude consultar las existencias del inventario real en este momento.';}
   }
 
   function isExploreSystemQuery(text){
@@ -1083,7 +1100,7 @@
         messages.push({role:'assistant',text:result}); render(); return;
       }
       if(isLowStockQuery(command)){
-        messages.push({role:'assistant',text:answerLowStockQuery()}); render(); return;
+        messages.push({role:'assistant',text:answerLowStockQuery(command)}); render(); return;
       }
       if(isInventoryQuery(command)){
         messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;
