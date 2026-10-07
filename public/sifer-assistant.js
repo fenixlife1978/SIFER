@@ -105,14 +105,30 @@
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function add(role,text){messages.push({role,text});render();}
   const voiceUi=root.querySelector('#sifer-ai-voice'), voiceText=root.querySelector('#sifer-ai-voice-text');
-  voiceUi.style.cursor='pointer'; voiceUi.title='Toca para activar el micrófono';
-  voiceUi.addEventListener('click',()=>{startVoice();});
+  const micBtn=root.querySelector('#sifer-ai-mic'), continuousBtn=root.querySelector('#sifer-ai-continuous');
+  let continuousListening=localStorage.getItem('sifer360_sifer_continuous_voice_v1')==='1';
+  continuousBtn.classList.toggle('on',continuousListening);
+  continuousBtn.textContent='♾️ Escucha continua: '+(continuousListening?'ON':'OFF');
+  micBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();startVoice();});
+  continuousBtn.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    continuousListening=!continuousListening;
+    localStorage.setItem('sifer360_sifer_continuous_voice_v1',continuousListening?'1':'0');
+    continuousBtn.classList.toggle('on',continuousListening);
+    continuousBtn.textContent='♾️ Escucha continua: '+(continuousListening?'ON':'OFF');
+    if(continuousListening) startVoice(); else { try{voice.recognition?.stop()}catch{}; if(voice.recorder?.state==='recording')try{voice.recorder.stop()}catch{}; setVoice('off','Escucha continua desactivada'); }
+  });
   const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   const voice={recognition:null,stream:null,recorder:null,chunks:[],listening:false,processing:false,timer:null,restartTimer:null,buffer:'',audioContext:null,analyser:null,startedAt:0,session:0};
-  function setVoice(mode,text){voiceUi.className='sifer-ai-voice '+(mode||'');voiceText.textContent=text||'Micrófono inactivo';}
+  function setVoice(mode,text){
+    voiceUi.className='sifer-ai-voice '+(mode||'');
+    voiceText.textContent=text||'Micrófono inactivo';
+    const state=mode==='listening'?'listening':mode==='processing'?'thinking':mode==='executing'?'executing':mode==='speaking'?'speaking':mode==='error'?'error':'idle';
+    orb.setAttribute('data-state',state);
+  }
   function speak(text){const value=String(text||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();if(!value||!('speechSynthesis'in window)){restartVoice(120);return;}try{voice.recognition?.stop()}catch{}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang='es-VE';u.rate=1.02;u.pitch=1;u.volume=1;u.onend=()=>restartVoice(120);u.onerror=()=>restartVoice(120);window.speechSynthesis.speak(u);}
   async function ensureMic(){if(voice.stream)return true;if(!navigator.mediaDevices?.getUserMedia){setVoice('off','Micrófono no disponible');return false;}try{voice.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});return true;}catch{setVoice('off','Activa el permiso del micrófono');return false;}}
-  function restartVoice(delay=180){if(!open||voice.processing)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(startVoice,delay);}
+  function restartVoice(delay=180){if(!open||voice.processing||!continuousListening)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(startVoice,delay);}
   async function startVoice(){if(!open||voice.processing||voice.listening)return;const ok=await ensureMic();if(!ok||!open||voice.processing||voice.listening)return;if(SpeechRecognition)startSpeech();else startRecorder();}
   function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if(open&&!voice.processing)restartVoice(150)};rec.onerror=e=>{voice.listening=false;voice.recognition=null;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setVoice('off','Permiso de micrófono requerido');return}if(open&&!voice.processing)restartVoice(400)};rec.onresult=e=>{if(session!==voice.session||voice.processing)return;let t='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=(e.results[i][0]?.transcript||'')+' ';if(!t.trim())return;voice.buffer=(voice.buffer+' '+t).trim();clearTimeout(voice.timer);voice.timer=setTimeout(commitVoice,800)};voice.recognition=rec;rec.start()}catch{voice.listening=false;startRecorder()}}
   function commitVoice(){const text=voice.buffer.trim();voice.buffer='';clearTimeout(voice.timer);if(!text){restartVoice(100);return}try{voice.recognition?.stop()}catch{}voice.listening=false;voice.processing=true;setVoice('processing','Procesando…');ask(text).then(()=>{const last=messages[messages.length-1]?.text;if(last)speak(last);else restartVoice(120)}).finally(()=>{voice.processing=false})}
