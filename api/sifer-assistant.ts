@@ -1,24 +1,27 @@
 const NVIDIA_BASE_URL = (process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/\/$/,'');
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'z-ai/glm-5.3-flash';
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const NVIDIA_TRANSCRIBE_MODEL = process.env.NVIDIA_TRANSCRIBE_MODEL || 'openai/whisper-large-v3';
 const REQUEST_TIMEOUT_MS = 30000;
 
-async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
+async function withTimeout(promise:any, ms=REQUEST_TIMEOUT_MS){
   let timer:any;
   try { return await Promise.race([promise, new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error('NVIDIA AI tardó demasiado en responder.')),ms); })]); }
   finally { clearTimeout(timer); }
 }
 
-// Proveedores directos opcionales. No usa Vercel AI Gateway.
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/,'');
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-reasoner';
 
-async function directOpenAICompatible(baseUrl:string, apiKey:string|undefined, model:string, prompt:string) {
+async function directOpenAICompatible(baseUrl:string, apiKey:string|undefined, model:string, prompt:string, json=true) {
   if(!baseUrl) return null;
+  const body:any={model,messages:[{role:'user',content:prompt}],temperature:0.2,max_tokens:1800};
+  if(json) body.response_format={type:'json_object'};
   const response=await withTimeout(fetch(baseUrl.replace(/\/$/,'')+'/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json',...(apiKey?{'Authorization':'Bearer '+apiKey}:{})},
-    body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.2,max_tokens:1800,response_format:{type:'json_object'}})
+    body:JSON.stringify(body)
   }));
   if(!response.ok) throw new Error('Proveedor IA '+response.status);
   const data=await response.json();
@@ -54,9 +57,8 @@ async function tryFreeProviders(prompt:string){
   }
   return null;
 }
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
-function cleanJson(value) {
+function cleanJson(value:any) {
   const text = String(value || '').trim().replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/,'').replace(/\s*\`\`\`$/,'');
   try { return JSON.parse(text); } catch {}
   const start = text.indexOf('{'), end = text.lastIndexOf('}');
@@ -66,34 +68,139 @@ function cleanJson(value) {
   return null;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-  const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
-  if (!NVIDIA_API_KEY && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene NVIDIA_API_KEY configurada en producción.' });
+function decodeAudioBase64(audioBase64:string){
+  const bin=atob(audioBase64);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return bytes;
+}
 
-  try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const mode = body.mode === 'plan' || body.mode === 'transcribe' ? body.mode : 'chat';
-    const command = String(body.command || '').slice(0, 4000);
-    const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
-    const context = body.context || {};
-    const capabilities = Array.isArray(context.capabilities) ? context.capabilities : [];
+async function transcribeAudio(audioBase64:string, mimeType:string){
+  if(!NVIDIA_API_KEY) throw new Error('La transcripción de audio necesita NVIDIA_API_KEY en el servidor.');
+  const bytes=decodeAudioBase64(audioBase64);
+  const ext=mimeType.includes('webm')?'webm':mimeType.includes('mp4')?'mp4':mimeType.includes('ogg')?'ogg':'webm';
+  const form=new FormData();
+  form.append('file',new Blob([bytes],{type:mimeType}),'audio.'+ext);
+  form.append('model',NVIDIA_TRANSCRIBE_MODEL);
+  form.append('response_format','json');
+  const response=await withTimeout(fetch(NVIDIA_BASE_URL+'/audio/transcriptions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+NVIDIA_API_KEY},
+    body:form
+  }),90000);
+  if(!response.ok){ const detail=await response.text().catch(()=> ''); throw new Error('NVIDIA transcripción '+response.status+(detail?': '+detail.slice(0,180):'')); }
+  const data=await response.json();
+  return String(data?.text||'').trim();
+}
 
-    const ai = NVIDIA_API_KEY ? { key: NVIDIA_API_KEY, base: NVIDIA_BASE_URL, model: NVIDIA_MODEL } : null;
+function normalizeCtx(s:any){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
+}
 
-    if (mode === 'transcribe') {
-      if (!ai) return res.status(503).json({ error: 'La transcripción de audio requiere NVIDIA_API_KEY configurada.' });
-      const audioBase64 = String(body.audioBase64 || '');
-      const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
-      if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
-      if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
-      if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
-      throw new Error('La transcripción por audio del servidor requiere un proveedor de voz; la escucha normal de SIFER usa el reconocimiento del navegador.');
+function isPlainArgs(args:any){
+  if(!args||typeof args!=='object'||Array.isArray(args)) return false;
+  const keys=Object.keys(args);
+  if(keys.length>40) return false;
+  for(const k of keys){
+    const v=args[k];
+    if(v===null||v===undefined) continue;
+    const t=typeof v;
+    if(t==='string'){ if(String(v).length>600) return false; continue; }
+    if(t==='number'||t==='boolean') continue;
+    if(Array.isArray(v)){
+      if(v.length>50) return false;
+      for(const x of v){
+        const xt=typeof x;
+        if(xt!=='string'&&xt!=='number'&&xt!=='boolean') return false;
+        if(xt==='string'&&String(x).length>400) return false;
+      }
+      continue;
     }
+    return false;
+  }
+  return true;
+}
 
-    if (mode === 'plan') {
-      const allowed = capabilities.map(x => x.name).filter(Boolean);
-      const plannerPrompt = `Eres el CEREBRO de SIFER, un asistente inteligente integrado a un POS automotriz venezolano. Tu función no es hacer coincidencia de palabras: debes comprender la intención humana, usar el contexto disponible, razonar qué quiere conseguir el usuario y convertirlo en una operación segura y ejecutable.
+function validateAction(action:any, allowed:string[], context:any, prefix=''){
+  if(!action||typeof action!=='object') return prefix+'acción inválida.';
+  const name=String(action.name||'').trim();
+  if(!name) return prefix+'falta action.name.';
+  if(!/^[a-z][a-z0-9_]*$/.test(name)) return prefix+'nombre de capacidad inválido: '+name;
+  if(allowed.length && !allowed.includes(name)) return prefix+'"'+name+'" no está entre las capacidades permitidas.';
+  const args=action.args===undefined||action.args===null?{}:action.args;
+  if(!isPlainArgs(args)) return prefix+'args de "'+name+'" debe ser un objeto plano con valores simples (string/number/boolean/array).';
+  if(action.confirmationText!==undefined){
+    if(typeof action.confirmationText!=='string') return prefix+'confirmationText debe ser texto.';
+    if(action.confirmationText.length>500) action.confirmationText=action.confirmationText.slice(0,500);
+  }
+  if(name==='ui_click'||name==='ui_fill'||name==='ui_select'){
+    const target=String(args.selector||args.id||args.button||args.dataSifer||args.text||args.label||'').trim();
+    if(!target) return prefix+'"'+name+'" necesita args.selector, args.id, args.button, args.dataSifer, args.text o args.label.';
+    const sm=(context&&context.systemMap)||{};
+    const atlas=sm.atlas||null;
+    const hay:any[]=[];
+    if(Array.isArray(sm.buttons)) hay.push(...sm.buttons);
+    if(Array.isArray(sm.fields)) hay.push(...sm.fields);
+    if(atlas&&atlas.current){
+      if(Array.isArray(atlas.current.buttons)) hay.push(...atlas.current.buttons);
+      if(Array.isArray(atlas.current.fields)) hay.push(...atlas.current.fields);
+    }
+    if(hay.length){
+      const nt=normalizeCtx(target);
+      const found=hay.some((b:any)=>[b?.ds,b?.id,b?.text,b?.lb,b?.label,b?.nm,b?.onclick].some((f:any)=>f&&normalizeCtx(f).includes(nt)));
+      if(!found) return prefix+'"' +target+'" no existe en el mapa del sistema (no inventes controles). Usa una capacidad de negocio o navega primero.';
+    }
+  }
+  return null;
+}
+
+function validatePlanShape(plan:any, allowed:string[], context:any){
+  if(!plan||typeof plan!=='object') return 'La respuesta no es un objeto JSON.';
+  if(plan.ok!==true) return 'Falta "ok": true.';
+  const type=String(plan.type||'');
+  if(type==='answer'){
+    const a=String(plan.answer||'').trim();
+    if(!a) return 'type=answer requiere un "answer" no vacío.';
+    if(a.length>3000) return 'El "answer" supera 3000 caracteres.';
+    return null;
+  }
+  if(type==='action') return validateAction(plan.action, allowed, context);
+  if(type==='plan'){
+    if(typeof plan.summary!=='string'||!plan.summary.trim()) return 'type=plan requiere un "summary" no vacío.';
+    if(!Array.isArray(plan.actions)||plan.actions.length<1) return 'plan.actions debe tener al menos 1 acción.';
+    if(plan.actions.length>8) return 'El plan tiene '+plan.actions.length+' pasos; el máximo es 8. Divide la operación.';
+    for(let i=0;i<plan.actions.length;i++){
+      const e=validateAction(plan.actions[i], allowed, context, 'paso '+(i+1)+': ');
+      if(e) return e;
+    }
+    return null;
+  }
+  return 'type debe ser "answer", "action" o "plan".';
+}
+
+function budgetJson(label:string, value:any, max:number){
+  if(value===null||value===undefined) return '';
+  const s=JSON.stringify(value);
+  if(!s||s==='null'||s==='{}'||s==='[]') return '';
+  if(s.length<=max) return label+': '+s;
+  return label+': '+s.slice(0,max)+'…(truncado)';
+}
+
+function buildPlannerPrompt(command:string, context:any, messages:any[], correction:string){
+  const caps=Array.isArray(context.capabilities)?context.capabilities:[];
+  const atlas=(context.systemMap&&context.systemMap.atlas)||null;
+  const parts=[
+    budgetJson('ATLAS_VERIFICADO', atlas, 16000),
+    budgetJson('MEMORIA_PERSISTENTE', context.memory, 6000),
+    budgetJson('ESTADO_READ_ONLY', context.readOnlyData, 9000),
+    budgetJson('ACCION_EN_CURSO', context.actionState, 3000),
+    budgetJson('MAPA_BOTONES', (context.systemMap&&context.systemMap.buttons)||null, 14000),
+    budgetJson('MAPA_CAMPOS', (context.systemMap&&context.systemMap.fields)||null, 12000),
+    budgetJson('DIALOGOS', (context.systemMap&&context.systemMap.dialogs)||null, 4000),
+    budgetJson('MODULOS_APRENDIDOS', (context.learnedMap&&(context.learnedMap.__index||Object.keys(context.learnedMap).slice(0,40)))||null, 2000)
+  ].filter(Boolean).join('\n').slice(0, 62000);
+
+  return `Eres el CEREBRO de SIFER, un asistente inteligente integrado a un POS automotriz venezolano. Tu función no es hacer coincidencia de palabras: debes comprender la intención humana, usar el contexto disponible, razonar qué quiere conseguir el usuario y convertirlo en una operación segura y ejecutable.
 
 INTERPRETACIÓN HUMANA:
 - Comprende español natural, coloquial, abreviaturas, errores ortográficos, frases incompletas y sinónimos.
@@ -122,9 +229,19 @@ RAZONAMIENTO:
 11. No afirmes que una acción fue realizada: solo propón acciones; el ejecutor local informará el resultado real.
 12. Cuando exista una capacidad específica de negocio, prefierela sobre ui_click/ui_fill/ui_select.
 
+EJECUCIÓN ATÓMICA:
+- Cada acción debe ser autónoma: valida por sí sola y modifica UNA sola cosa.
+- Máximo 8 pasos. Si necesitas más, simplifica o devuelve una pregunta al usuario.
+- Ordena los pasos por precondición: primero navegar/abrir el módulo, luego localizar, luego llenar campos, luego confirmar.
+- Si un paso depende del resultado de otro (buscar antes de importar, abrir caja antes de cobrar), encadénalos en ese orden exacto.
+- Nunca repitas un paso idéntico "por si acaso".
+- confirmationText es obligatorio solo cuando la capacidad tenga confirm:true (cobros, compras, pagos, Corte Z, devoluciones, anulaciones, descuentos altos); en las demás no lo incluyas.
+- MEMORIA_PERSISTENTE contiene hechos aprendidos del usuario (preferencias, configuración) y fallos recientes: úsalos para responder mejor y no repetir lo que falló.
+- ATLAS_VERIFICADO es el mapa real navegable del sistema con botones, campos y sus atributos data-sifer. Para ui_* usa SOLO identificadores presentes ahí; nunca inventes controles ni asumas campos de un módulo que no se haya navegado.
+
 DEVUELVE SOLO JSON VÁLIDO. No muestres razonamiento interno paso a paso.
 Nunca inventes una herramienta. Solo puedes usar estas capacidades:
-${JSON.stringify(capabilities)}
+${JSON.stringify(caps)}
 
 Informativa:
 {"ok":true,"type":"answer","answer":"respuesta basada únicamente en el contexto real"}
@@ -135,74 +252,93 @@ Una acción:
 Varias acciones:
 {"ok":true,"type":"plan","summary":"resultado esperado","actions":[{"name":"CAPACIDAD","args":{},"confirmationText":"..."}]}
 
-Las capacidades ui_click/ui_fill/ui_select solo pueden usar controles visibles descritos en systemMap. Si una navegación cambia de módulo, no inventes los campos del módulo destino que no aparecen en el mapa actual. Usa una capacidad específica si existe o solicita el dato faltante.
+Las capacidades ui_click/ui_fill/ui_select solo pueden usar controles visibles descritos en ATLAS_VERIFICADO o MAPA_BOTONES. Si una navegación cambia de módulo, no inventes los campos del módulo destino que no aparezcan en el mapa; usa capacidades de negocio o devuelve una pregunta.
 - search_catalog sirve para localizar artículos reales del Catálogo Máster sin modificar el inventario.
 - import_catalog_item sirve para localizar e incorporar un artículo del Catálogo Máster al inventario real. Debe conservar query, stock, min y reorderPoint cuando el usuario los haya indicado.
 - Para órdenes como "busca el sensor de oxígeno del Aveo y, si no está, impórtalo con 100 unidades, mínimo 30 y reorden 40", la intención es una sola operación compuesta: resolver el artículo en el catálogo y luego incorporarlo con esos parámetros.
 - Si el usuario usa pronombres ("búscalo", "ese", "ese mismo"), toma como referencia la entidad más reciente y suficientemente clara del historial; no inventes otra.
 
 CONTEXTO REAL DEL POS:
-${JSON.stringify(context).slice(0, 50000)}
+${parts}
 
 SOLICITUD DEL USUARIO:
 ${command}
 
 HISTORIAL RECIENTE:
-${JSON.stringify(messages).slice(0, 12000)}`;
+${JSON.stringify(messages).slice(0, 12000)}${correction?`
 
-      const direct=await tryFreeProviders(plannerPrompt);
-      let planText=direct?.text || null;
-      if(!planText) planText=await nvidiaChat([{role:'user',content:plannerPrompt}],{json:true,max_tokens:1800,temperature:0.1});
-      if (!planText) throw new Error('NVIDIA no devolvió un plan válido.');
-      const plan = cleanJson(planText || '');
-      if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
+CORRIGE ESTE ERROR Y DEVUELVE SOLO JSON VÁLIDO:
+${correction}`:''}`;
+}
 
-      if (plan.type === 'action') {
-        const name = String(plan.action?.name || '');
-        if (!allowed.includes(name)) return res.status(422).json({ error: 'La interpretación propuso una operación que SIFER no tiene habilitada.' });
-        plan.action.args = plan.action.args && typeof plan.action.args === 'object' ? plan.action.args : {};
+export default async function handler(req:any, res:any) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
+  if (!NVIDIA_API_KEY && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene NVIDIA_API_KEY configurada en producción.' });
+
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const mode = body.mode === 'plan' || body.mode === 'transcribe' ? body.mode : 'chat';
+    const command = String(body.command || '').slice(0, 4000);
+    const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
+    const context = body.context || {};
+    const capabilities = Array.isArray(context.capabilities) ? context.capabilities : [];
+
+    if (mode === 'transcribe') {
+      if (!NVIDIA_API_KEY) return res.status(503).json({ error: 'La transcripción de audio requiere NVIDIA_API_KEY configurada.' });
+      const audioBase64 = String(body.audioBase64 || '');
+      const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
+      if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
+      if (!/^audio\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
+      if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
+      try {
+        const text = await transcribeAudio(audioBase64, mimeType);
+        if (!text) return res.status(422).json({ error: 'No pude entender la frase del audio.' });
+        return res.status(200).json({ ok:true, text });
+      } catch (err:any) {
+        return res.status(502).json({ error: 'No pude transcribir el audio: '+String(err?.message||err).slice(0,240) });
       }
-      if (plan.type === 'plan') {
-        if (!Array.isArray(plan.actions) || plan.actions.length < 1 || plan.actions.length > 12) return res.status(422).json({ error: 'El plan de SIFER no es válido.' });
-        for (const action of plan.actions) {
-          const name = String(action?.name || '');
-          if (!allowed.includes(name)) return res.status(422).json({ error: 'El plan contiene una operación no habilitada por SIFER.' });
-          action.args = action.args && typeof action.args === 'object' ? action.args : {};
+    }
+
+    if (mode === 'plan') {
+      const allowed = capabilities.map((x:any) => x.name).filter(Boolean);
+      let plan:any = null;
+      let lastError = '';
+      for (let attempt = 0; attempt < 3 && !plan; attempt++) {
+        const plannerPrompt = buildPlannerPrompt(command, context, messages, lastError);
+        let planText:string|null = null;
+        try { const d = await tryFreeProviders(plannerPrompt); planText = d?.text || null; } catch {}
+        if (!planText) {
+          try { planText = await nvidiaChat([{role:'user',content:plannerPrompt}], {json:true, max_tokens:1800, temperature:0.1}); } catch {}
         }
+        if (!planText) { lastError = 'El proveedor de IA no respondió.'; continue; }
+        const parsed = cleanJson(planText);
+        if (!parsed || parsed.ok !== true) { lastError = 'La respuesta no es JSON válido con ok:true.'; continue; }
+        const v = validatePlanShape(parsed, allowed, context);
+        if (v) { lastError = v; continue; }
+        plan = parsed;
       }
+      if (!plan) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido. ' + String(lastError || '').slice(0, 300) });
       return res.status(200).json(plan);
     }
 
-    const contents = messages
-      .filter(m => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string')
-      .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 4000) }] }));
+    const systemInstruction = `Eres SIFER, asistente inteligente de SIFER360, un POS especializado en repuestos automotrices, aceites y lubricantes en Venezuela. Habla español, sé profesional, directo y seguro. Tu personalidad es amable, elegante, ingeniosa y ligeramente sarcástica, inspirada en un asistente tecnológico de ciencia ficción: humor breve y oportuno, nunca burlón, ofensivo ni condescendente. No conviertas cada respuesta en un chiste; primero resuelve y luego, cuando encaje, añade una frase simpática. SIFER es un POS, no un ERP. No inventes datos. Usa el mapa operativo y el estado suministrado como fuente de verdad. Puedes explicar módulos, productos, ventas, inventario y flujos. No expongas secretos, claves, tokens ni variables de entorno. Las operaciones que modifican datos se ejecutan mediante el motor de acciones de SIFER y requieren las confirmaciones correspondientes. Módulo actual: ${String(context.module || 'Inicio').slice(0,100)}. Estado: ${JSON.stringify(context.readOnlyData || {}).slice(0,28000)}. Mapa: ${JSON.stringify(context.systemMap || {}).slice(0,28000)}`;
 
-    const systemInstruction = `Eres SIFER, asistente inteligente de SIFER360, un POS especializado en repuestos automotrices, aceites y lubricantes en Venezuela. Habla español, sé profesional, directo y seguro. Tu personalidad es amable, elegante, ingeniosa y ligeramente sarcástica, inspirada en un asistente tecnológico de ciencia ficción: humor breve y oportuno, nunca burlón, ofensivo ni condescendiente. No conviertas cada respuesta en un chiste; primero resuelve y luego, cuando encaje, añade una frase simpática. SIFER es un POS, no un ERP. No inventes datos. Usa el mapa operativo y el estado suministrados como fuente de verdad. Puedes explicar módulos, productos, ventas, inventario y flujos. No expongas secretos, claves, tokens ni variables de entorno. Las operaciones que modifican datos se ejecutan mediante el motor de acciones de SIFER y requieren las confirmaciones correspondientes. Módulo actual: ${String(context.module || 'Inicio').slice(0,100)}. Estado: ${JSON.stringify(context.readOnlyData || {}).slice(0,28000)}. Mapa: ${JSON.stringify(context.systemMap || {}).slice(0,28000)}`;
+    const chatTurns = messages
+      .filter((m:any) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string')
+      .map((m:any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content.slice(0, 4000) }));
 
-    if (!ai) return res.status(503).json({ error: 'SIFER no tiene Gemini habilitado para respuestas conversacionales.' });
-
-    let stream;
-    let lastError;
-    for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
-      try {
-        stream = await withTimeout(ai.models.generateContentStream({
-          model,
-          contents: contents.length ? contents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
-          config: { systemInstruction, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } }
-        });
-        break;
-      } catch (err) { lastError = err; }
+    const flatPrompt = systemInstruction + (chatTurns.length ? '\n\nHISTORIAL:\n' + chatTurns.map((m:any) => m.role + ': ' + m.content).join('\n') : '') + '\n\nUSUARIO:\n' + (command || 'Hola');
+    const direct = await tryFreeProviders(flatPrompt);
+    let answer = direct?.text || null;
+    if (!answer && NVIDIA_API_KEY) {
+      answer = await nvidiaChat([{role:'system',content:systemInstruction}, ...chatTurns], {temperature:0.5, max_tokens:900});
     }
-    if (!stream) throw lastError || new Error('Google AI no devolvió respuesta.');
-
+    if (!answer) return res.status(503).json({ error: 'SIFER no tiene ningún proveedor de IA configurado (NVIDIA_API_KEY u otro).' });
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
-    for await (const chunk of stream) {
-      const text = chunk.text || '';
-      if (text) res.write(text);
-    }
-    return res.end();
+    return res.end(answer);
   } catch (error) {
     console.error('SIFER assistant error:', error);
     if (!res.headersSent) { const detail = error instanceof Error ? error.message : String(error || 'error desconocido'); return res.status(502).json({ error: 'SIFER no pudo comunicarse con NVIDIA. '+detail.slice(0,240) }); }

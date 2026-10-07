@@ -400,26 +400,13 @@
   }
 
   async function exploreSystem(){
-    const discovered=typeof navItems==='function'?navItems():[];
-    const modules=Array.from(new Map([...discovered,['pedidos','📝 Pedidos'],['usuarios','👥 Usuarios/Cajas']].map(x=>[x[0],x])).values());
-    const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null);
-    if(!navigate)throw new Error('Navegación no disponible para explorar el sistema.');
-    const active=document.querySelector('.module.active');
-    const originalText=active?.innerText?.trim()||document.getElementById('windowTitle')?.textContent||'Inicio';
-    const cleanLabel=s=>String(s||'').replace(/^\S+\s*/,'').trim();
-    const original=modules.find(([k,l])=>cleanLabel(l)===cleanLabel(originalText))?.[0]||'inicio';
-    let visited=0,failed=0;
-    for(const [view] of modules){
-      try{navigate(view);await new Promise(r=>setTimeout(r,350));rememberCurrentModule();visited++;}catch{failed++;}
-    }
-    try{navigate(original);await new Promise(r=>setTimeout(r,300));rememberCurrentModule();}catch{}
-    const map=loadLearnedMap();
-    map.__index=Array.from(new Set(Object.keys(map).filter(k=>k!=='__index'&&!k.startsWith('__'))));
-    map.__lastFullExploreAt=new Date().toISOString();
-    map.__exploredViews=modules.map(x=>x[0]);
-    map.__explorationVersion=2;
-    localStorage.setItem('sifer360_learned_map_v1',JSON.stringify(map));
-    return 'Exploración completada. SIFER recorrió '+visited+' de '+modules.length+' módulos y guardó botones, acciones, campos, selectores, diálogos y navegación visibles en su memoria persistente.'+(failed?' No pudo observar '+failed+' módulo(s).':'');
+    if(typeof window.SIFER_ATLAS==='undefined'||!window.SIFER_ATLAS)throw new Error('El explorador del atlas no está disponible.');
+    if(window.SIFER_ATLAS.isBusy())return 'SIFER ya está explorando el sistema. Espera a que termine.';
+    status.textContent='SIFER está recorriendo y aprendiendo el sistema…';
+    const out=await window.SIFER_ATLAS.explore();
+    const c=out.counts||{visited:0,failed:0};
+    const total=(window.SIFER_ATLAS.navModules()||[]).length||c.visited+c.failed;
+    return 'Exploración completada. SIFER recorrió '+c.visited+' de '+total+' módulos y guardó botones, campos, selectores, diálogos, modales y navegación en su memoria persistente (local y en la nube).'+(c.failed?' No pudo observar '+c.failed+' módulo(s).':'');
   }
 
   function isTodaySalesQuery(text){
@@ -486,13 +473,15 @@
   function buildSystemMap(){
     try{
       const txt=el=>String(el?.innerText||el?.value||el?.getAttribute?.('aria-label')||el?.title||'').replace(/\\s+/g,' ').trim();
+      const atlas=(typeof window.SIFER_ATLAS!=='undefined'&&window.SIFER_ATLAS)?window.SIFER_ATLAS.contextSlice():null;
       return {
         generatedAt:new Date().toISOString(),
+        atlas:atlas,
         learnedModules:loadLearnedMap(),
         pageTitle:document.title,
         currentModule:txt(document.getElementById('windowTitle'))||'Inicio',
-        buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',onclick:el.getAttribute('onclick')||''})).filter(x=>x.text||x.id||x.onclick).slice(0,700),
-        fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||'',value:el.value||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,80).map(o=>({value:o.value,text:txt(o)})) : []})).filter(x=>x.id||x.name||x.placeholder||x.label).slice(0,700),
+        buttons:[...document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')].map((el,i)=>({n:i+1,text:txt(el),id:el.id||'',ds:el.getAttribute('data-sifer')||'',onclick:el.getAttribute('onclick')||''})).filter(x=>x.text||x.id||x.ds||x.onclick).slice(0,700),
+        fields:[...document.querySelectorAll('input,select,textarea')].map((el,i)=>({n:i+1,tag:el.tagName.toLowerCase(),id:el.id||'',name:el.name||'',type:el.type||'',placeholder:el.placeholder||'',label:el.getAttribute('aria-label')||'',ds:el.getAttribute('data-sifer')||'',value:el.value||'',options:el.tagName.toLowerCase()==='select'?[...el.options].slice(0,80).map(o=>({value:o.value,text:txt(o)})) : []})).filter(x=>x.id||x.name||x.placeholder||x.label||x.ds).slice(0,700),
         dialogs:[...document.querySelectorAll('.modal,[role="dialog"]')].map((el,i)=>({n:i+1,id:el.id||'',text:txt(el).slice(0,500)})).filter(x=>x.id||x.text).slice(0,120),
         scripts:[...document.scripts].map(s=>s.src||'inline').slice(0,100),
         principles:['SIFER360 es un POS automotriz, no un ERP.','Las operaciones sensibles deben pedir confirmación antes de modificar datos.','Turso es la fuente remota operativa; el POS debe conservar operación offline.']
@@ -508,16 +497,23 @@
     catalog_ficha:{description:'Mostrar en pantalla la ficha técnica del artículo identificado en el Catálogo Máster',mutating:false},
     import_catalog_item:{description:'Buscar un artículo en el Catálogo Máster, incorporarlo al inventario real y establecer existencia, mínimo y punto de reorden indicados por el usuario',mutating:true,confirm:false},
     create_purchase:{description:'Registrar una compra real a un proveedor, con cantidad, artículo, costo y condición contado o crédito',mutating:true,confirm:true},
-    remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
+    remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:false},
     cancel_sale:{description:'Cancelar la venta actual sin registrarla',mutating:true,confirm:true},
-    open_cash:{description:'Abrir la caja actual',mutating:true,confirm:true},
+    open_cash:{description:'Abrir la caja actual',mutating:true,confirm:false},
+    finish_sale:{description:'Cobrar y finalizar la venta actual del carrito (abre el cobro antes si hace falta)',mutating:true,confirm:true},
+    charge_order:{description:'Tomar un pedido pendiente, cargarlo en el POS y abrir el cobro',mutating:true,confirm:true},
+    quote_to_sale:{description:'Convertir un presupuesto en venta cargando sus líneas en el POS',mutating:true,confirm:true},
+    account_pay_finish:{description:'Aplicar un cobro CxC o pago CxP sobre un documento con saldo (requiere el formulario abierto)',mutating:true,confirm:true},
+    toggle_cash:{description:'Abrir la caja actual (para cerrar la caja usa execute_z)',mutating:true,confirm:false},
+    sync_bcv_rate:{description:'Sincronizar la tasa BCV desde la fuente oficial',mutating:false,confirm:false},
+    reset_data:{description:'Restablecer los datos del POS a demostración; pide escribir BORRAR SIFER como confirmación',mutating:true,confirm:false},
     open_checkout:{description:'Abrir la ventana de cobro de la venta actual',mutating:false},
     open_purchase:{description:'Abrir el formulario de nueva compra',mutating:false},
     open_quote:{description:'Abrir el formulario de nuevo presupuesto',mutating:false},
     open_bcv:{description:'Mostrar la tasa BCV y sus acciones disponibles',mutating:false},
     open_account_payment:{description:'Abrir el formulario para cobrar CxC o pagar CxP',mutating:false},
     select_customer:{description:'Seleccionar un cliente existente para la venta actual',mutating:true,confirm:false},
-    edit_cart_line:{description:'Modificar cantidad, precio o descuento de una línea del carrito',mutating:true,confirm:true},
+    edit_cart_line:{description:'Modificar cantidad, precio o descuento de una línea del carrito',mutating:true,confirm:false},
     set_discount:{description:'Aplicar un descuento a una línea del carrito',mutating:true,confirm:true},
     mark_return:{description:'Marcar una línea del carrito como devolución',mutating:true,confirm:true},
     open_item_search:{description:'Abrir la búsqueda de artículos del POS',mutating:false},
@@ -561,14 +557,41 @@
     const els=[...document.querySelectorAll('input,select,textarea')].filter(siferVisible);
     return els.find(el=>normalizeLocal(el.id)===q||normalizeLocal(el.name)===q)||els.find(el=>siferFieldLabel(el)===q)||els.find(el=>siferFieldLabel(el).includes(q))||els.find(el=>normalizeLocal(el.placeholder).includes(q))||null;
   }
-  function siferSensitiveClick(el){
-    const t=siferUiText(el);
-    return /(guardar|crear|registrar|finalizar|cobrar|pagar|eliminar|borrar|anular|cancelar|devolver|ejecutar|cerrar|actualizar|confirmar|aplicar|convertir|reset|restablecer)/.test(t);
+  const SIFER_CRITICAL=new Set(['create_purchase','cancel_sale','execute_z','mark_return','finish_sale','charge_order','quote_to_sale','account_pay_finish']);
+  const SIFER_CRITICAL_DS=new Set(['sale-finish','purchase-save','z-execute','order-charge','quote-to-sale','account-pay-finish']);
+  function siferNeedsConfirm(name,args){
+    if(SIFER_CRITICAL.has(name))return true;
+    if(name==='set_discount'){
+      const pct=Number(args?.percent);
+      if(Number.isFinite(pct)&&pct>=20)return true;
+      const disc=Number(args?.discount??args?.amount??0);
+      const idx=args?.index===undefined?null:Number(args.index);
+      const l=Array.isArray(cart)?(idx!==null&&cart[idx]?cart[idx]:cart[cart.length-1]):null;
+      const lineTotal=l?Number(l.qty||0)*Number(l.price||0):0;
+      return lineTotal>0&&(disc/lineTotal)>=0.20;
+    }
+    if(name==='ui_click'){
+      const ds=String(args?.dataSifer||args?.ds||'');
+      if(ds&&SIFER_CRITICAL_DS.has(ds))return true;
+      const el=siferFindButton(args?.target||args?.text||args?.id);
+      const elDs=el?el.getAttribute('data-sifer'):null;
+      if(elDs&&SIFER_CRITICAL_DS.has(elDs))return true;
+      const t=siferUiText(el)||normalizeLocal(String(args?.target||args?.text||''));
+      return /(finalizar|cobrar|pagar|anular|cancelar|devolver|devoluci|corte z|ejecutar z|restablecer|resetear|vaciar carrito)/.test(t);
+    }
+    return false;
+  }
+  async function withToastCapture(fn){
+    let captured='';
+    const orig=(typeof window.toast==='function')?window.toast:null;
+    window.toast=function(m){captured=String(m||'');if(orig)orig.apply(window,arguments);};
+    try{ const r=await fn(); return {result:r,captured}; }
+    finally{ if(orig)window.toast=orig; else delete window.toast; }
   }
   async function executeSiferActionOriginal(action){
     const name=String(action?.name||'').trim(),args=action?.args&&typeof action.args==='object'?action.args:{},cap=SIFER_CAPABILITIES[name];
     if(!cap) throw new Error('Acción no permitida por SIFER: '+name);
-    if(cap.confirm && !window.confirm('SIFER solicita confirmación\\n\\n'+String(action.confirmationText||cap.description)+'\\n\\n¿Deseas ejecutar esta operación?')) return {cancelled:true};
+    if(siferNeedsConfirm(name,args) && !window.confirm('SIFER solicita confirmación\n\n'+String(action.confirmationText||cap.description)+'\n\n¿Deseas ejecutar esta operación?')) return {cancelled:true};
     switch(name){
       case 'navigate': {
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
@@ -775,8 +798,16 @@
       case 'set_discount': {
         const idx=args.index===undefined?(Array.isArray(cart)?cart.length-1:-1):Number(args.index), l=cart?.[idx];
         if(!l) throw new Error('No hay una línea de carrito seleccionada');
-        const disc=Math.max(0,Number(args.discount)); if(!Number.isFinite(disc)||disc>Number(l.qty||0)*Number(l.price||0)) throw new Error('Descuento inválido');
-        l.disc=disc;selected=null;renderView();return {ok:true,message:'Descuento aplicado: '+disc};
+        let disc;
+        if(args.percent!==undefined){
+          const pct=Number(args.percent);
+          if(!Number.isFinite(pct)||pct<0||pct>100) throw new Error('Porcentaje de descuento inválido');
+          disc=(Number(l.qty||0)*Number(l.price||0))*pct/100;
+        }else{
+          disc=Math.max(0,Number(args.discount));
+        }
+        if(!Number.isFinite(disc)||disc>Number(l.qty||0)*Number(l.price||0)) throw new Error('Descuento inválido');
+        l.disc=disc;selected=null;renderView();return {ok:true,message:'Descuento aplicado: '+money(disc)};
       }
       case 'mark_return': {
         const idx=args.index===undefined?(Array.isArray(cart)?cart.length-1:-1):Number(args.index); if(!cart?.[idx]) throw new Error('No hay una línea de carrito seleccionada');
@@ -788,7 +819,109 @@
       case 'new_order': if(typeof nuevoPedido!=='function') throw new Error('Pedidos no disponible'); nuevoPedido(); return {ok:true,message:'Nuevo pedido abierto'};
       case 'show_x': if(typeof showCorteX!=='function') throw new Error('Corte X no disponible'); showCorteX(); return {ok:true,message:'Corte X mostrado'};
       case 'show_z': if(typeof showCorteZ!=='function') throw new Error('Corte Z no disponible'); showCorteZ(); return {ok:true,message:'Corte Z preparado'};
-      case 'execute_z': if(typeof executeCorteZ!=='function') throw new Error('Corte Z no disponible'); await executeCorteZ(); return {ok:true,message:'Corte Z ejecutado'};
+      case 'execute_z': {
+        if(typeof executeCorteZ!=='function') throw new Error('Corte Z no disponible');
+        if(!cajaActual().abierta) throw new Error('La caja ya está cerrada; no hay corte Z que ejecutar.');
+        const z=await withToastCapture(()=>executeCorteZ());
+        if(cajaActual().abierta) throw new Error(z.captured||'El Corte Z no se ejecutó.');
+        return {ok:true,message:z.captured||'Corte Z ejecutado y caja cerrada.'};
+      }
+      case 'finish_sale': {
+        if(typeof window.finishSale!=='function') throw new Error('Finalizar venta no disponible');
+        if(!Array.isArray(cart)||!cart.length) throw new Error('El carrito está vacío; no hay nada que cobrar.');
+        if(!cajaActual().abierta) throw new Error('Abre la caja antes de cobrar.');
+        let total=NaN;
+        const saleBtn=document.querySelector('[data-sifer="sale-finish"]');
+        if(saleBtn){ const m=String(saleBtn.getAttribute('onclick')||'').match(/finishSale\((-?\d+(?:\.\d+)?)\)/); if(m) total=Number(m[1]); }
+        if(!Number.isFinite(total)){
+          const sub=cart.reduce((s,x)=>s+Number(x.price||0)*Number(x.qty||1)-Number(x.disc||0),0);
+          total=sub*(1+Number((typeof db!=='undefined'&&db.config)?db.config.impuesto:0)/100);
+        }
+        const amt=Math.abs(total);
+        const isCredit=(typeof saleType!=='undefined'&&saleType==='credito');
+        const payField=document.getElementById('payAmount1');
+        if(payField&&!isCredit){
+          const current=Math.max(0,Number(payField.value)||0);
+          if(current<amt){ const desired=Number(args.amount??amt); payField.value=String(Number.isFinite(desired)&&desired>=amt?desired:amt); }
+          const m1=document.getElementById('payMethod1');
+          if(m1&&!m1.value) m1.value=String(args.method||'Efectivo');
+        }
+        const fs=await withToastCapture(()=>window.finishSale(total));
+        if(Array.isArray(cart)&&cart.length) throw new Error(fs.captured||'El POS rechazó el cobro (revisa montos, caja o stock).');
+        return {ok:true,message:(fs.captured&&/(correctamente|procesada)/.test(fs.captured))?fs.captured:('Venta cobrada y finalizada por '+money(amt)+'.')};
+      }
+      case 'charge_order': {
+        if(typeof window.cobrarPedido!=='function') throw new Error('Cobro de pedido no disponible');
+        const orders=(typeof db!=='undefined'&&Array.isArray(db.pedidos))?db.pedidos:[];
+        let pid=String(args.orderId||args.id||args.query||'').trim();
+        if(pid){
+          const hit=orders.find(x=>String(x.id)===pid||String(x.numero||'')===pid);
+          if(!hit) throw new Error('No encontré el pedido indicado.');
+          if(String(hit.estado)!=='Pendiente') throw new Error('El pedido no está Pendiente (estado actual: '+hit.estado+').');
+          pid=hit.id;
+        }else{
+          const pending=orders.filter(x=>String(x.estado)==='Pendiente');
+          if(pending.length!==1) throw new Error('Hay '+(pending.length||0)+' pedidos pendientes; indica cuál cobrar.');
+          pid=pending[0].id;
+        }
+        const co=await withToastCapture(()=>window.cobrarPedido(pid));
+        if(String((typeof activeOrderId!=='undefined')?activeOrderId:'')!==String(pid)) throw new Error(co.captured||'El POS no tomó el pedido (puede estar reservado por otro operador).');
+        return {ok:true,message:'Pedido cargado en el POS y cobro abierto.'};
+      }
+      case 'quote_to_sale': {
+        if(typeof window.quoteToSale!=='function') throw new Error('Conversión de presupuesto no disponible');
+        const quotes=(typeof db!=='undefined'&&Array.isArray(db.presupuestos))?db.presupuestos:[];
+        let num=String(args.numero||args.id||args.query||'').trim();
+        if(num){
+          const q=quotes.find(x=>String(x.numero).toLowerCase()===num.toLowerCase());
+          if(!q) throw new Error('Presupuesto '+num+' no encontrado.');
+          num=q.numero;
+        }else{
+          const open=quotes.filter(x=>String(x.estado)==='Pendiente');
+          if(open.length!==1) throw new Error('Hay '+(open.length||0)+' presupuestos pendientes; indica el número a convertir.');
+          num=open[0].numero;
+        }
+        const qs=await withToastCapture(()=>window.quoteToSale(num));
+        const q=quotes.find(x=>String(x.numero)===String(num));
+        if(!q||String(q.estado)!=='Convertido') throw new Error(qs.captured||'El presupuesto no se convirtió (¿vencido o sin stock?).');
+        return {ok:true,message:'Presupuesto '+num+' convertido en venta y cargado en el POS.'};
+      }
+      case 'account_pay_finish': {
+        if(typeof window.finishAccountPay!=='function') throw new Error('Cobro/pago de cuenta no disponible');
+        const type=args.type==='cxp'?'cxp':'cxc';
+        const list=(typeof db!=='undefined')?(type==='cxc'?db.cxc:db.cxp):[];
+        const q=normalizeLocal(args.query||args.id||args.documento||'');
+        let rec=q?list.find(x=>normalizeLocal([x.id,x.documento,x.cliente,x.proveedor].filter(Boolean).join(' ')).includes(q)):null;
+        if(!rec){ const withSaldo=list.filter(x=>Number(x.saldo)>0); if(withSaldo.length===1) rec=withSaldo[0]; }
+        if(!rec) throw new Error('No encontré el documento con saldo para el cobro/pago.');
+        const before=Number(rec.saldo)||0;
+        if(!before) throw new Error('El documento '+rec.documento+' no tiene saldo pendiente.');
+        const field=document.getElementById('payAccountAmt');
+        if(!field) throw new Error('Abre primero el cobro/pago con open_account_payment.');
+        if(args.amount!==undefined){ const amt=Number(args.amount); if(!Number.isFinite(amt)||amt<=0) throw new Error('Monto inválido'); field.value=String(Math.min(amt,before)); }
+        const ap=await withToastCapture(()=>window.finishAccountPay(type,rec.id));
+        const after=Number(rec.saldo)||0;
+        if(!(after<before)) throw new Error(ap.captured||'El POS no aplicó el pago (¿caja cerrada o monto inválido?).');
+        return {ok:true,message:(type==='cxc'?'Cobro':'Pago')+' aplicado: '+money(before-after)+' sobre '+rec.documento+'. Saldo restante: '+money(after)+'.'};
+      }
+      case 'toggle_cash': {
+        if(typeof toggleCaja!=='function') throw new Error('Apertura de caja no disponible');
+        if(cajaActual().abierta) throw new Error('La caja ya está abierta; para cerrar la caja usa execute_z (Corte Z).');
+        toggleCaja();
+        if(!cajaActual().abierta) throw new Error('No se pudo abrir la caja.');
+        return {ok:true,message:'Caja abierta.'};
+      }
+      case 'sync_bcv_rate': {
+        if(typeof updateBCVRate!=='function') throw new Error('Sincronización BCV no disponible');
+        const b=await withToastCapture(()=>updateBCVRate(false));
+        return {ok:true,message:b.captured||'Tasa BCV sincronizada.'};
+      }
+      case 'reset_data': {
+        if(typeof resetData!=='function') throw new Error('Restablecer datos no disponible');
+        const rd=await withToastCapture(()=>resetData());
+        if(/cancelado/i.test(rd.captured)) throw new Error('Restablecimiento cancelado; no se modificó nada.');
+        return {ok:true,message:rd.captured||'Datos restablecidos a demostración.'};
+      }
       case 'refresh': if(typeof refreshModuleData!=='function') throw new Error('Actualización no disponible'); refreshModuleData(); return {ok:true,message:'Módulo actualizado'};
       case 'print': if(typeof printView!=='function') throw new Error('Impresión no disponible'); printView(); return {ok:true,message:'Impresión solicitada'};
       case 'ui_click': {
@@ -979,13 +1112,23 @@
     }
     if(/descuento/.test(q)&&/carrito|articulo|linea|producto/.test(q)){
       const m=q.match(/(\d+(?:\.\d+)?)\s*%/);
-      if(m)return {name:'set_discount',args:{discount:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'};
+      if(m)return {name:'set_discount',args:{percent:Number(m[1])},confirmationText:'Aplicar un descuento del '+m[1]+'% a la línea actual del carrito.'};
     }
     if(/(devolucion|devuelve|devolver).*(articulo|producto|linea|carrito)/.test(q)) return {name:'mark_return',args:{},confirmationText:'Marcar el artículo actual del carrito como devolución.'};
     if(/(?:referencias? cruzadas?|equivalencias?|numeros? de parte|n[uú]meros? equivalentes?)/.test(q)) return {name:'catalog_references',args:{query:deriveCatalogQuery(command)}};
     if(/(?:muestra|mostrar|ensena|enseña|ver|dame|abre|abrir).*(?:ficha|ficha tecnica|ficha técnica|detalles?)/.test(q) || /ficha.*(?:sensor|repuesto|producto|articulo|aveo|chevrolet)/.test(q)) return {name:'catalog_ficha',args:{query:deriveCatalogQuery(command)}};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre|apertura|abrir la).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
+    if(/(finaliza|termina|procesa|completa|registra|cobra y cierra).*(venta)|registrar (la )?venta|finalizar (la )?venta/.test(q)&&!/corte/.test(q)) return {name:'finish_sale',args:{},confirmationText:'Cobrar y finalizar la venta actual.'};
+    if(/(cobra|cobrar|factura|toma|abre).*(pedido)/.test(q)){
+      const m=q.match(/(?:pedido|id)\s+([a-z0-9-]{3,})/);
+      return {name:'charge_order',args:m?{orderId:m[1]}:{},confirmationText:'Tomar el pedido, cargarlo en el POS y abrir el cobro.'};
+    }
+    if(/(convierte|convertir|transforma).*(presupuesto|cotizacion)/.test(q)){
+      const m=q.match(/(pre-[a-z0-9-]+)/);
+      return {name:'quote_to_sale',args:m?{numero:m[1]}:{},confirmationText:'Convertir el presupuesto en venta y cargarlo en el POS.'};
+    }
+    if(/(restablece|restablecer|resetea|resetear|reset)\b.*(datos|sistema)|datos de demostracion/.test(q)) return {name:'reset_data',args:{}};
     if(/(cobrar|facturar|ir a cobrar|pasar a cobro)/.test(q)) return {name:'open_checkout',args:{}};
     if(/corte x/.test(q)) return {name:'show_x',args:{}};
     if(/(prepara|mostrar|ver|abre|abrir).*(corte z)/.test(q)) return {name:'show_z',args:{}};
@@ -1045,16 +1188,52 @@
     return await executeSiferActionOriginal(action);
   }
 
+  function sanitizePlan(plan){
+    if(!plan||plan.ok!==true)throw new Error('El planificador no devolvió ok:true.');
+    const allowed=new Set(buildCapabilities().map(c=>c&&c.name).filter(Boolean));
+    const checkAction=(a,where)=>{
+      if(!a||typeof a!=='object')throw new Error(where+' no es una acción válida.');
+      const name=String(a.name||'').trim();
+      if(!allowed.has(name))throw new Error(where+' propone una capacidad no habilitada: '+(name||'(vacía)'));
+      const args=(a.args&&typeof a.args==='object'&&!Array.isArray(a.args))?a.args:{};
+      for(const k of Object.keys(args)){
+        const v=args[k];
+        if(v===null||v===undefined)continue;
+        const t=typeof v;
+        if(t==='string'){ if(v.length>600)throw new Error(where+': el argumento "'+k+'" es demasiado largo.'); }
+        else if(t==='number'||t==='boolean'){ if(t==='number'&&!Number.isFinite(v))throw new Error(where+': el argumento "'+k+'" no es un número válido.'); }
+        else if(Array.isArray(v)){ for(const x of v){ if(x!==null&&!['string','number','boolean'].includes(typeof x))throw new Error(where+': el argumento "'+k+'" contiene valores no permitidos.'); } }
+        else throw new Error(where+': el argumento "'+k+'" debe ser texto, número, booleano o lista.');
+      }
+      return {name,args,confirmationText:typeof a.confirmationText==='string'?a.confirmationText.slice(0,500):undefined};
+    };
+    const type=String(plan.type||'');
+    if(type==='answer'){
+      if(!String(plan.answer||'').trim())throw new Error('El planificador devolvió una respuesta vacía.');
+      return plan;
+    }
+    if(type==='action'){ plan.action=checkAction(plan.action,'La acción'); return plan; }
+    if(type==='plan'){
+      if(!Array.isArray(plan.actions)||plan.actions.length<1)throw new Error('El plan no contiene acciones.');
+      if(plan.actions.length>8)throw new Error('El plan excede 8 pasos.');
+      if(!String(plan.summary||'').trim())throw new Error('El plan no tiene resumen.');
+      plan.actions=plan.actions.map((a,i)=>checkAction(a,'Paso '+(i+1)));
+      return plan;
+    }
+    throw new Error('Tipo de plan desconocido: '+(type||'(vacío)'));
+  }
+
   async function planWithSifer(command){
     const readOnlyData=buildReadOnlyData();
     const systemMap=buildSystemMap();
-    const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState(),learnedMap:loadLearnedMap()};
+    const memory=(typeof window.SIFER_MEMORY!=='undefined'&&window.SIFER_MEMORY)?window.SIFER_MEMORY.contextSlice(command):null;
+    const context={module:document.getElementById('windowTitle')?.textContent||'Inicio',product:'SIFER360 POS Automotriz',readOnlyData,systemMap,capabilities:buildCapabilities(),actionState:currentActionState(),learnedMap:loadLearnedMap(),memory};
     const history=messages.slice(-10).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.text}));
     const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'plan',command,messages:history,context})});
     if(!r.ok){let e='No pude consultar el núcleo de interpretación de SIFER.';try{const j=await r.json();e=j.error||e}catch{};throw new Error(e);}
     const plan=await r.json();
     if(!plan?.ok)throw new Error(plan?.error||'SIFER no pudo interpretar la solicitud.');
-    return plan;
+    return sanitizePlan(plan);
   }
 
   // Respuestas atómicas: preguntas conversacionales simples no deben consumir Gemini.
@@ -1078,6 +1257,42 @@
     return null;
   }
 
+  function localMemoryCommand(command){
+    const M=(typeof window.SIFER_MEMORY!=='undefined'&&window.SIFER_MEMORY)?window.SIFER_MEMORY:null;
+    if(!M)return null;
+    const q=normalizeLocal(command);
+    let m=q.match(/^(?:recuerda|recuerde|anota|apunta)(?: que| esto| lo siguiente)?[\s:,.]+(.+)$/);
+    if(m){
+      const fact=M.remember(m[1].trim(),'');
+      return fact?'Hecho. Lo guardo en mi memoria persistente: "'+(fact.content.slice(0,160)+(fact.content.length>160?'…':''))+'"':'No me dijiste qué debo recordar.';
+    }
+    m=q.match(/^(?:que|que) recuerdas(?: de| sobre)?(?: el| la| los| las| tu)?\s*(.*)$/);
+    if(m){
+      const target=(m[1]||'').trim();
+      const facts=M.recallList(target,10);
+      if(!facts.length)return 'Todavía no tengo memorizado nada'+(target?' sobre "'+target+'"':'')+'. Dime "recuerda que…" y lo guardo.';
+      const lines=facts.map((f,i)=>(i+1)+'. '+String(f.content).slice(0,180));
+      return (target?'Esto recuerdo sobre "'+target+'":':'Esto es lo que más recuerdo:')+'\n'+lines.join('\n');
+    }
+    m=q.match(/^(?:olvida|borra|elimina)(?: de (?:tu|la) )?(?:memoria|recuerdo|recuerdos)(?: que|:)?\s*(.*)$/);
+    if(m){
+      const target=(m[1]||'').trim();
+      if(!target)return 'Dime qué debo olvidar: "olvida de memoria …".';
+      const n=M.forget(target);
+      return n?'Listo. Eliminé '+n+' '+(n===1?'registro':'registros')+' de mi memoria.':'No encontré nada en mi memoria que coincida con "'+target+'".';
+    }
+    return null;
+  }
+
+  function recordEpisodeSafe(command,outcome,success){
+    try{
+      const M=(typeof window.SIFER_MEMORY!=='undefined'&&window.SIFER_MEMORY)?window.SIFER_MEMORY:null;
+      if(!M)return;
+      const title=String(document.getElementById('windowTitle')?.textContent||'Inicio').trim();
+      M.recordEpisode(command,title,outcome,success);
+    }catch{}
+  }
+
   async function ask(text){
     const rawText=String(text||'').trim();
     const awakened=extractWakeWord(rawText);
@@ -1090,6 +1305,12 @@
     if(instant){
       messages.push({role:'assistant',text:instant}); render();
       if(voice.processing){ speak(instant); }
+      return;
+    }
+    const memoryReply=localMemoryCommand(command);
+    if(memoryReply!==null){
+      messages.push({role:'assistant',text:memoryReply}); render();
+      if(voice.processing){ speak(memoryReply); }
       return;
     }
     busy=true; send.disabled=true; orb.classList.add('active'); setVoice('thinking','SIFER está pensando…'); status.textContent='SIFER está interpretando…';
@@ -1130,14 +1351,26 @@
           messages.push({role:'assistant',text:plan.answer||'Entendido.'}); render(); return;
         }
         if(plan.type==='plan'&&Array.isArray(plan.actions)){
-          for(const step of plan.actions){
-            setVoice('executing','SIFER está ejecutando…'); status.textContent='SIFER está ejecutando el siguiente paso…';
-            const execution=await executeSiferAction(step);
+          const total=plan.actions.length;
+          for(let i=0;i<total;i++){
+            const step=plan.actions[i];
+            setVoice('executing','SIFER está ejecutando…'); status.textContent='SIFER está ejecutando el paso '+(i+1)+' de '+total+'…';
+            let execution;
+            try{
+              execution=await executeSiferAction(step);
+            }catch(stepErr){
+              const why=stepErr?.message||'error desconocido';
+              recordEpisodeSafe(command,'Fallo en paso '+(i+1)+'/'+total+' ('+(step.name||'')+'): '+why,false);
+              messages.push({role:'assistant',text:'El paso '+(i+1)+' de '+total+' ('+(step.name||'paso sin nombre')+') falló: '+why+'.\nEl plan se detuvo aquí; los pasos anteriores quedaron aplicados y no se intentó repetir.'});
+              render(); return;
+            }
             if(execution?.cancelled){ messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'}); render(); return; }
             if(execution?.message) messages.push({role:'assistant',text:execution.message});
             await new Promise(r=>setTimeout(r,80));
           }
-          messages.push({role:'assistant',text:plan.summary||'Solicitud ejecutada por SIFER.'}); render(); return;
+          messages.push({role:'assistant',text:plan.summary||'Solicitud ejecutada por SIFER.'}); render();
+          recordEpisodeSafe(command,plan.summary||'Plan ejecutado',true);
+          return;
         }
         if(plan.type!=='action'||!plan.action) throw new Error('No encontré una acción segura para esa solicitud.');
         action=plan.action;
@@ -1148,10 +1381,13 @@
         messages.push({role:'assistant',text:'Operación cancelada. No se modificó el POS.'});
       }else{
         messages.push({role:'assistant',text:execution?.message||'Acción ejecutada por SIFER.'});
+        recordEpisodeSafe(command,execution?.message||'Acción ejecutada',true);
       }
       render();
     }catch(e){
-      messages.push({role:'assistant',text:'SIFER no pudo ejecutar la solicitud: '+(e?.message||'error desconocido')+'\\n\\nNo se realizó ningún cambio inseguro en el POS.'});render();
+      const errText=(e?.message||'error desconocido');
+      recordEpisodeSafe(command,'Fallo: '+errText,false);
+      messages.push({role:'assistant',text:'SIFER no pudo ejecutar la solicitud: '+errText+'\\n\\nNo se realizó ningún cambio inseguro en el POS.'});render();
     }finally{
       busy=false;send.disabled=false;orb.classList.remove('active');if(!voice.listening&&!voice.processing)setVoice('off',continuousListening?'Escucha continua activa':'Listo cuando quieras');status.textContent='';input.focus();
     }
