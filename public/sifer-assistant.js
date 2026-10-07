@@ -519,7 +519,8 @@
     try{
       if(isInventoryQuery(command)){
         messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;
-      }\n      if(isTodaySalesQuery(command)){
+      }
+      if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
       }
       let action=localActionFromCommand(command);
