@@ -732,11 +732,15 @@
           else if(hayTokens.some(h=>h===t||h.startsWith(t)||t.startsWith(h))) score+=0.75;
         }
         if(name && tokens.every(t=>name.includes(t))) score+=2;
+        const compactQuery=normalizeLocal(cleaned).replace(/\s+/g,' ');
+        const compactName=normalizeLocal(p.nombre||'').replace(/\s+/g,' ');
+        if(compactQuery && compactName.includes(compactQuery)) score+=5;
         return {p,score};
       }).sort((a,b)=>b.score-a.score||String(a.p.nombre||'').length-String(b.p.nombre||'').length);
       const best=scored[0];
       if(!best)return null;
-      return best.score>=Math.max(1.5,tokens.length*0.55)?best.p:null;
+      const minimum=Math.max(1.5,Math.min(tokens.length*0.55,3));
+      return best.score>=minimum?best.p:null;
     }catch{return null;}
   }
   function extractRequestedQuantity(command){
@@ -822,7 +826,12 @@
       const type=isMixed?'mixto':(/\b(?:a|de)\s+credito\b|\bcredito\b/.test(q)?'credito':'contado');
       const cashOutsideBox=/no.*\b(?:descontar|descuente|descontado|descontada)\b.*\bcaja\b|pago.*directamente.*(?:sin|fuera).*caja/.test(q);
       const supplierQuery=/\b(?:con|al|a)\s+(?:el\s+)?(?:proveedor\s+)?(?:existente|actual|mismo|ese proveedor)\b/.test(q)?'ese proveedor':((q.match(/\b(?:con|al|a)\s+(?:el\s+)?proveedor\s+([^,]+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|\s+mixto|$)/)||[])[1]||'ese proveedor').trim();
-      const productQuery=q.replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|contado|mixto|mixta|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|dia|monto|por|unidad|unidades?|mismo|actual|efectivo|cash|saldo|resto)\b/g,' ').replace(/\b\d+(?:[.,]\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+      let productQuery='';
+      const productMatch=q.match(/(?:art[ií]culo|producto|repuesto)\s+(?:es|:)?\s*(.+?)(?=,\s*(?:compra|registra)\b|\s+compra\s+\d|\s+registra\s+\$?\d|$)/i);
+      if(productMatch?.[1]) productQuery=productMatch[1].replace(/\s+/g,' ').trim();
+      if(!productQuery){
+        productQuery=q.replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|otra|una|la|compra|comprar|adquisicion|adquisición|a|de|credito|contado|mixto|mixta|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|dia|monto|por|unidad|unidades?|mismo|actual|efectivo|cash|saldo|resto|parte|solo|registrarla|pago|directamente)\b/g,' ').replace(/\b\d+(?:[.,]\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+      }
       const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/);
       const daysMatch=q.match(/(?:a|de|por)\s+(\d+)\s+d[ií]as?/);
       const cashMatch=q.match(/(\d+(?:[.,]\d+)?)\s+(?:de\s+)?(?:contado|efectivo|cash)\b/);
