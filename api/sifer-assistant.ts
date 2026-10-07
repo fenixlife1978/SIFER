@@ -1,12 +1,10 @@
-import { GoogleGenAI } from '@google/genai';
-
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.7-flash,gemini-3.6-flash').split(',').map(x=>x.trim()).filter(Boolean);
-const REQUEST_TIMEOUT_MS = 45000;
+const NVIDIA_BASE_URL = (process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/\/$/,'');
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'z-ai/glm-5.3-flash';
+const REQUEST_TIMEOUT_MS = 30000;
 
 async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
   let timer:any;
-  try { return await Promise.race([promise, new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error('Google AI tardó demasiado en responder.')),ms); })]); }
+  try { return await Promise.race([promise, new Promise((_, reject)=>{ timer=setTimeout(()=>reject(new Error('NVIDIA AI tardó demasiado en responder.')),ms); })]); }
   finally { clearTimeout(timer); }
 }
 
@@ -27,6 +25,20 @@ async function directOpenAICompatible(baseUrl:string, apiKey:string|undefined, m
   return data?.choices?.[0]?.message?.content || null;
 }
 
+async function nvidiaChat(messages:any[], options:any={}) {
+  if(!NVIDIA_API_KEY) return null;
+  const body:any={model:NVIDIA_MODEL,messages,temperature:options.temperature ?? 0.15,max_tokens:options.max_tokens ?? 1800};
+  if(options.json) body.response_format={type:'json_object'};
+  const response=await withTimeout(fetch(NVIDIA_BASE_URL+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+NVIDIA_API_KEY},
+    body:JSON.stringify(body)
+  }));
+  if(!response.ok){ const detail=await response.text().catch(()=> ''); throw new Error('NVIDIA '+response.status+(detail?': '+detail.slice(0,180):'')); }
+  const data=await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
 async function tryFreeProviders(prompt:string){
   const providers=[
     {name:'ollama',base:OLLAMA_BASE_URL,model:OLLAMA_MODEL,key:undefined},
@@ -42,7 +54,7 @@ async function tryFreeProviders(prompt:string){
   }
   return null;
 }
-const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
 function cleanJson(value) {
   const text = String(value || '').trim().replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/,'').replace(/\s*\`\`\`$/,'');
@@ -56,9 +68,8 @@ function cleanJson(value) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-  const apiKey = ENV_NAMES.map(name => process.env[name]).find(Boolean);
   const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
-  if (!apiKey && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene un motor de IA configurado. En esta instalación debe estar disponible GEMINI_API_KEY.' });
+  if (!NVIDIA_API_KEY && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene NVIDIA_API_KEY configurada en producción.' });
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
@@ -68,32 +79,16 @@ export default async function handler(req, res) {
     const context = body.context || {};
     const capabilities = Array.isArray(context.capabilities) ? context.capabilities : [];
 
-    const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+    const ai = NVIDIA_API_KEY ? { key: NVIDIA_API_KEY, base: NVIDIA_BASE_URL, model: NVIDIA_MODEL } : null;
 
     if (mode === 'transcribe') {
-      if (!ai) return res.status(503).json({ error: 'La transcripción de audio requiere un motor de voz configurado.' });
+      if (!ai) return res.status(503).json({ error: 'La transcripción de audio requiere NVIDIA_API_KEY configurada.' });
       const audioBase64 = String(body.audioBase64 || '');
       const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
       if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
       if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
-      let result;
-      let lastError;
-      for (const model of [MODEL,...FALLBACK_MODELS]) {
-        try {
-          result = await withTimeout(ai.models.generateContent({
-            model,
-            contents: [{ role: 'user', parts: [
-              { text: 'Transcribe exactamente lo que dice el usuario en este audio. Devuelve SOLO la transcripción en español, sin explicación. Conserva nombres, números, productos, cantidades y expresiones coloquiales venezolanas.' },
-              { inlineData: { mimeType, data: audioBase64 } }
-            ] }],
-            config: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: 'low' } }
-          }));
-          if (result?.text) break;
-        } catch (err) { lastError = err; }
-      }
-      if (!result?.text) throw lastError || new Error('Google AI no devolvió transcripción.');
-      return res.status(200).json({ text: String(result.text || '').trim() });
+      throw new Error('La transcripción por audio del servidor requiere un proveedor de voz; la escucha normal de SIFER usa el reconocimiento del navegador.');
     }
 
     if (mode === 'plan') {
@@ -156,24 +151,9 @@ HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
       const direct=await tryFreeProviders(plannerPrompt);
-      let result;
-      let lastError;
-      if(direct?.text){
-        result={text:direct.text};
-      }else{
-        for (const model of [MODEL,...FALLBACK_MODELS]) {
-          try {
-            result = await withTimeout(ai.models.generateContent({
-              model,
-              contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-              config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-            }));
-            if (result?.text) break;
-          } catch (err) { lastError = err; }
-        }
-      }
-      const planText=result?.text;
-      if (!planText) throw lastError || new Error('Ningún motor de IA devolvió un plan.');
+      let planText=direct?.text || null;
+      if(!planText) planText=await nvidiaChat([{role:'user',content:plannerPrompt}],{json:true,max_tokens:1800,temperature:0.1});
+      if (!planText) throw new Error('NVIDIA no devolvió un plan válido.');
       const plan = cleanJson(planText || '');
       if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
 
@@ -225,7 +205,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
     return res.end();
   } catch (error) {
     console.error('SIFER assistant error:', error);
-    if (!res.headersSent) { const detail = error instanceof Error ? error.message : String(error || 'error desconocido'); return res.status(502).json({ error: 'SIFER no pudo comunicarse con Gemini. '+detail.slice(0,240) }); }
+    if (!res.headersSent) { const detail = error instanceof Error ? error.message : String(error || 'error desconocido'); return res.status(502).json({ error: 'SIFER no pudo comunicarse con NVIDIA. '+detail.slice(0,240) }); }
     return res.end();
   }
 }
