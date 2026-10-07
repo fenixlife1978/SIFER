@@ -52,6 +52,22 @@
   window.dispatchEvent(new CustomEvent('sifer:mounted'));
 
   const orb=root.querySelector('#sifer-ai-orb');
+  // La esfera debe ser visible por sí misma, sin depender de estilos externos del POS.
+  Object.assign(orb.style,{
+    display:'block',
+    visibility:'visible',
+    opacity:'1',
+    position:'absolute',
+    inset:'0',
+    width:'92px',
+    height:'92px',
+    border:'1px solid rgba(74,218,255,.72)',
+    borderRadius:'50%',
+    background:'radial-gradient(circle at 50% 50%, #ffffff 0 4%, #55ddff 8%, #0878bd 28%, #03182a 57%, rgba(3,24,42,.05) 62%, transparent 70%)',
+    boxShadow:'0 0 10px #fff, 0 0 24px #27cfff, 0 0 52px #0878bd',
+    pointerEvents:'auto',
+    zIndex:'2147483647'
+  });
   keepOrbAlive();
   const siferOrbObserver=new MutationObserver(()=>keepOrbAlive());
   siferOrbObserver.observe(document.body,{childList:true,subtree:true});
