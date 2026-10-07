@@ -34,14 +34,22 @@ export default async function handler(req, res) {
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
       if (!/^audio\\//i.test(mimeType)) return res.status(400).json({ error: 'Formato de audio no válido.' });
       if (audioBase64.length > 12000000) return res.status(413).json({ error: 'El audio es demasiado grande.' });
-      const result = await ai.models.generateContent({
-        model: MODEL,
-        contents: [{ role: 'user', parts: [
-          { text: 'Transcribe exactamente lo que dice el usuario en este audio. Devuelve SOLO la transcripción en español, sin explicación. Conserva nombres, números, productos, cantidades y expresiones coloquiales venezolanas.' },
-          { inlineData: { mimeType, data: audioBase64 } }
-        ] }],
-        config: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: 'low' } }
-      });
+      let result;
+      let lastError;
+      for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
+        try {
+          result = await ai.models.generateContent({
+            model,
+            contents: [{ role: 'user', parts: [
+              { text: 'Transcribe exactamente lo que dice el usuario en este audio. Devuelve SOLO la transcripción en español, sin explicación. Conserva nombres, números, productos, cantidades y expresiones coloquiales venezolanas.' },
+              { inlineData: { mimeType, data: audioBase64 } }
+            ] }],
+            config: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: 'low' } }
+          });
+          if (result?.text) break;
+        } catch (err) { lastError = err; }
+      }
+      if (!result?.text) throw lastError || new Error('Google AI no devolvió transcripción.');
       return res.status(200).json({ text: String(result.text || '').trim() });
     }
 
