@@ -148,7 +148,7 @@
     localStorage.setItem('sifer360_sifer_continuous_voice_v1',continuousListening?'1':'0');
     continuousBtn.classList.toggle('on',continuousListening);
     continuousBtn.textContent='♾️ Escucha continua: '+(continuousListening?'ON':'OFF');
-    if(continuousListening){ forceClose(); startVoice(); } else { try{voice.recognition?.stop()}catch{}; if(voice.recorder?.state==='recording')try{voice.recorder.stop()}catch{}; setVoice('off','Escucha continua desactivada'); }
+    if(continuousListening){ forceClose(); setVoice('listening','Activando micrófono…'); startVoice(); } else { stopVoice(); }
   });
   const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   const voice={recognition:null,stream:null,recorder:null,chunks:[],listening:false,processing:false,timer:null,restartTimer:null,buffer:'',audioContext:null,analyser:null,startedAt:0,session:0};
@@ -163,15 +163,18 @@
   function restartVoice(delay=180){if((!open&&!continuousListening)||voice.processing||voice.listening||!continuousListening)return;clearTimeout(voice.restartTimer);voice.restartTimer=setTimeout(()=>startVoice(),delay);}
   async function startVoice(){
     if((!open&&!continuousListening)||voice.processing||voice.listening)return;
+    // En Chrome/Android SpeechRecognition administra su propio micrófono. No debemos abrir
+    // getUserMedia antes porque ambos pueden competir por el mismo dispositivo de captura.
+    if(SpeechRecognition){ startSpeech(); return; }
     const ok=await ensureMic();
     if(!ok||voice.processing||voice.listening)return;
-    // En escucha continua SIFER permanece sin panel: no exigir que el panel esté abierto.
-    if(SpeechRecognition)startSpeech();else startRecorder();
+    startRecorder();
   }
-  function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if((open||continuousListening)&&!voice.processing)restartVoice(150)};
+  function startSpeech(){try{const session=++voice.session,rec=new SpeechRecognition();rec.lang='es-VE';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;setVoice('listening','Activando micrófono…');rec.onstart=()=>{if(session!==voice.session)return;voice.listening=true;voice.recognition=rec;setVoice('listening','Escuchando…')};rec.onend=()=>{if(session!==voice.session)return;voice.listening=false;voice.recognition=null;if((open||continuousListening)&&!voice.processing)restartVoice(150)};
       rec.onerror=e=>{voice.listening=false;voice.recognition=null;
         if(e.error==='not-allowed'||e.error==='service-not-allowed'){setVoice('error','Chrome no permite el micrófono. Revisa el permiso de este sitio.');if(continuousListening)setTimeout(()=>{if(continuousListening&&!voice.processing)startVoice()},1200);return}
         if(e.error==='audio-capture'){setVoice('error','No se pudo capturar el micrófono del teléfono.');}
+        else if(e.error==='network')setVoice('error','Chrome no pudo conectar el reconocimiento de voz. Reintentando…');
         else if(e.error!=='no-speech'&&e.error!=='aborted')setVoice('error','La escucha se interrumpió. Reintentando…');
         if((open||continuousListening)&&!voice.processing)restartVoice(e.error==='no-speech'?180:500)
       };rec.onresult=e=>{if(session!==voice.session||voice.processing)return;let t='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=(e.results[i][0]?.transcript||'')+' ';if(!t.trim())return;voice.buffer=(voice.buffer+' '+t).trim();clearTimeout(voice.timer);voice.timer=setTimeout(commitVoice,800)};voice.recognition=rec;rec.start()}catch{voice.listening=false;startRecorder()}}
@@ -197,7 +200,7 @@
     panel.style.setProperty('display','none','important');
     panel.style.setProperty('visibility','hidden','important');
     panel.style.setProperty('opacity','0','important');
-    if(continuousListening) setVoice('listening','Escucha continua activa');
+    if(continuousListening) setVoice('listening','Activando micrófono…');
   }
   function toggle(force){
     if(continuousListening && force!==false){
