@@ -461,19 +461,27 @@
         const supplierRaw=String(args.supplierQuery||args.proveedor||'');
         const supplierQuery=normalizeLocal(supplierRaw);
         let supplier=null;
-        if(/^(ese|ese proveedor|el proveedor|el mismo)$/i.test(supplierRaw) && suppliers.length===1) supplier=suppliers[0];
-        if(!supplier && supplierQuery) supplier=suppliers.find(s=>normalizeLocal([s.id,s.nombre,s.documento,s.telefono].filter(Boolean).join(' ')).includes(supplierQuery));
+        if(/^(ese|ese proveedor|el proveedor|el mismo|proveedor existente|proveedor actual)$/i.test(supplierRaw) && suppliers.length===1) supplier=suppliers[0];
+        if(!supplier && supplierQuery) supplier=suppliers.find(s=>normalizeLocal([s.id,s.nombre,s.documento,s.rif,s.telefono,s.email].filter(Boolean).join(' ')).includes(supplierQuery));
         if(!supplier && suppliers.length===1) supplier=suppliers[0];
         if(!supplier) throw new Error('No pude identificar el proveedor de la compra.');
         const query=String(args.productQuery||args.producto||args.query||'').trim();
         const p=findProductForCommand(query);
         if(!p) throw new Error('No encontré el artículo solicitado para la compra.');
         const qty=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
-        const costRaw=String(args.cost??'').toLowerCase()==='current'?Number(p.costo??p.precio??0):Number(args.cost??p.costo??p.precio??0); const cost=Number.isFinite(costRaw)?costRaw:0;
+        const costRaw=String(args.cost??'').toLowerCase()==='current'?Number(p.costo??p.precio??0):Number(args.cost??p.costo??p.precio??0);
+        const cost=Number.isFinite(costRaw)?costRaw:0;
         if(!Number.isFinite(cost)||cost<0) throw new Error('No pude determinar un costo unitario válido para la compra.');
-        const type=String(args.type||'credito').toLowerCase()==='contado'?'contado':'credito';
-        if(type==='contado' && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para una compra de contado primero debes abrir la caja.');
-        const total=qty*cost, paid=type==='contado'?total:0, saldo=total-paid; const creditDays=Math.max(0,Math.floor(Number(args.creditDays||0))); const dueDate=saldo&&creditDays?new Date(Date.now()+creditDays*86400000).toLocaleDateString('es-VE'):null;
+        const paymentType=String(args.type||'credito').toLowerCase();
+        const isMixed=paymentType==='mixto'||paymentType==='mixta';
+        const isCash=paymentType==='contado';
+        const creditDays=Math.max(0,Math.floor(Number(args.creditDays||0)));
+        const total=qty*cost;
+        const paidRaw=Number(args.cashAmount??args.contado??args.paid??0);
+        const paid=isMixed?Math.min(total,Math.max(0,Number.isFinite(paidRaw)?paidRaw:0)):(isCash?total:0);
+        const saldo=Math.max(0,total-paid);
+        if(paid>0 && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para registrar el componente de contado de una compra primero debes abrir la caja.');
+        const dueDate=saldo&&creditDays?new Date(Date.now()+creditDays*86400000).toLocaleDateString('es-VE'):null;
         const isRep=typeof getRepuestos==='function' && getRepuestos().some(x=>x.id===p.id);
         const target=isRep?getRepuestos().find(x=>x.id===p.id):(Array.isArray(db.productos)?db.productos.find(x=>x.id===p.id):null);
         if(!target) throw new Error('El artículo no está disponible en la base de inventario.');
@@ -482,15 +490,17 @@
         db.cxp=Array.isArray(db.cxp)?db.cxp:[];
         db.movimientos=Array.isArray(db.movimientos)?db.movimientos:[];
         const num=typeof id==='function'?id('CMP','compra'):'CMP-'+Date.now();
-        db.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,diasCredito:creditDays,fechaVencimiento:dueDate,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
+        const compraTipo=isMixed?'mixto':(isCash?'contado':'credito');
+        db.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:compraTipo,diasCredito:creditDays,fechaVencimiento:dueDate,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
         if(saldo){
           db.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,diasCredito:creditDays,fechaVencimiento:dueDate,estado:'Pendiente'});
           supplier.saldo=Number(supplier.saldo||0)+saldo;
-        }else if(typeof cajaActual==='function'){cajaActual().saldo-=paid;}
+        }
+        if(paid>0 && typeof cajaActual==='function') cajaActual().saldo-=paid;
         db.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
         if(typeof save==='function') save('purchase-created');
         if(typeof renderView==='function') renderView();
-        return {ok:true,message:'Compra '+num+' registrada a '+type+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+(saldo?'. CxP creada por '+money(saldo)+(creditDays?' con vencimiento a '+creditDays+' días.':'.'):'.')};
+        return {ok:true,message:'Compra '+num+' registrada '+(isMixed?'como mixta':('a '+(isCash?'contado':'credito')))+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+'. Contado '+money(paid)+'.'+(saldo?' Saldo a crédito '+money(saldo)+(creditDays?' con vencimiento a '+creditDays+' días.':''):' Sin saldo pendiente.')};
       }
       case 'search_catalog': {
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
@@ -695,25 +705,32 @@
       const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
       const items=[...(Array.isArray(d.productos)?d.productos:[]),...(typeof getRepuestos==='function'?(getRepuestos()||[]):[])];
       const q=normalizeLocal(command);
-      const cleaned=q.replace(/\b(?:cantidad|cant|unidades|unidad|uds?|piezas|pieza|x)\s*[:=]?\s*\d+(?:[.,]\d+)?\b/g,' ')
-        .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?|x)?\b/g,' ').trim();
+      const cleaned=q
+        .replace(/\b(?:cantidad|cant|unidades?|uds?|piezas?|pieza|x)\s*[:=]?\s*\d+(?:[.,]\d+)?\b/g,' ')
+        .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?|x)?\b/g,' ')
+        .replace(/\b(?:registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|compra|comprar|adquisicion|proveedor|existente|actual|mismo|misma|credito|contado|mixto|mixta|dias?|dia|monto|precio|costo|unidad|por|con|al|a|de|ese|saldo|resto|efectivo|cash)\b/g,' ')
+        .replace(/\s+/g,' ').trim();
       const singular=t=>String(t||'').replace(/(es|s)$/,'').replace(/ias$/,'ia').replace(/os$/,'o').replace(/as$/,'a');
-      const stop=new Set(['registra','registrar','realiza','realizar','compra','compra','compra','proveedor','existente','credito','credito','dias','dia','monto','unidad','actual','mismo','misma','precio','costo','por','con','ese','ese']);
+      const stop=new Set(['ga','el','la','los','las','del','para','una','uno','un','que','mismo','misma']);
       const tokens=cleaned.split(/\s+/).map(singular).filter(x=>x.length>2&&!stop.has(x));
       if(!tokens.length)return null;
       const scored=items.map(p=>{
+        const name=normalizeLocal(p.nombre||'');
         const parts=[p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM,p.descripcion,...(Array.isArray(p.referenciasCruzadas)?p.referenciasCruzadas.flatMap(x=>[x.marca,x.codigo]):[])];
         const hay=normalizeLocal(parts.filter(Boolean).join(' '));
         const hayTokens=hay.split(/\s+/).map(singular);
-        const score=tokens.reduce((s,t)=>{
-          if(hay.includes(t)) return s+1;
-          if(hayTokens.some(h=>h.startsWith(t)||t.startsWith(h))) return s+0.8;
-          return s;
-        },0);
+        let score=0;
+        for(const t of tokens){
+          if(name.includes(t)) score+=1.4;
+          else if(hay.includes(t)) score+=1;
+          else if(hayTokens.some(h=>h===t||h.startsWith(t)||t.startsWith(h))) score+=0.75;
+        }
+        if(name && tokens.every(t=>name.includes(t))) score+=2;
         return {p,score};
-      }).filter(x=>x.score>=Math.max(1,tokens.length-0.6))
-       .sort((a,b)=>b.score-a.score||String(a.p.nombre||'').length-String(b.p.nombre||'').length);
-      return scored[0]?.p||null;
+      }).sort((a,b)=>b.score-a.score||String(a.p.nombre||'').length-String(b.p.nombre||'').length);
+      const best=scored[0];
+      if(!best)return null;
+      return best.score>=Math.max(1.5,tokens.length*0.55)?best.p:null;
     }catch{return null;}
   }
   function extractRequestedQuantity(command){
@@ -793,18 +810,18 @@
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
-    if(/(?:realiza|haz|registra|registrar|crear|crea|genera|compra).*(?:compra|adquisicion|adquisición).*(?:credito|cr[eé]dito|contado)|(?:compra|adquiere).*(?:credito|cr[eé]dito|contado)/.test(q)){
+    if(/(?:realiza|haz|registra|registrar|crear|crea|genera|compra).*(?:compra|adquisicion|adquisición)/.test(q)){
       const qty=extractRequestedQuantity(q);
-      const type=/(?:a|de)\s+credito|cr[eé]dito/.test(q)?'credito':'contado';
-      const supplierQuery=/\b(?:con|al|a)\s+(?:el\s+)?(?:proveedor\s+)?(?:existente|actual|mismo|ese proveedor)\b/.test(q)?'ese proveedor':((q.match(/\b(?:con|al|a)\s+(?:el\s+)?proveedor\s+([^,]+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|$)/)||[])[1]||'ese proveedor').trim();
-      const productQuery=q
-        .replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|cr[eé]dito|contado|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|monto|por|unidad|unidades?|mismo|actual)\b/g,' ')
-        .replace(/\b\d+(?:[.,]\d+)?\b/g,' ')
-        .replace(/\s+/g,' ').trim();
-      const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/); const daysMatch=q.match(/(?:a|de|por)\s+(\d+)\s+d[ií]as?/);
-      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cost:'current',creditDays:daysMatch?Number(daysMatch[1]):0},confirmationText:'Preparar una compra a '+type+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+'. A crédito se registrará la CxP correspondiente.'};
+      const isMixed=/\bmixt[oa]\b/.test(q);
+      const type=isMixed?'mixto':(/\b(?:a|de)\s+credito\b|\bcredito\b/.test(q)?'credito':'contado');
+      const supplierQuery=/\b(?:con|al|a)\s+(?:el\s+)?(?:proveedor\s+)?(?:existente|actual|mismo|ese proveedor)\b/.test(q)?'ese proveedor':((q.match(/\b(?:con|al|a)\s+(?:el\s+)?proveedor\s+([^,]+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|\s+mixto|$)/)||[])[1]||'ese proveedor').trim();
+      const productQuery=q.replace(/\b(?:sifer|registra|registrar|realiza|realizar|haz|hacer|crear|crea|genera|una|la|compra|comprar|adquisicion|adquisicion|a|de|credito|contado|mixto|mixta|con|al|proveedor|existente|actual|mismo|ese|proveedor|dias?|dia|monto|por|unidad|unidades?|mismo|actual|efectivo|cash|saldo|resto)\b/g,' ').replace(/\b\d+(?:[.,]\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+      const costMatch=q.match(/(?:monto|precio|costo)\s+(?:por\s+)?unidad\s+(?:es\s+)?(?:el\s+)?mismo(?:\s+actual)?/);
+      const daysMatch=q.match(/(?:a|de|por)\s+(\d+)\s+d[ií]as?/);
+      const cashMatch=q.match(/(\d+(?:[.,]\d+)?)\s+(?:de\s+)?(?:contado|efectivo|cash)\b/);
+      const cashAmount=cashMatch?Number(String(cashMatch[1]).replace(',','.')):0;
+      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type,cashAmount,cost:'current',creditDays:daysMatch?Number(daysMatch[1]):0},confirmationText:'Preparar una compra '+(isMixed?'mixta':type)+' de '+qty+' unidades de '+productQuery+' con '+supplierQuery+(costMatch?' usando el monto unitario actual registrado.':'')+(isMixed?' con '+cashAmount+' de contado y el saldo a crédito.':'')+(daysMatch?' A crédito a '+daysMatch[1]+' días.':'')+'.'};
     }
-
     if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
       const params=extractImportParams(q);
       const query=deriveCatalogQuery(command);
