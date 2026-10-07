@@ -464,13 +464,20 @@
       }
       case 'add_to_cart': {
         if(typeof addToCart!=='function') throw new Error('Carrito no disponible');
-        let id=String(args.id||''), type=args.type==='repuesto'?'repuesto':'producto';
+        let id=String(args.id||''), type=args.type==='repuesto'?'repuesto':'producto', p=null;
         if(!id){
-          const p=findProductForCommand(args.query||args.nombre||args.producto||'');
+          p=findProductForCommand(args.query||args.nombre||args.producto||'');
           if(!p) throw new Error('No encontré el artículo solicitado en el catálogo.');
           id=String(p.id); type=(p.sku&&!p.codigo?'repuesto':'producto');
+        }else{
+          const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
+          p=type==='repuesto'?(typeof getRepuestos==='function'?getRepuestos().find(x=>x.id===id):null):(Array.isArray(d.productos)?d.productos.find(x=>x.id===id):null);
         }
-        addToCart(id,type); return {ok:true,message:'Artículo agregado al carrito'};
+        const qty=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
+        const available=Number(p?.stock??0);
+        if(p&&qty>available) throw new Error('No hay existencia suficiente para agregar '+qty+' unidades; hay '+available+' disponibles.');
+        for(let i=0;i<qty;i++) addToCart(id,type);
+        return {ok:true,message:qty===1?'Artículo agregado al carrito':'Agregadas '+qty+' unidades al carrito'};
       }
       case 'remove_cart_line': if(typeof selected!=='undefined') selected=Number(args.index); if(typeof removeCart!=='function') throw new Error('Carrito no disponible'); removeCart(); return {ok:true,message:'Línea eliminada del carrito'};
       case 'cancel_sale': if(typeof cancelSale!=='function') throw new Error('Cancelación no disponible'); cancelSale(); return {ok:true,message:'Venta cancelada'};
@@ -548,15 +555,32 @@
     try{
       const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
       const items=[...(Array.isArray(d.productos)?d.productos:[]),...(typeof getRepuestos==='function'?(getRepuestos()||[]):[])];
-      const q=normalizeLocal(command),tokens=q.split(/\\s+/).filter(x=>x.length>2);
+      const q=normalizeLocal(command);
+      const cleaned=q.replace(/\b(?:cantidad|cant|unidades|unidad|uds?|piezas|pieza|x)\s*[:=]?\s*\d+(?:[.,]\d+)?\b/g,' ')
+        .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?|x)?\b/g,' ').trim();
+      const singular=t=>String(t||'').replace(/(es|s)$/,'').replace(/ias$/,'ia').replace(/os$/,'o').replace(/as$/,'a');
+      const tokens=cleaned.split(/\s+/).map(singular).filter(x=>x.length>2);
       if(!tokens.length)return null;
       const scored=items.map(p=>{
-        const hay=normalizeLocal([p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM].filter(Boolean).join(' '));
-        const score=tokens.reduce((s,t)=>s+(hay.includes(t)?1:0),0);
+        const parts=[p.nombre,p.codigo,p.sku,p.marca,p.categoria,p.codigoOEM,...(Array.isArray(p.referenciasCruzadas)?p.referenciasCruzadas.flatMap(x=>[x.marca,x.codigo]):[])];
+        const hay=normalizeLocal(parts.filter(Boolean).join(' '));
+        const hayTokens=hay.split(/\s+/).map(singular);
+        const score=tokens.reduce((s,t)=>{
+          if(hay.includes(t)) return s+1;
+          if(hayTokens.some(h=>h.startsWith(t)||t.startsWith(h))) return s+0.8;
+          return s;
+        },0);
         return {p,score};
-      }).filter(x=>x.score===tokens.length).sort((a,b)=>a.p.nombre.length-b.p.nombre.length);
+      }).filter(x=>x.score>=Math.max(1,tokens.length-0.2))
+       .sort((a,b)=>b.score-a.score||String(a.p.nombre||'').length-String(b.p.nombre||'').length);
       return scored[0]?.p||null;
     }catch{return null;}
+  }
+  function extractRequestedQuantity(command){
+    const q=normalizeLocal(command);
+    const m=q.match(/(?:\b(?:agrega|añade|mete|pon|echa|incorpora)\s+)?(?:\b(?:cantidad|cant|unidades?|uds?|piezas?|x)\s*[:=]?\s*)?(\d+(?:[.,]\d+)?)\s*(?:unidades?|uds?|piezas?|x)?\b/);
+    const n=m?Number(String(m[1]).replace(',','.')):1;
+    return Number.isFinite(n)&&n>0?n:1;
   }
   function normalizeLocal(s){
     return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9.%-]+/g,' ').trim();
@@ -632,8 +656,10 @@
     if(/(agrega|añade|mete|pon|echa|incorpora).*(al carrito|carrito)/.test(q)){
       const clean=q.replace(/.*?(agrega|añade|mete|pon|echa|incorpora)\s+/,'').replace(/\s+(al carrito|carrito).*$/,'').trim();
       const p=findProductForCommand(clean);
-      if(p)return {name:'add_to_cart',args:{id:p.id,type:(p.sku&&!p.codigo?'repuesto':'producto')}};
-      if(clean)return {name:'add_to_cart',args:{query:clean}};
+      const quantity=extractRequestedQuantity(clean);
+      if(p)return {name:'add_to_cart',args:{id:p.id,type:(p.sku&&!p.codigo?'repuesto':'producto'),quantity}};
+      if(clean)return {name:'add_to_cart',args:{query:clean,quantity}};
+
     }
     if(/(actualiza|refresca|sincroniza).*(modulo|pantalla|datos)/.test(q)) return {name:'refresh',args:{}};
     if(/imprime|imprimir/.test(q)) return {name:'print',args:{}};
