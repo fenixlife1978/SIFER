@@ -21,7 +21,7 @@
   #sifer-ai-panel.show{display:flex}
   .sifer-ai-head{height:58px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #19445b}.sifer-ai-mini{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,#fff,#36caff 25%,#07558c 55%,#02111e 75%);box-shadow:0 0 16px #26bfff}.sifer-ai-title{font-size:15px;font-weight:800}.sifer-ai-sub{font-size:9px;color:#77cbed}.sifer-ai-close{margin-left:auto;background:none;border:0;color:#b8eaff;font-size:24px;cursor:pointer}
   .sifer-ai-chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}.sifer-msg{max-width:88%;padding:9px 11px;border-radius:10px;font-size:12px;line-height:1.4;white-space:pre-wrap}.sifer-msg.ai{align-self:flex-start;background:#0c3d5e}.sifer-msg.user{align-self:flex-end;background:#086fbf}
-  .sifer-ai-voice{padding:7px;text-align:center;font-size:10px;color:#72d8ff;border-top:1px solid #19445b}.sifer-ai-status{min-height:16px;padding:0 10px 5px;font-size:9px;color:#6fc9ef}.sifer-ai-form{display:flex;gap:6px;padding:8px;border-top:1px solid #19445b}.sifer-ai-input{flex:1;height:42px;resize:none;background:#031526;border:1px solid #2b6985;border-radius:7px;color:#fff;padding:9px;font-size:12px}.sifer-ai-send{width:46px;border:1px solid #168ac5;border-radius:7px;background:#087fc0;color:#fff;font-weight:800}
+  .sifer-ai-voice{padding:7px;text-align:center;font-size:10px;color:#72d8ff;border-top:1px solid #19445b;display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap}.sifer-ai-voice button{border:1px solid #277fa6;background:#062337;color:#bceeff;border-radius:999px;padding:5px 8px;font-size:10px;cursor:pointer}.sifer-ai-voice button.on{background:#0b7656;border-color:#43e0a4;color:#fff}.sifer-ai-status{min-height:16px;padding:0 10px 5px;font-size:9px;color:#6fc9ef}.sifer-ai-form{display:flex;gap:6px;padding:8px;border-top:1px solid #19445b}.sifer-ai-input{flex:1;height:42px;resize:none;background:#031526;border:1px solid #2b6985;border-radius:7px;color:#fff;padding:9px;font-size:12px}.sifer-ai-send{width:46px;border:1px solid #168ac5;border-radius:7px;background:#087fc0;color:#fff;font-weight:800}
   @keyframes siferOrbit{to{transform:translate(-50%,-50%) rotate(360deg) scaleX(.7)}}
   #sifer-ai-orb[data-state="listening"] .sifer-core{animation:siferListen 1s ease-in-out infinite}
   #sifer-ai-orb[data-state="thinking"] .sifer-core{animation:siferThink .75s ease-in-out infinite}
@@ -40,11 +40,11 @@
 
   const root=document.createElement('div'); root.id='sifer-ai-root';
   root.innerHTML=`
-    <button id="sifer-ai-orb" type="button" aria-label="Abrir SIFER" title="Abrir SIFER"><i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i></button>
+    <button id="sifer-ai-orb" type="button" aria-label="Abrir SIFER" title="Abrir SIFER" data-state="idle"><i class="sifer-core"></i><i class="sifer-p p1"></i><i class="sifer-p p2"></i><i class="sifer-p p3"></i></button>
     <section id="sifer-ai-panel" aria-hidden="true">
       <div class="sifer-ai-head"><div class="sifer-ai-mini"></div><div><div class="sifer-ai-title">SIFER</div><div class="sifer-ai-sub">ASISTENTE INTELIGENTE · POS AUTOMOTRIZ</div></div><button class="sifer-ai-close" type="button" aria-label="Cerrar">×</button></div>
       <div class="sifer-ai-chat" id="sifer-ai-chat"></div>
-      <div class="sifer-ai-voice" id="sifer-ai-voice"><span id="sifer-ai-voice-text">Micrófono inactivo</span></div>
+      <div class="sifer-ai-voice" id="sifer-ai-voice"><button id="sifer-ai-mic" type="button" title="Activar micrófono">🎙️ Micrófono</button><button id="sifer-ai-continuous" type="button" title="Escucha continua">♾️ Escucha continua: OFF</button><span id="sifer-ai-voice-text">Micrófono inactivo · toca 🎙️ para activarlo</span></div>
       <div class="sifer-ai-status" id="sifer-ai-status"></div>
       <form class="sifer-ai-form" id="sifer-ai-form"><textarea class="sifer-ai-input" id="sifer-ai-input" placeholder="Dile a SIFER qué necesitas…" rows="1"></textarea><button class="sifer-ai-send" id="sifer-ai-send" type="submit">➤</button></form>
     </section>`;
