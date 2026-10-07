@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
 const MODEL = 'gemini-3.8-flash';
-const ENV_NAME = 'GEMINI_' + 'API_' + 'KEY';
+const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
 
 function cleanJson(value) {
   const text = String(value || '').trim().replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/,'').replace(/\s*\`\`\`$/,'');
@@ -15,8 +15,8 @@ function cleanJson(value) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-  const apiKey = process.env[ENV_NAME];
-  if (!apiKey) return res.status(503).json({ error: 'SIFER AI todavía no está configurado. Falta la variable de Google AI en Vercel.' });
+  const apiKey = ENV_NAMES.map(name => process.env[name]).find(Boolean);
+  if (!apiKey) return res.status(503).json({ error: 'SIFER AI todavía no está configurado. Falta una clave de Google AI en Vercel (GEMINI_API_KEY, GOOGLE_AI_API_KEY o GOOGLE_API_KEY).' });
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
@@ -93,11 +93,19 @@ ${command}
 HISTORIAL RECIENTE:
 ${JSON.stringify(messages).slice(0, 12000)}`;
 
-      const result = await ai.models.generateContent({
-        model: MODEL,
-        contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
-        config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
-      });
+      let result;
+      let lastError;
+      for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
+        try {
+          result = await ai.models.generateContent({
+            model,
+            contents: [{ role: 'user', parts: [{ text: plannerPrompt }] }],
+            config: { maxOutputTokens: 1800, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'medium' } }
+          });
+          if (result?.text) break;
+        } catch (err) { lastError = err; }
+      }
+      if (!result?.text) throw lastError || new Error('Google AI no devolvió un plan.');
       const plan = cleanJson(result.text || '');
       if (!plan || plan.ok !== true) return res.status(422).json({ error: 'SIFER no pudo producir un plan válido para esa solicitud.' });
 
@@ -123,11 +131,19 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
 
     const systemInstruction = `Eres SIFER, asistente inteligente de SIFER360, un POS especializado en repuestos automotrices, aceites y lubricantes en Venezuela. Habla español, sé profesional, directo y seguro. SIFER es un POS, no un ERP. No inventes datos. Usa el mapa operativo y el estado suministrados como fuente de verdad. Puedes explicar módulos, productos, ventas, inventario y flujos. No expongas secretos, claves, tokens ni variables de entorno. Las operaciones que modifican datos se ejecutan mediante el motor de acciones de SIFER y requieren las confirmaciones correspondientes. Módulo actual: ${String(context.module || 'Inicio').slice(0,100)}. Estado: ${JSON.stringify(context.readOnlyData || {}).slice(0,28000)}. Mapa: ${JSON.stringify(context.systemMap || {}).slice(0,28000)}`;
 
-    const stream = await ai.models.generateContentStream({
-      model: MODEL,
-      contents: contents.length ? contents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
-      config: { systemInstruction, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } }
-    });
+    let stream;
+    let lastError;
+    for (const model of [MODEL,'gemini-3.7-flash','gemini-3.6-flash']) {
+      try {
+        stream = await ai.models.generateContentStream({
+          model,
+          contents: contents.length ? contents : [{ role: 'user', parts: [{ text: 'Hola' }] }],
+          config: { systemInstruction, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } }
+        });
+        break;
+      } catch (err) { lastError = err; }
+    }
+    if (!stream) throw lastError || new Error('Google AI no devolvió respuesta.');
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
