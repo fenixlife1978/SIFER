@@ -387,6 +387,7 @@
     add_to_cart:{description:'Agregar un producto o repuesto existente al carrito actual',mutating:false},
     search_catalog:{description:'Buscar productos o repuestos en el Catálogo Automotriz/Máster usando lenguaje natural y devolver coincidencias reales',mutating:false},
     import_catalog_item:{description:'Buscar un artículo en el Catálogo Máster, incorporarlo al inventario real y establecer existencia, mínimo y punto de reorden indicados por el usuario',mutating:true,confirm:false},
+    create_purchase:{description:'Registrar una compra real a un proveedor, con cantidad, artículo, costo y condición contado o crédito',mutating:true,confirm:true},
     remove_cart_line:{description:'Eliminar una línea del carrito actual',mutating:true,confirm:true},
     cancel_sale:{description:'Cancelar la venta actual sin registrarla',mutating:true,confirm:true},
     open_cash:{description:'Abrir la caja actual',mutating:true,confirm:true},
@@ -453,6 +454,44 @@
         const allowed=['inicio','pos','pedidos','usuarios','master_catalog','repuestos','productos','compras','clientes','proveedores','cxc','cxp','presupuestos','reportes','caja','config'];
         const target=String(args.view||'inicio'); if(!allowed.includes(target)) throw new Error('Módulo no permitido: '+target);
         const navigate=typeof window.go==='function'?window.go:(typeof go==='function'?go:null); if(!navigate) throw new Error('Navegación no disponible'); navigate(target); setTimeout(rememberCurrentModule,300); return {ok:true,message:'Módulo abierto: '+target};
+      }
+      case 'create_purchase': {
+        if(typeof save!=='function') throw new Error('Persistencia del POS no disponible');
+        const raw=localStorage.getItem('sifer360_v1'), liveDb=raw?JSON.parse(raw):{};
+        const suppliers=Array.isArray(liveDb.proveedores)?liveDb.proveedores:[];
+        const supplierQuery=normalizeLocal(args.supplierQuery||args.proveedor||'');
+        let supplier=null;
+        if(/^(ese|ese proveedor|el proveedor|el mismo)$/i.test(String(args.supplierQuery||'')) && suppliers.length===1) supplier=suppliers[0];
+        if(!supplier && supplierQuery) supplier=suppliers.find(s=>normalizeLocal([s.id,s.nombre,s.documento,s.telefono].filter(Boolean).join(' ')).includes(supplierQuery));
+        if(!supplier && suppliers.length===1) supplier=suppliers[0];
+        if(!supplier) throw new Error('No pude identificar el proveedor de la compra.');
+        const query=String(args.productQuery||args.producto||args.query||'').trim();
+        const p=findProductForCommand(query);
+        if(!p) throw new Error('No encontré el artículo solicitado para la compra.');
+        const qty=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
+        const cost=Number(args.cost??p.costo??p.precio??0);
+        if(!Number.isFinite(cost)||cost<0) throw new Error('No pude determinar un costo unitario válido para la compra.');
+        const type=String(args.type||'credito').toLowerCase()==='contado'?'contado':'credito';
+        if(type==='contado' && typeof cajaActual==='function' && !cajaActual().abierta) throw new Error('Para una compra de contado primero debes abrir la caja.');
+        const total=qty*cost, paid=type==='contado'?total:0, saldo=total-paid;
+        const isRep=typeof getRepuestos==='function' && getRepuestos().some(x=>x.id===p.id);
+        const target=isRep?getRepuestos().find(x=>x.id===p.id):liveDb.productos.find(x=>x.id===p.id);
+        if(!target) throw new Error('El artículo no está disponible en la base de inventario.');
+        target.stock=Number(target.stock||0)+qty;
+        const num=typeof id==='function'?id('CMP','compra'):'CMP-'+Date.now();
+        liveDb.compras=Array.isArray(liveDb.compras)?liveDb.compras:[];
+        liveDb.cxp=Array.isArray(liveDb.cxp)?liveDb.cxp:[];
+        liveDb.movimientos=Array.isArray(liveDb.movimientos)?liveDb.movimientos:[];
+        liveDb.compras.push({numero:num,fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),proveedor:supplier.nombre,proveedorId:supplier.id,total,pagado:paid,saldo,tipo:type,lineas:[{id:p.id,qty,costo:cost,tipo:isRep?'repuesto':'producto'}]});
+        if(saldo){
+          liveDb.cxp.push({id:typeof id==='function'?id('CXP','cxp'):'CXP-'+Date.now(),fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),documento:num,proveedorId:supplier.id,proveedor:supplier.nombre,total,saldo,estado:'Pendiente'});
+          supplier.saldo=Number(supplier.saldo||0)+saldo;
+        }else if(typeof cajaActual==='function'){cajaActual().saldo-=paid;}
+        liveDb.movimientos.push({fecha:typeof fmt==='function'?fmt():new Date().toLocaleString('es-VE'),tipo:'Compra',documento:num,detalle:supplier.nombre,monto:paid?-paid:0});
+        localStorage.setItem('sifer360_v1',JSON.stringify(liveDb));
+        if(typeof save==='function') save('purchase-created');
+        if(typeof renderView==='function') renderView();
+        return {ok:true,message:'Compra '+num+' registrada a crédito: '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+'. CxP creada por '+money(saldo)+'.'};
       }
       case 'search_catalog': {
         const item=findMasterCatalogItemForCommand(args.query||args.search||'');
@@ -754,6 +793,18 @@
       if(idx===null)return null;
       return {name:'remove_cart_line',args:{index:idx},confirmationText:'Eliminar del carrito el último artículo agregado.'};
     }
+    if(/(?:realiza|haz|registra|crear|crea|genera|compr[aá]|compra).*(?:compra|adquisicion|adquisición).*(?:credito|cr[eé]dito|contado)|(?:compra|adquiere).*(?:credito|cr[eé]dito|contado)/.test(q)){
+      const qty=extractRequestedQuantity(q);
+      const type=/(?:a|de)\s+credito|cr[eé]dito/.test(q)?'credito':'contado';
+      const supplierMatch=q.match(/(?:con|a|al|para)\s+(?:el\s+)?(?:proveedor\s+)?(.+?)(?:\s+(?:a|de)\s+credito|\s+credito|\s+contado|$)/);
+      const supplierQuery=supplierMatch?.[1]&&supplierMatch[1].trim()!=='ese proveedor'?supplierMatch[1].trim():'ese proveedor';
+      const productQuery=q
+        .replace(/(?:sifer|realiza|haz|registra|crear|crea|genera|una|la|compra|adquisicion|adquisicion|a|de|credito|cr[eé]dito|contado|con|ese proveedor)/g,' ')
+        .replace(/\b\d+(?:[.,]\d+)?\s*(?:unidades?|uds?|piezas?)?\b/g,' ')
+        .replace(/\s+/g,' ').trim();
+      return {name:'create_purchase',args:{productQuery,quantity:qty,supplierQuery,type},confirmationText:'Registrar una compra '+type+' de '+qty+' unidades de '+productQuery+' al proveedor '+supplierQuery+'. SIFER actualizará inventario y, si es a crédito, creará la CxP.'};
+    }
+
     if(/(?:busca|buscar|buscalo|búscalo|importa|importalo|incorpora|añadelo|añádelo).*(?:catalogo|cat[aá]logo|inventario|tienda)|(?:importa|incorpora).*(?:unidad|unidades|existencia|stock|minimo|reorden)/.test(q)){
       const params=extractImportParams(q);
       const query=deriveCatalogQuery(command);
