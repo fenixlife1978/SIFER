@@ -8,6 +8,8 @@
   const messages = [];
   let open = false;
   let busy = false;
+  // SIFER: conserva el último artículo de catálogo para consultas contextuales.
+  let lastCatalogItem = null;
 
   const css = `
   #sifer-ai-root{position:fixed;right:16px;bottom:16px;width:92px;height:92px;z-index:2147483647;font-family:Arial,sans-serif;pointer-events:none}
