@@ -68,8 +68,17 @@
     zIndex:'2147483647'
   });
   keepOrbAlive();
-  const siferOrbObserver=new MutationObserver(()=>keepOrbAlive());
-  siferOrbObserver.observe(document.body,{childList:true,subtree:true});
+  // Solo vigilar si el nodo raíz realmente desaparece. Evita observar todo el DOM.
+  let orbRepairScheduled=false;
+  const repairOrb=()=>{
+    if(orbRepairScheduled)return;
+    orbRepairScheduled=true;
+    requestAnimationFrame(()=>{orbRepairScheduled=false;keepOrbAlive();});
+  };
+  const siferOrbObserver=new MutationObserver(()=>{
+    if(!document.body.contains(root)) repairOrb();
+  });
+  siferOrbObserver.observe(document.body,{childList:true});
   orb.style.display='block';
   const panel=root.querySelector('#sifer-ai-panel');
   const chat=root.querySelector('#sifer-ai-chat');
