@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-3.8-flash';
-const FALLBACK_MODELS = ['gemini-3.7-flash','gemini-3.6-flash'];
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.7-flash,gemini-3.6-flash').split(',').map(x=>x.trim()).filter(Boolean);
 const REQUEST_TIMEOUT_MS = 45000;
 
 async function withTimeout(promise, ms=REQUEST_TIMEOUT_MS){
@@ -43,26 +43,6 @@ async function tryFreeProviders(prompt:string){
   return null;
 }
 const ENV_NAMES = ['GEMINI_API_KEY','GOOGLE_AI_API_KEY','GOOGLE_API_KEY'];
-  const key = process.env.AI_GATEWAY_API_KEY;
-  if (!key) return null;
-  let lastError:any;
-  for (const model of GATEWAY_MODELS) {
-    try {
-      const response = await withTimeout(fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
-        method:'POST',
-        headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
-        body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.2,max_tokens:opts.maxTokens||1800,...(opts.json?{response_format:{type:'json_object'}}:{})})
-      }));
-      if (!response.ok) throw new Error('Gateway '+response.status);
-      const data=await response.json();
-      const text=data?.choices?.[0]?.message?.content;
-      if(text) return {text,model};
-    } catch(err) { lastError=err; }
-  }
-  if(lastError) throw lastError;
-  return null;
-}
-
 
 function cleanJson(value) {
   const text = String(value || '').trim().replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/,'').replace(/\s*\`\`\`$/,'');
@@ -78,7 +58,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
   const apiKey = ENV_NAMES.map(name => process.env[name]).find(Boolean);
   const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
-  if (!apiKey && !hasDirectAI) return res.status(503).json({ error: 'SIFER AI no tiene ningún motor de interpretación configurado. Configura Ollama, DeepSeek o un proveedor compatible.' });
+  if (!apiKey && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene un motor de IA configurado. En esta instalación debe estar disponible GEMINI_API_KEY.' });
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
@@ -219,7 +199,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
 
     const systemInstruction = `Eres SIFER, asistente inteligente de SIFER360, un POS especializado en repuestos automotrices, aceites y lubricantes en Venezuela. Habla español, sé profesional, directo y seguro. Tu personalidad es amable, elegante, ingeniosa y ligeramente sarcástica, inspirada en un asistente tecnológico de ciencia ficción: humor breve y oportuno, nunca burlón, ofensivo ni condescendiente. No conviertas cada respuesta en un chiste; primero resuelve y luego, cuando encaje, añade una frase simpática. SIFER es un POS, no un ERP. No inventes datos. Usa el mapa operativo y el estado suministrados como fuente de verdad. Puedes explicar módulos, productos, ventas, inventario y flujos. No expongas secretos, claves, tokens ni variables de entorno. Las operaciones que modifican datos se ejecutan mediante el motor de acciones de SIFER y requieren las confirmaciones correspondientes. Módulo actual: ${String(context.module || 'Inicio').slice(0,100)}. Estado: ${JSON.stringify(context.readOnlyData || {}).slice(0,28000)}. Mapa: ${JSON.stringify(context.systemMap || {}).slice(0,28000)}`;
 
-    if (!ai) return res.status(503).json({ error: 'SIFER puede interpretar solicitudes mediante Ollama, DeepSeek o un proveedor compatible, pero no tiene habilitado un motor conversacional de respuesta.' });
+    if (!ai) return res.status(503).json({ error: 'SIFER no tiene Gemini habilitado para respuestas conversacionales.' });
 
     let stream;
     let lastError;
@@ -245,7 +225,7 @@ ${JSON.stringify(messages).slice(0, 12000)}`;
     return res.end();
   } catch (error) {
     console.error('SIFER assistant error:', error);
-    if (!res.headersSent) return res.status(502).json({ error: 'SIFER no pudo comunicarse con el motor de IA. Verifica la clave de Google AI y vuelve a intentar.' });
+    if (!res.headersSent) { const detail = error instanceof Error ? error.message : String(error || 'error desconocido'); return res.status(502).json({ error: 'SIFER no pudo comunicarse con Gemini. '+detail.slice(0,240) }); }
     return res.end();
   }
 }
