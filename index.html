@@ -994,5 +994,21 @@ document.addEventListener('fullscreenchange',()=>{
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
 </script>
 <script src="/sifer-assistant.js?v=20261006-stable"></script>
+<script>
+(function(){
+  if(document.getElementById('sifer-ai-root')) return;
+  var s=document.createElement('style');
+  s.id='sifer-emergency-orb-style';
+  s.textContent='#sifer-fallback-orb{position:fixed!important;right:16px!important;bottom:16px!important;width:92px!important;height:92px!important;border:1px solid rgba(74,218,255,.72)!important;border-radius:50%!important;background:radial-gradient(circle at 50% 50%,#fff 0 4%,#55ddff 8%,#0878bd 28%,#03182a 57%,rgba(3,24,42,.05) 62%,transparent 70%)!important;box-shadow:0 0 10px #fff,0 0 24px #27cfff,0 0 52px #0878bd!important;z-index:2147483647!important;cursor:pointer!important}';
+  document.head.appendChild(s);
+  var b=document.createElement('button');
+  b.id='sifer-fallback-orb'; b.type='button'; b.setAttribute('aria-label','Abrir SIFER'); b.title='SIFER';
+  document.body.appendChild(b);
+  b.onclick=function(){
+    if(typeof window.SIFER_OPEN==='function'){window.SIFER_OPEN();return;}
+    alert('SIFER no terminó de cargar. Recarga la página para reiniciar el asistente.');
+  };
+})();
+</script>
 </body>
 </html>
