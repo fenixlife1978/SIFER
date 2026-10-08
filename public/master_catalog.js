@@ -1393,6 +1393,7 @@
   }
 
   function masterCatalogView() {
+    setTimeout(()=>checkMasterCatalogMaterialization(),0);
     return `
     <div class="pagehead">
       <div>
