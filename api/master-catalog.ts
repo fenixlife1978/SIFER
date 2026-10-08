@@ -254,20 +254,45 @@ export default async function handler(req:any,res:any){
       return res.status(200).json({ok:true,persistent:true,items:[],totalMatched:Number(count.rows?.[0]?.n)||0,page,totalPages:Math.max(1,Math.ceil((Number(count.rows?.[0]?.n)||0)/pageSize))});
     }
 
+    if(q){
+      // Para búsquedas naturales usamos un token ancla (el más específico) y
+      // filtramos el resto en memoria. Esto evita depender de combinaciones de
+      // múltiples LIKE parametrizados y mantiene la búsqueda determinista.
+      const ts=tokens(q);
+      const anchor=[...ts].sort((a,b)=>b.length-a.length)[0]||q;
+      const anchorRows=await db.execute({
+        sql:`SELECT * FROM sifer_master_catalog
+             WHERE searchable_text LIKE ? COLLATE NOCASE
+             LIMIT 5000`,
+        args:['%'+anchor+'%']
+      });
+      const items=anchorRows.rows.map(rowToItem)
+        .filter((item:any)=>{
+          if(!categoryMatches(item,category)) return false;
+          const hay=normalize([
+            item.nombre,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,
+            item.subcategoria,item.descripcionTecnica,item.especificaciones,item.origenMarca,item.unidadMedida
+          ].join(' '));
+          return ts.every((t:string)=>hay.includes(t));
+        });
+      items.sort((a:any,b:any)=>score([b.nombre,b.marca,b.codigoOEM,b.codigoProveedor,b.categoria,b.subcategoria].join(' '),q)-score([a.nombre,a.marca,a.codigoOEM,a.codigoProveedor,a.categoria,a.subcategoria].join(' '),q));
+      const total=items.length;
+      const offset=(page-1)*pageSize;
+      return res.status(200).json({
+        ok:true,persistent:true,items:items.slice(offset,offset+pageSize),
+        totalMatched:total,page,totalPages:Math.max(1,Math.ceil(total/pageSize))
+      });
+    }
+
     const where:any[]=[];
     const args:any[]=[];
     if(category && category!=='Todos'){where.push('LOWER(categoria)=LOWER(?)');args.push(category);}
-    if(q){
-      const ts=tokens(q);
-      for(const t of ts){where.push('searchable_text LIKE ?');args.push('%'+t+'%');}
-    }
     const clause=where.length?' WHERE '+where.join(' AND '):'';
     const count=await db.execute({sql:`SELECT COUNT(*) AS n FROM sifer_master_catalog${clause}`,args});
     const total=Number(count.rows?.[0]?.n)||0;
     const offset=(page-1)*pageSize;
     const data=await db.execute({sql:`SELECT * FROM sifer_master_catalog${clause} LIMIT ? OFFSET ?`,args:[...args,pageSize,offset]});
     const items=data.rows.map(rowToItem);
-    items.sort((a:any,b:any)=>score([b.nombre,b.marca,b.codigoOEM,b.codigoProveedor,b.categoria,b.subcategoria].join(' '),q)-score([a.nombre,a.marca,a.codigoOEM,a.codigoProveedor,a.categoria,a.subcategoria].join(' '),q));
     return res.status(200).json({ok:true,persistent:true,items,totalMatched:total,page,totalPages:Math.max(1,Math.ceil(total/pageSize))});
   }catch(error:any){
     return res.status(503).json({ok:false,configured:true,error:String(error?.message||error)});
