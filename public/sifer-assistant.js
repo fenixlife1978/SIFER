@@ -1026,10 +1026,10 @@
       if(typeof queryMasterCatalog!=='function') return null;
       const query=deriveCatalogQuery(command);
       if(!query) return null;
+      const q=normalizeLocal(query);
       const variants=[query];
       if(q.includes('correa') && q.includes('tiempo') && q.includes('aveo')) variants.push('correa de tiempo aveo');
       if(q.includes('correa') && q.includes('aveo')) variants.push('correa aveo');
-      const q=normalizeLocal(query);
       if(q.includes('sensor') && q.includes('oxigen')) variants.push('sensor oxigeno aveo');
       if(q.includes('aveo') && q.includes('sensor')) variants.push('sensor aveo');
       const unique=[...new Set(variants.filter(Boolean))];
