@@ -421,7 +421,7 @@
     const q=normalizeLocal(text);
     return /(cuanto hay en caja|cu[aá]nto hay en caja|cuanto tengo en caja|saldo de caja|saldo en caja|caja est[aá] abierta|caja abierta|cajas abiertas|estado de caja|efectivo en caja|dinero en caja|efectivo.*(?:bolivar|bolívar|bolivares|bolívares|usd|dolar|dólar|sistema|deberia|debería)|(?:bolivar|bolívar|bolivares|bolívares).*efectivo|(?:usd|dolar|dólar).*efectivo)/.test(q);
   }
-  async function answerCash(){
+  async function answerCash(requestText=''){
     try{
       const response=await fetch('/api/sifer-data?query=cash',{cache:'no-store'});
       if(!response.ok)throw new Error('Turso no disponible');
@@ -432,7 +432,7 @@
       if(!items.length)return 'Turso no tiene cajas registradas todavía.';
       if(!open.length)return 'Turso confirma que no hay ninguna caja abierta en este momento.';
       let rate=Number(typeof db!=='undefined'&&db.config?.bcv?.rate);
-      const hasCurrencyDetail=/(bolivar|bolívar|bolivares|bolívares|usd|dolar|dólar|deberia|debería|sistema)/.test(normalizeLocal(arguments?.[0]||''));
+      const hasCurrencyDetail=/(bolivar|bolívar|bolivares|bolívares|usd|dolar|dólar|deberia|debería|sistema)/.test(normalizeLocal(requestText));
       const detail=open.map(x=>{
         const usd=Number(x.saldo||0);
         const bs=Number.isFinite(rate)&&rate>0?usd*rate:null;
@@ -1428,7 +1428,7 @@
         messages.push({role:'assistant',text:answer}); render(); return;
       }
       if(isCashQuery(command)){
-        messages.push({role:'assistant',text:await answerCash()}); render(); return;
+        messages.push({role:'assistant',text:await answerCash(command)}); render(); return;
       }
       if(isLastZQuery(command)){
         messages.push({role:'assistant',text:await answerLastZ()}); render(); return;
