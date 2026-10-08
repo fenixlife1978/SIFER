@@ -628,7 +628,7 @@
   async function fetchPersistentMasterSearch(query='', category='Todos', page=1, pageSize=20) {
     try {
       const p=new URLSearchParams({q:String(query||''),category:String(category||'Todos'),page:String(page),pageSize:String(pageSize)});
-      const r=await fetch('/api/master-catalog-search?'+p.toString(),{credentials:'same-origin',cache:'no-store'});
+      const r=await fetch('/api/master-catalog?'+p.toString(),{credentials:'same-origin',cache:'no-store'});
       const d=await r.json().catch(()=>({}));
       if(!r.ok || !d.ok || !d.persistentSource) return null;
       const key=[query,category,page,pageSize].join('|');
