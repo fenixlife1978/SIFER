@@ -995,6 +995,9 @@ document.addEventListener('fullscreenchange',()=>{
  if(b) b.innerHTML = document.fullscreenElement ? '🗗 Salir de Pantalla Completa' : '⛶ Pantalla Completa';
 });
 ensureBCVHistory();save();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,80));window.addEventListener('focus',maybeRefreshBCV);setInterval(maybeRefreshBCV,15*60*1000);fit();renderShell();setTimeout(maybeRefreshBCV,500);
+if(window.SiferOffline&&navigator.onLine) window.SiferOffline.bootstrapProductsInventory().then(r=>{
+  if(r?.bootstrapped) toast('Inventario inicial sincronizado con Turso');
+}).catch(()=>{});
 </script>
 <script src="/sifer-atlas.js"></script>
 <script src="/sifer-memory.js"></script>
