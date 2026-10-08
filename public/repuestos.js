@@ -787,7 +787,7 @@ function renderFitmentSearchTab(){
       <div style="display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:8px;align-items:flex-end">
         <div class="field">
           <label>1. Repuesto a buscar</label>
-          <input id="fitRepuesto" placeholder="Ej: correa, pastillas, amortiguador, filtro..." value="${esc(fitmentFilter.repuesto)}" oninput="fitmentFilter.repuesto=this.value;renderView()">
+          <input id="fitRepuesto" placeholder="Ej: correa, pastillas, amortiguador, filtro..." value="${esc(fitmentFilter.repuesto)}" oninput="fitmentFilter.repuesto=this.value">
         </div>
         <div class="field">
           <label>2. Marca del vehículo</label>
@@ -805,13 +805,14 @@ function renderFitmentSearchTab(){
         </div>
         <div class="field">
           <label>4. Año</label>
-          <input id="fitAnio" inputmode="numeric" maxlength="4" placeholder="Ej: 2015" value="${esc(fitmentFilter.anio)}" oninput="fitmentFilter.anio=this.value;renderView()">
+          <input id="fitAnio" inputmode="numeric" maxlength="4" placeholder="Ej: 2015" value="${esc(fitmentFilter.anio)}" oninput="fitmentFilter.anio=this.value">
         </div>
         <div class="field">
           <label>5. Posición / Sistema</label>
-          <input id="fitPosicion" placeholder="Ej: delantero, freno, motor..." value="${esc(fitmentFilter.posicion)}" oninput="fitmentFilter.posicion=this.value;renderView()">
+          <input id="fitPosicion" placeholder="Ej: delantero, freno, motor..." value="${esc(fitmentFilter.posicion)}" oninput="fitmentFilter.posicion=this.value">
         </div>
-        <div>
+        <div style="display:flex;gap:5px">
+          <button class="btn primary" onclick="renderView()">🔎 Buscar</button>
           <button class="btn" onclick="fitmentFilter={repuesto:'',marca:'',modelo:'',anio:'',posicion:''};renderView()">Limpiar</button>
         </div>
       </div>
