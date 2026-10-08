@@ -866,6 +866,13 @@
           total=sub*(1+Number((typeof db!=='undefined'&&db.config)?db.config.impuesto:0)/100);
         }
         const amt=Math.abs(total);
+        const preflight=await fetch('/api/sifer-business',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+          operation:'sale-preflight',
+          cajaId:typeof cajaActual==='function'?cajaActual().id:'',
+          lines:cart.map(x=>({id:x.id,qty:x.qty}))
+        })});
+        const preflightData=await preflight.json().catch(()=>({}));
+        if(!preflight.ok||!preflightData.ok) throw new Error(preflightData.error||'Turso no pudo validar la venta antes del cobro.');
         const isCredit=(typeof saleType!=='undefined'&&saleType==='credito');
         const payField=document.getElementById('payAmount1');
         if(payField&&!isCredit){
@@ -935,6 +942,12 @@
       case 'toggle_cash': {
         if(typeof toggleCaja!=='function') throw new Error('Apertura de caja no disponible');
         if(cajaActual().abierta) throw new Error('La caja ya está abierta; para cerrar la caja usa execute_z (Corte Z).');
+        const box=typeof cajaActual==='function'?cajaActual():null;
+        const pre=await fetch('/api/sifer-business',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+          operation:'open-cash',cajaId:box?.id||'',nombre:box?.nombre||box?.id||'Caja'
+        })});
+        const preData=await pre.json().catch(()=>({}));
+        if(!pre.ok||!preData.ok) throw new Error(preData.error||'Turso no pudo registrar la apertura de caja.');
         toggleCaja();
         if(!cajaActual().abierta) throw new Error('No se pudo abrir la caja.');
         return {ok:true,message:'Caja abierta.'};
