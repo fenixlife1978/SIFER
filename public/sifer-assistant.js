@@ -893,7 +893,7 @@
           const current=Math.max(0,Number(payField.value)||0);
           if(current<amt){ const desired=Number(args.amount??amt); payField.value=String(Number.isFinite(desired)&&desired>=amt?desired:amt); }
           const m1=document.getElementById('payMethod1');
-          if(m1&&!m1.value) m1.value=String(args.method||'Efectivo');
+          if(m1&&args.method) m1.value=String(args.method);
         }
         const fs=await withToastCapture(()=>window.finishSale(total));
         if(Array.isArray(cart)&&cart.length) throw new Error(fs.captured||'El POS rechazó el cobro (revisa montos, caja o stock).');
@@ -1202,7 +1202,7 @@
     if(/(?:muestra|mostrar|ensena|enseña|ver|dame|abre|abrir).*(?:ficha|ficha tecnica|ficha técnica|detalles?)/.test(q) || /ficha.*(?:sensor|repuesto|producto|articulo|aveo|chevrolet)/.test(q)) return {name:'catalog_ficha',args:{query:deriveCatalogQuery(command)}};
     if(/buscar (articulo|producto|repuesto)|buscar en catalogo|buscar repuesto/.test(q)) return {name:'open_item_search',args:{}};
     if(/(abrir|abre|apertura|abrir la).*(caja)/.test(q)) return {name:'open_cash',args:{},confirmationText:'Abrir la caja actual.'};
-    if(/(finaliza|termina|procesa|completa|registra|cobra y cierra).*(venta)|registrar (la )?venta|finalizar (la )?venta/.test(q)&&!/corte/.test(q)) return {name:'finish_sale',args:{},confirmationText:'Cobrar y finalizar la venta actual.'};
+    if(/(finaliza|termina|procesa|completa|registra|cobra|factura|cierra).*(venta)|registrar (la )?venta|finalizar (la )?venta/.test(q)&&!/corte/.test(q)){ const method=/pago movil|movil|móvil/.test(q)?'Pago Móvil':(/transferencia/.test(q)?'Transferencia':(/tarjeta/.test(q)?'Tarjeta':(/cheque/.test(q)?'Cheque':'Efectivo'))); return {name:'finish_sale',args:{method},confirmationText:'Cobrar y finalizar la venta actual mediante '+method+'.'}; }
     if(/(cobra|cobrar|factura|toma|abre).*(pedido)/.test(q)){
       const m=q.match(/(?:pedido|id)\s+([a-z0-9-]{3,})/);
       return {name:'charge_order',args:m?{orderId:m[1]}:{},confirmationText:'Tomar el pedido, cargarlo en el POS y abrir el cobro.'};
