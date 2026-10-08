@@ -380,6 +380,43 @@
     }
   }
 
+  function isAccountsReceivableQuery(text){
+    const q=normalizeLocal(text);
+    return /(cuentas? por cobrar|cxc|cuentas? cobrar|cobrarle a|quien me debe|quienes me deben|deudores|clientes? deben|saldo pendiente.*cliente|pendiente.*cliente)/.test(q);
+  }
+  async function answerAccountsReceivable(){
+    try{
+      const response=await fetch('/api/sifer-data?query=cxc',{cache:'no-store'});
+      if(!response.ok)throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok)throw new Error(data.error||'Consulta no disponible');
+      const items=Array.isArray(data.items)?data.items:[];
+      if(!items.length)return 'Turso confirma que no hay cuentas por cobrar con saldo pendiente.';
+      const detail=items.slice(0,30).map(x=>(x.cliente||x.cliente_id||'Cliente general')+' — '+String(x.numero||'sin documento')+' — saldo '+formatSalesAmount(x.saldo,'USD')).join('; ');
+      return 'Turso confirma '+items.length+' documento'+(items.length===1?'':'s')+' con saldo pendiente por cobrar, por un total de '+formatSalesAmount(data.saldo,'USD')+'. '+detail+(items.length>30?' …':'');
+    }catch{
+      return 'No pude consultar las cuentas por cobrar reales en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
+    }
+  }
+  function isAccountsPayableQuery(text){
+    const q=normalizeLocal(text);
+    return /(cuentas? por pagar|cxp|cuentas? pagar|a quien le debo|a quienes les debo|proveedores? debo|saldo pendiente.*proveedor|pendiente.*proveedor)/.test(q);
+  }
+  async function answerAccountsPayable(){
+    try{
+      const response=await fetch('/api/sifer-data?query=cxp',{cache:'no-store'});
+      if(!response.ok)throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok)throw new Error(data.error||'Consulta no disponible');
+      const items=Array.isArray(data.items)?data.items:[];
+      if(!items.length)return 'Turso confirma que no hay cuentas por pagar con saldo pendiente.';
+      const detail=items.slice(0,30).map(x=>(x.proveedor||x.proveedor_id||'Proveedor')+' — '+String(x.documento||'sin documento')+' — saldo '+formatSalesAmount(x.saldo,'USD')).join('; ');
+      return 'Turso confirma '+items.length+' documento'+(items.length===1?'':'s')+' con saldo pendiente por pagar, por un total de '+formatSalesAmount(data.saldo,'USD')+'. '+detail+(items.length>30?' …':'');
+    }catch{
+      return 'No pude consultar las cuentas por pagar reales en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
+    }
+  }
+
   function isExploreSystemQuery(text){
     const q=normalizeLocal(text);
     return /(explora|explorar|explorate|recorre|recorrer|map(ea|ear)|mapea|mapear|conoce|aprende|explota|reexplora|re-explora).*(sistema|pos|modulos|modulo|botones|acciones|mapa)/.test(q)
@@ -1316,7 +1353,9 @@
       if(isLowStockQuery(command)){
         messages.push({role:'assistant',text:await answerLowStockQuery(command)}); render(); return;
       }
-      if(isInventoryQuery(command)){
+      if(isAccountsReceivableQuery(command)) return {text:await answerAccountsReceivable()};
+    if(isAccountsPayableQuery(command)) return {text:await answerAccountsPayable()};
+    if(isInventoryQuery(command)){
         messages.push({role:'assistant',text:await answerInventoryQuery()}); render(); return;
       }
       if(isTodaySalesQuery(command)){
