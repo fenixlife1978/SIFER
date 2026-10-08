@@ -2,25 +2,25 @@
   const SCHEMA=2;
   const LOCAL_KEY='sifer360_atlas_v2';
   const SLEEP=ms=>new Promise(r=>setTimeout(r,ms));
-  const MAX_BUTTONS=400;
-  const MAX_FIELDS=300;
+  const MAX_BUTTONS=700;
+  const MAX_FIELDS=400;
   let current=null;
   let busy=false;
 
   const MODAL_OPENERS={
     inicio:[['openBCV']],
     pos:[['openItemSearch'],['openClientSearch'],['checkout'],['openDeliveryModal'],['openShipToModal'],['openCustomerClassModal'],['openGiftCardModal']],
-    productos:[['openProduct'],['openRepuestoModal'],['openMasterCatalogSelectorModal']],
-    repuestos:[['openRepuestoModal']],
+    productos:[['openProduct'],['openRepuestoModal'],['openMasterCatalogSelectorModal','producto']],
+    repuestos:[['openRepuestoModal'],['openMasterCatalogSelectorModal','repuesto']],
     compras:[['openPurchase']],
     clientes:[['openClient'],['openClientSearch']],
     proveedores:[['openSupplier']],
     presupuestos:[['openQuote']],
     pedidos:[['nuevoPedido']],
-    usuarios:[['nuevoUsuario'],['nuevaCaja']],
+    usuarios:[['nuevoUsuario']],
     caja:[['showCorteZ']],
     config:[['openCustomerClassModal'],['openDeliveryModal'],['openGiftCardModal'],['openShipToModal']],
-    master_catalog:[['openMasterCatalogSelectorModal']]
+    master_catalog:[['openMasterCatalogSelectorModal','producto']]
   };
 
   function norm(s){
@@ -49,6 +49,8 @@
   }
   function describeField(el){
     const out={tag:el.tagName.toLowerCase(),id:el.id||'',nm:el.name||'',ty:el.type||'',ph:String(el.placeholder||'').slice(0,120),lb:labelOf(el).slice(0,120),ds:el.getAttribute?.('data-sifer')||''};
+    const ch=el.getAttribute?.('onchange')||el.getAttribute?.('oninput')||el.getAttribute?.('onclick')||'';
+    if(ch) out.ch=String(ch).replace(/\s+/g,' ').slice(0,160);
     if(el.tagName.toLowerCase()==='select'){
       const opts=Array.from(el.options||[]);
       out.opts=opts.slice(0,60).map(o=>({v:String(o.value||'').slice(0,80),t:textOf(o)}));
@@ -58,11 +60,32 @@
   }
   function describeButtons(root){
     const els=Array.from(root.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"],a[href]'));
-    return els.filter(el=>textOf(el)||el.id||el.getAttribute?.('data-sifer')||el.getAttribute?.('onclick')).slice(0,MAX_BUTTONS).map(describeButton);
+    const out=[],seen=new Map();
+    for(const el of els){
+      if(!(textOf(el)||el.id||el.getAttribute?.('data-sifer')||el.getAttribute?.('onclick'))) continue;
+      const d=describeButton(el);
+      const key=(d.ds?'ds:'+d.ds:'')+'|'+(d.id?'id:'+d.id:'')+'|'+(d.h?'h:'+d.h:'')+'|'+(d.t||'')+'|'+(d.oc||'');
+      const prev=seen.get(key);
+      if(prev!==undefined){ out[prev].n=(out[prev].n||1)+1; continue; }
+      seen.set(key,out.length);
+      out.push(d);
+      if(out.length>=MAX_BUTTONS) break;
+    }
+    return out;
   }
   function describeFields(root){
     const els=Array.from(root.querySelectorAll('input,select,textarea'));
-    return els.filter(el=>el.id||el.name||el.placeholder||el.getAttribute?.('aria-label')||el.getAttribute?.('data-sifer')).slice(0,MAX_FIELDS).map(describeField);
+    const out=[],seen=new Set();
+    for(const el of els){
+      if(!(el.id||el.name||el.placeholder||el.getAttribute?.('aria-label')||el.getAttribute?.('data-sifer'))) continue;
+      const d=describeField(el);
+      const key=(d.id||'')+'|'+(d.nm||'')+'|'+(d.lb||'')+'|'+(d.ph||'')+'|'+(d.ch||'');
+      if(seen.has(key)) continue;
+      seen.add(key);
+      out.push(d);
+      if(out.length>=MAX_FIELDS) break;
+    }
+    return out;
   }
   function describeTables(root){
     return Array.from(root.querySelectorAll('table')).slice(0,12).map(tb=>({
@@ -87,7 +110,7 @@
     const bar=document.querySelector('.modulebar');
     const menu=document.querySelector('.menubar');
     return {
-      modules:bar?Array.from(bar.querySelectorAll('.module')).map(el=>({k:(el.getAttribute('onclick')||'').match(/go\('([^']+)'\)/)?.[1]||'',t:textOf(el)})).filter(x=>x.k):[],
+      modules:bar?Array.from(bar.querySelectorAll('.module')).map(el=>({k:(el.getAttribute('onclick')||'').match(/go\('([^']+)'\)/)?.[1]||'',t:textOf(el),ds:el.getAttribute('data-sifer')||''})).filter(x=>x.k):[],
       menus:menu?Array.from(menu.querySelectorAll('button')).map(el=>({t:textOf(el),oc:String(el.getAttribute('onclick')||'').slice(0,120)})):[],
       titlebar:Array.from(document.querySelectorAll('.titlebar button,.titlebar .win-icon')).map(el=>({t:textOf(el),h:handlerOf(el)})).filter(x=>x.t||x.h)
     };
@@ -175,11 +198,11 @@
     return null;
   }
 
-  async function openAndCapture(fnName){
+  async function openAndCapture(fnName,arg){
     try{
       const fn=window[fnName];
       if(typeof fn!=='function') return null;
-      fn();
+      fn(arg);
       await SLEEP(340);
       const d=describeModal();
       closeModalSafe();
@@ -209,8 +232,8 @@
   async function captureModals(key,entry){
     const openers=MODAL_OPENERS[key]||[];
     const modals=[];
-    for(const [fnName] of openers){
-      const d=await openAndCapture(fnName);
+    for(const opener of openers){
+      const d=await openAndCapture(opener[0],opener[1]);
       if(d) modals.push(d);
     }
     entry.modals=modals;
@@ -307,6 +330,10 @@
       currentKey:key,
       currentTitle:mod?mod.ti:'',
       index:Object.keys(a.modules).map(k=>({key:k,title:a.modules[k].ti})),
+      summary:Object.keys(a.modules).map(k=>{
+        const m=a.modules[k]||{};
+        return {key:k,title:m.ti,buttons:(m.buttons||[]).slice(0,50).map(b=>b.ds||b.h||b.t).filter(Boolean),modals:(m.modals||[]).map(x=>x.ti)};
+      }),
       menus:a.nav&&a.nav.menus?a.nav.menus.map(m=>m.t):[],
       current:mod,
       exploredAt:a.at

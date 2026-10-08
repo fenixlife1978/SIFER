@@ -190,15 +190,15 @@ function buildPlannerPrompt(command:string, context:any, messages:any[], correct
   const caps=Array.isArray(context.capabilities)?context.capabilities:[];
   const atlas=(context.systemMap&&context.systemMap.atlas)||null;
   const parts=[
-    budgetJson('ATLAS_VERIFICADO', atlas, 16000),
+    budgetJson('ATLAS_VERIFICADO', atlas, 24000),
     budgetJson('MEMORIA_PERSISTENTE', context.memory, 6000),
     budgetJson('ESTADO_READ_ONLY', context.readOnlyData, 9000),
     budgetJson('ACCION_EN_CURSO', context.actionState, 3000),
-    budgetJson('MAPA_BOTONES', (context.systemMap&&context.systemMap.buttons)||null, 14000),
-    budgetJson('MAPA_CAMPOS', (context.systemMap&&context.systemMap.fields)||null, 12000),
-    budgetJson('DIALOGOS', (context.systemMap&&context.systemMap.dialogs)||null, 4000),
+    budgetJson('MAPA_BOTONES', (context.systemMap&&context.systemMap.buttons)||null, 10000),
+    budgetJson('MAPA_CAMPOS', (context.systemMap&&context.systemMap.fields)||null, 8000),
+    budgetJson('DIALOGOS', (context.systemMap&&context.systemMap.dialogs)||null, 3000),
     budgetJson('MODULOS_APRENDIDOS', (context.learnedMap&&(context.learnedMap.__index||Object.keys(context.learnedMap).slice(0,40)))||null, 2000)
-  ].filter(Boolean).join('\n').slice(0, 62000);
+  ].filter(Boolean).join('\n').slice(0, 66000);
 
   return `Eres el CEREBRO de SIFER, un asistente inteligente integrado a un POS automotriz venezolano. Tu función no es hacer coincidencia de palabras: debes comprender la intención humana, usar el contexto disponible, razonar qué quiere conseguir el usuario y convertirlo en una operación segura y ejecutable.
 
@@ -214,6 +214,13 @@ INTERPRETACIÓN HUMANA:
 - Distingue búsqueda de consulta de inventario: si el usuario dice "búscalo" puede significar buscar en el Catálogo Máster cuando ya indicó que no existe localmente.
 - Distingue "consultar" de "incorporar": buscar un artículo no lo agrega; "importa", "incorpora", "añádelo a mi inventario" sí solicita incorporación.
 - Si el usuario pide una operación compuesta, conserva todos sus parámetros al convertirla en una acción.
+
+LENGUAJE NATURAL SIN REGLAS RÍGIDAS:
+- No exijas palabras clave exactas: cualquier forma de pedirlo en español (coloquial, abreviado, con faltas de ortografía) debe mapearse a la misma capacidad.
+- "agrega/añade/pon/mete N unidades del artículo X" o "ponme N X" = add_to_cart con quantity=N y query=X. Si el artículo no está en el inventario local, add_to_cart lo importa automáticamente desde el Catálogo Máster; también puedes encadenar search_catalog → import_catalog_item → add_to_cart.
+- Si piden agregar unidades sin indicar cantidad, devuelve una pregunta breve (answer) pidiendo la cantidad antes de ejecutar.
+- "importa/incrementa existencias de X con N unidades" = import_catalog_item (no confundir con agregar al carrito).
+- "busca/encontrar/ubicar X" solo consulta; nunca modifica inventario ni carrito.
 
 RAZONAMIENTO:
 1. Determina el objetivo final, no solo las palabras literales.
