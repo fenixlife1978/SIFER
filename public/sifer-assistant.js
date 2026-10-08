@@ -1316,13 +1316,13 @@
         messages.push({role:'assistant',text:result}); render(); return;
       }
       if(isLowStockQuery(command)){
-        messages.push({role:'assistant',text:answerLowStockQuery(command)}); render(); return;
+        messages.push({role:'assistant',text:await answerLowStockQuery(command)}); render(); return;
       }
       if(isInventoryQuery(command)){
-        messages.push({role:'assistant',text:answerInventoryQuery()}); render(); return;
+        messages.push({role:'assistant',text:await answerInventoryQuery()}); render(); return;
       }
       if(isTodaySalesQuery(command)){
-        messages.push({role:'assistant',text:answerTodaySales()}); render(); return;
+        messages.push({role:'assistant',text:await answerTodaySales()}); render(); return;
       }
       // Las consultas de referencias cruzadas/equivalencias son consultas de datos:
       // deben resolverse SIEMPRE de forma determinística antes del planificador.
