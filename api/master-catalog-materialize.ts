@@ -2,12 +2,25 @@ import { createClient } from '@libsql/client';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 
+function verifyAdminSession(req:any){
+  const secret=String(process.env.CRON_SECRET||'').trim();
+  if(!secret)return false;
+  const token=String(req.cookies?.sifer_admin_session||'');
+  const [value,sig]=token.split('.');
+  if(!value||!sig||!value.startsWith('admin:'))return false;
+  const exp=Number(value.slice(6));
+  if(!Number.isFinite(exp)||exp<Date.now())return false;
+  const expected=crypto.createHmac('sha256',secret).update(value).digest('base64url');
+  try{return crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected));}catch{return false;}
+}
 function authOk(req:any){
   const secret=String(process.env.CRON_SECRET||'').trim();
   if(!secret)return false;
   const auth=String(req.headers?.authorization||'');
-  return auth===`Bearer ${secret}`;
+  if(auth===`Bearer ${secret}`)return true;
+  return verifyAdminSession(req);
 }
 
 async function loadGenerator(req:any){
