@@ -623,6 +623,25 @@
     })).catch(() => {});
   }
 
+  let persistentMasterSearch = new Map();
+
+  async function fetchPersistentMasterSearch(query='', category='Todos', page=1, pageSize=20) {
+    try {
+      const p=new URLSearchParams({q:String(query||''),category:String(category||'Todos'),page:String(page),pageSize:String(pageSize)});
+      const r=await fetch('/api/master-catalog-search?'+p.toString(),{credentials:'same-origin',cache:'no-store'});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok || !d.ok || !d.persistentSource) return null;
+      const key=[query,category,page,pageSize].join('|');
+      const result={items:Array.isArray(d.items)?d.items:[],totalMatched:Number(d.totalMatched)||0,totalCatalog:Number(d.totalCatalog)||0,page:Number(d.page)||page,totalPages:Number(d.totalPages)||1,persistentSource:true};
+      persistentMasterSearch.set(key,result);
+      return result;
+    } catch { return null; }
+  }
+
+  function getPersistentMasterSearch(query='', category='Todos', page=1, pageSize=20) {
+    return persistentMasterSearch.get([query,category,page,pageSize].join('|')) || null;
+  }
+
   function queryMasterCatalog(query = '', category = 'Todos', page = 1, pageSize = ITEMS_PER_PAGE) {
     const rawQ = String(query || '').trim();
     const results = [];
@@ -856,12 +875,14 @@
   let searchTimeout = null;
   function debounceMasterModalSearch(val) {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
+    searchTimeout = setTimeout(async () => {
       currentSelectorQuery = val;
       currentSelectorPage = 1;
       const c = document.getElementById('masterSearchResultsContainer');
-      if (c) c.innerHTML = renderMasterSelectorResultsHTML();
-    }, 150);
+      if (!c) return;
+      await fetchPersistentMasterSearch(currentSelectorQuery,currentSelectorCategory,1,20);
+      c.innerHTML = renderMasterSelectorResultsHTML();
+    }, 180);
   }
 
   function setMasterSelectorCategory(cat, btn) {
@@ -876,7 +897,7 @@
   }
 
   function renderMasterSelectorResultsHTML() {
-    const res = queryMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20);
+    const res = getPersistentMasterSearch(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20) || queryMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20);
 
     if (!res.items.length) {
       return `<div style="padding:24px;text-align:center;color:#666">
@@ -1256,12 +1277,13 @@
     masterViewSearchQuery = val;
     activeMasterPage = 1;
     clearTimeout(masterViewSearchTimeout);
-    masterViewSearchTimeout = setTimeout(() => {
+    masterViewSearchTimeout = setTimeout(async () => {
       const container = document.getElementById('masterExplorerTableContainer');
-      if (container) {
-        container.innerHTML = renderMasterExplorerTableContainerHTML();
-      }
-    }, 120);
+      if (!container) return;
+      const persistent = await fetchPersistentMasterSearch(masterViewSearchQuery, activeMasterCategory, 1, ITEMS_PER_PAGE);
+      if (persistent) container.innerHTML = renderMasterExplorerTableContainerHTML();
+      else container.innerHTML = renderMasterExplorerTableContainerHTML();
+    }, 180);
   }
 
   function setMasterViewCategory(cat, btn) {
@@ -1287,7 +1309,7 @@
   }
 
   function renderMasterExplorerTableContainerHTML() {
-    const res = queryMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE);
+    const res = getPersistentMasterSearch(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE) || queryMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE);
     const myProductCodes = new Set(db.productos.map(p => (p.codigo || '').toLowerCase()));
     const myRepuestoSKUs = new Set(getRepuestos().map(r => (r.sku || '').toLowerCase()));
 
@@ -1391,7 +1413,12 @@
   }
 
   function masterCatalogView() {
-    setTimeout(()=>checkMasterCatalogMaterialization(),0);
+    setTimeout(async ()=>{
+      await checkMasterCatalogMaterialization();
+      await fetchPersistentMasterSearch(masterViewSearchQuery,activeMasterCategory,activeMasterPage,ITEMS_PER_PAGE);
+      const container=document.getElementById('masterExplorerTableContainer');
+      if(container) container.innerHTML=renderMasterExplorerTableContainerHTML();
+    },0);
     return `
     <div class="pagehead">
       <div>
