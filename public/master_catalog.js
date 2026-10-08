@@ -1359,15 +1359,7 @@
     const setStatus=(s)=>{if(statusEl)statusEl.textContent=s;};
     if(btn)btn.disabled=true;
     try{
-      let r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
-      if(r.status===401){
-        const secret=prompt('Acceso administrativo\\n\\nIntroduzca la clave administrativa configurada en CRON_SECRET para habilitar la materialización por lotes:');
-        if(!secret){setStatus('Materialización cancelada.');return;}
-        const u=await fetch('/api/master-catalog-materialize',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'unlock',secret})});
-        const ud=await u.json().catch(()=>({}));
-        if(!u.ok||!ud.ok)throw new Error(ud.error||'No fue posible validar la credencial administrativa.');
-        r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
-      }
+      const r=await fetch('/api/master-catalog-materialize',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:'{}',cache:'no-store'});
       const data=await r.json().catch(()=>({}));
       if(!r.ok||!data.ok)throw new Error(data.error||'No fue posible ejecutar el lote.');
       const pct=data.totalCatalog?Math.min(100,(Number(data.cursor||0)/Number(data.totalCatalog))*100):0;
@@ -1385,10 +1377,10 @@
     const statusEl=document.getElementById('masterMaterializeStatus');
     try{
       const r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
-      if(r.status===401){if(statusEl)statusEl.textContent='Materialización administrativa bloqueada. Pulsa el botón para desbloquear.';return;}
+      if(r.status===401){if(statusEl)statusEl.textContent='Materialización no disponible.';return;}
       const d=await r.json().catch(()=>({}));
       if(!d.ok){if(statusEl)statusEl.textContent='Estado no disponible: '+String(d.error||'error');return;}
-      if(statusEl)statusEl.textContent=d.done?'✅ Catálogo completamente materializado en Turso.':`Materialización: ${Number(d.cursor||0).toLocaleString()} / ${Number(d.totalCatalog||0).toLocaleString()} · Pulsa el botón para continuar.`;
+      if(statusEl)statusEl.textContent=d.done?'✅ Catálogo completamente materializado en Turso.':`Materialización: ${Number(d.cursor||0).toLocaleString()} / ${Number(d.totalCatalog||0).toLocaleString()} · Pulsa nuevamente para continuar.`;
     }catch{}
   }
 
