@@ -321,28 +321,17 @@
       || /cuantos productos tenemos/.test(q);
   }
 
-  function answerInventoryQuery(){
+  async function answerInventoryQuery(){
     try{
-      const raw=localStorage.getItem('sifer360_v1');
-      const db=raw?JSON.parse(raw):{};
-      const productos=Array.isArray(db.productos)?db.productos:[];
-      const repuestos=typeof getRepuestos==='function'?(getRepuestos()||[]):[];
-      const all=[...productos,...repuestos];
-      const seen=new Set();
-      const unique=all.filter(p=>{
-        const key=String(p.id||p.codigo||p.sku||p.nombre||Math.random());
-        if(seen.has(key)) return false;
-        seen.add(key); return true;
-      });
-      const conExistencia=unique.filter(p=>Number(p.stock||0)>0);
-      const unidades=conExistencia.reduce((s,p)=>s+Number(p.stock||0),0);
-      const sinExistencia=unique.length-conExistencia.length;
-      return 'En el inventario hay '+unique.length+' artículos registrados. '+conExistencia.length+' tienen existencia disponible, con '+unidades+' unidades en total. '+sinExistencia+' están sin existencia.';
+      const response=await fetch('/api/sifer-data?query=inventory',{cache:'no-store'});
+      if(!response.ok) throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok) throw new Error(data.error||'Consulta no disponible');
+      return 'Turso confirma '+Number(data.count||0)+' artículos registrados. '+Number(data.available||0)+' tienen existencia disponible, con '+Number(data.units||0)+' unidades en total.';
     }catch{
-      return 'No pude consultar el inventario real del POS en este momento.';
+      return 'No pude consultar el inventario real en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
     }
   }
-
   function extractStockThreshold(text){
     const q=normalizeLocal(text).replace(/,/g,'.');
     const patterns=[
