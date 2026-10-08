@@ -50,6 +50,9 @@ export default async function handler(req:any,res:any){
 
     if(req.method!=='POST') return res.status(405).json({ok:false,error:'Method not allowed'});
     const products=Array.isArray(req.body?.products)?req.body.products:[];
+    const existing=await db.execute({sql:'SELECT COUNT(*) AS count FROM sifer_products',args:[]});
+    const existingCount=Number(existing.rows?.[0]?.count||0);
+    if(existingCount>0)return res.status(409).json({ok:false,conflict:true,error:'El inventario de Turso ya está inicializado; no se permite sobrescribirlo mediante la carga inicial.',count:existingCount});
     const now=new Date().toISOString();
     const stmts:any[]=[];
     for(const raw of products){
