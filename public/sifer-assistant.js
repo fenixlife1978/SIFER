@@ -1005,7 +1005,7 @@
     const raw=String(command||'').trim();
     const q=normalizeLocal(raw);
     const removeFiller=s=>String(s||'')
-      .replace(/\b(?:sifer|por favor|please|busca|buscar|buscame|búscame|buscalo|búscalo|importa|importe|importalo|importar|incorpora|incorpore|incorporalo|incorporar|agrega|agregar|agregue|añade|anade|añadir|anadir|añadelo|añádelo|anada|añada|mete|meta|echale|pon|ciertas|cierto|ciertos|ciertas|unas|unos|varios|algunos|algunas|restantes|a mi inventario|en mi inventario|a la tienda|a mi tienda|desde el catalogo|del catalogo|catalogo|catalog|unidades|uds|piezas|articulo|articulos|del|de la)\b/gi,' ')
+      .replace(/\b(?:sifer|por favor|please|busca|buscar|buscame|búscame|buscalo|búscalo|muestra|mostrar|muéstrame|muestrame|dame|dime|quiero|referencia|referencias|equivalencia|equivalencias|importa|importe|importalo|importar|incorpora|incorpore|incorporalo|incorporar|agrega|agregar|agregue|añade|anade|añadir|anadir|añadelo|añádelo|anada|añada|mete|meta|echale|pon|ciertas|cierto|ciertos|ciertas|unas|unos|varios|algunos|algunas|restantes|a mi inventario|en mi inventario|a la tienda|a mi tienda|desde el catalogo|del catalogo|catalogo|catalog|unidades|uds|piezas|articulo|articulos|del|de la)\b/gi,' ')
       .replace(/\s+/g,' ').trim();
     const direct=removeFiller(q)
       .replace(/\ben\s*importalo\b|\benimportalo\b|\bimportalo\b/gi,' ')
@@ -1026,10 +1026,10 @@
       if(typeof queryMasterCatalog!=='function') return null;
       const query=deriveCatalogQuery(command);
       if(!query) return null;
+      const q=normalizeLocal(query);
       const variants=[query];
       if(q.includes('correa') && q.includes('tiempo') && q.includes('aveo')) variants.push('correa de tiempo aveo');
       if(q.includes('correa') && q.includes('aveo')) variants.push('correa aveo');
-      const q=normalizeLocal(query);
       if(q.includes('sensor') && q.includes('oxigen')) variants.push('sensor oxigeno aveo');
       if(q.includes('aveo') && q.includes('sensor')) variants.push('sensor aveo');
       const unique=[...new Set(variants.filter(Boolean))];

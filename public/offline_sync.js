@@ -63,14 +63,19 @@
       if(!remote.ok)return {ok:false,status:remote.status};
       const current=await remote.json();
       if(!current.ok)return {ok:false,error:current.error||'Consulta remota no disponible'};
-      if(Array.isArray(current.products)&&current.products.length>0)return {ok:true,count:current.products.length,bootstrapped:false};
       const local=await loadStateValue();
       const products=Array.isArray(local?.productos)?clone(local.productos):[];
-      if(!products.length)return {ok:true,count:0,bootstrapped:false};
-      const push=await fetch('/api/turso-products',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({products})});
+      const reps=typeof global.getRepuestos==='function'&&Array.isArray(global.getRepuestos())?clone(global.getRepuestos()):[];
+      const all=[...products,...reps];
+      if(!all.length)return {ok:true,count:Array.isArray(current.products)?current.products.length:0,bootstrapped:false};
+      const remoteIds=new Set((Array.isArray(current.products)?current.products:[]).map(p=>String(p.id)));
+      const missing=all.filter(p=>p?.id&&!remoteIds.has(String(p.id)));
+      if(!missing.length)return {ok:true,count:Array.isArray(current.products)?current.products.length:0,bootstrapped:false};
+      const operationId='bootstrap-missing-inventory-'+missing.map(p=>String(p.id)).join('-').slice(0,180);
+      const push=await fetch('/api/turso-sync',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({operationId,type:'products-inventory-snapshot',createdAt:new Date().toISOString(),payload:{products:missing}})});
       const data=await push.json().catch(()=>({}));
-      if(!push.ok||!data.ok)throw new Error(data.error||'No se pudo inicializar el inventario en Turso');
-      return {ok:true,count:products.length,bootstrapped:true};
+      if(!push.ok||!data.ok)throw new Error(data.error||'No se pudo completar la migración del inventario faltante a Turso');
+      return {ok:true,count:(Array.isArray(current.products)?current.products.length:0)+missing.length,bootstrapped:true,added:missing.length};
     }catch(e){return {ok:false,error:String(e?.message||e)}}
   }
 
@@ -84,16 +89,26 @@
       const data=await response.json();
       if(!data.ok||!Array.isArray(data.products)||!data.products.length)return {ok:true,count:0};
       const local=await loadStateValue();
-      if(!local||!Array.isArray(local.productos))return {ok:true,count:data.products.length};
+      if(!local)return {ok:true,count:data.products.length};
       const byId=new Map(data.products.map(p=>[String(p.id),p]));
       let changed=false;
       const merged=clone(local);
-      merged.productos=local.productos.map(p=>{
-        const remote=byId.get(String(p.id));
-        if(!remote)return p;
-        changed=true;
-        return {...p,...remote,stock:Number(remote.stock??p.stock??0),min:Number(remote.min??p.min??0)};
-      });
+      const mergeList=(list=[])=>{
+        const out=[]; const seen=new Set();
+        for(const p of list){
+          const remote=byId.get(String(p?.id));
+          const next=remote?{...p,...remote,stock:Number(remote.stock??p.stock??0),min:Number(remote.min??p.min??0)}:p;
+          if(remote)changed=true;
+          out.push(next); seen.add(String(p?.id));
+        }
+        for(const remote of data.products){
+          const id=String(remote?.id||'');
+          if(id&&!seen.has(id)){out.push({...remote,stock:Number(remote.stock??0),min:Number(remote.min??0)});changed=true;}
+        }
+        return out;
+      };
+      merged.productos=mergeList(Array.isArray(local.productos)?local.productos:[]);
+      if(Array.isArray(local.repuestos)) merged.repuestos=mergeList(local.repuestos);
       if(changed){
         lastSnapshot=clone(merged);
         await saveState(merged);
@@ -123,7 +138,8 @@
   }
   async function persist(state,reason){
     await saveState(state);
-    await enqueue('products-inventory-snapshot',{reason,products:Array.isArray(state?.productos)?clone(state.productos):[],at:new Date().toISOString()});
+    const snapshotProducts=[...(Array.isArray(state?.productos)?clone(state.productos):[]),...(Array.isArray(state?.repuestos)?clone(state.repuestos):(typeof global.getRepuestos==='function'&&Array.isArray(global.getRepuestos())?clone(global.getRepuestos()):[]))];
+    await enqueue('products-inventory-snapshot',{reason,products:snapshotProducts,at:new Date().toISOString()});
     if(reason==='order-created' && state?.pedidos?.length){
       const order=state.pedidos[state.pedidos.length-1];
       if(order) await enqueue('order-created',{order:clone(order),at:new Date().toISOString()});
