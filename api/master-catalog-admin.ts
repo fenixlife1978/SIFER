@@ -20,7 +20,8 @@ export default async function handler(req:any,res:any){
   if(req.method==='POST'){
     const body=req.body||{};
     if(String(body.action||'')!=='unlock') return res.status(400).json({ok:false,error:'Acción no válida'});
-    if(bearer(req)!==s) return res.status(401).json({ok:false,error:'Credencial administrativa inválida'});
+    const provided=bearer(req)||String(body.secret||'').trim();
+    if(provided!==s) return res.status(401).json({ok:false,error:'Credencial administrativa inválida'});
     const exp=Date.now()+60*60*1000;
     res.setHeader('Set-Cookie',`sifer_admin_session=${makeToken(exp)}; Path=/; Max-Age=3600; HttpOnly; Secure; SameSite=Lax`);
     return res.status(200).json({ok:true,expiresAt:new Date(exp).toISOString()});
