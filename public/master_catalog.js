@@ -1409,5 +1409,15 @@
   global.getMasterItemByIndex = getMasterItemByIndex;
   global.getMasterCatalogCount = () => TOTAL_VIRTUAL_CATALOG_COUNT;
   global.TOTAL_VIRTUAL_CATALOG_COUNT = TOTAL_VIRTUAL_CATALOG_COUNT;
+  // Fuente estructural del Catálogo Máster para consumidores servidor/Turso.
+  // Permite reconstruir combinaciones exactas sin muestreo ni generación aleatoria.
+  global.getMasterCatalogSourceManifest = () => ({
+    vehicles: VEHICLES_IN_VENEZUELA,
+    templates: AUTO_PART_TEMPLATES,
+    sparePartBrands: SPARE_PART_BRANDS,
+    lubricantBrands: LUBRICANT_BRANDS_VENEZUELA,
+    lubricantTypes: LUBRICANT_TYPES,
+    presentations: PRESENTATIONS
+  });
 
 })(window);
