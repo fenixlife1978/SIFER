@@ -604,17 +604,47 @@
 
     // Nunca recorrer millones de registros virtuales en el hilo principal.
     // Esto evita congelar el POS mientras el usuario escribe o cambia de página.
-    let step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
-    if (rawQ && (category !== 'Todos')) {
-      step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
+    // Cuando la consulta menciona un vehículo, buscar de forma determinística
+    // dentro de sus combinaciones de repuesto evita que el muestreo se salte
+    // artículos válidos como "correa de tiempo Aveo" o "sensor oxígeno Aveo".
+    const qNorm = normalizeSearchText(rawQ);
+    const qTokens = qNorm.split(/\s+/).filter(Boolean);
+    const matchedVehicles = rawQ ? VEHICLES_IN_VENEZUELA.filter(v => {
+      const hay = normalizeSearchText(v.marca + ' ' + v.modelo + ' ' + v.anios + ' ' + v.motor);
+      const hits = qTokens.filter(t => t.length >= 3 && hay.includes(t));
+      return hits.length >= Math.min(2, qTokens.length);
+    }) : [];
+
+    const candidateIndices = [];
+    if (matchedVehicles.length && AUTO_PART_TEMPLATES.length && SPARE_PART_BRANDS.length) {
+      const seen = new Set();
+      for (const vehicle of matchedVehicles.slice(0, 6)) {
+        const vIdx = VEHICLES_IN_VENEZUELA.indexOf(vehicle);
+        for (let tIdx = 0; tIdx < AUTO_PART_TEMPLATES.length; tIdx++) {
+          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
+            const idx = 120000 + vIdx
+              + VEHICLES_IN_VENEZUELA.length * tIdx
+              + VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length * bIdx;
+            if (idx < TOTAL_VIRTUAL_CATALOG_COUNT && !seen.has(idx)) {
+              seen.add(idx);
+              candidateIndices.push(idx);
+            }
+          }
+        }
+      }
     }
+
+    const step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
+    const indices = candidateIndices.length
+      ? candidateIndices
+      : Array.from({length: maxScanLimit}, (_, n) => n * step).filter(i => i < TOTAL_VIRTUAL_CATALOG_COUNT);
 
     let matchCount = 0;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
 
-    for (let i = 0, scanned = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1200 && scanned < maxScanLimit; i += step, scanned++) {
-      const item = getMasterItemByIndex(i);
+    for (let scanned = 0; scanned < indices.length && matchCount < 1200; scanned++) {
+      const item = getMasterItemByIndex(indices[scanned]);
 
       let matchesCat = true;
       if (category !== 'Todos') {
