@@ -1048,8 +1048,8 @@
       // una correa o un sensor cuando el usuario pidió bujías, aunque puntúe alto por Aveo.
       const familyText=item=>normalizeLocal([item.nombre,item.categoria,item.subcategoria,item.descripcionTecnica,item.especificaciones].filter(Boolean).join(' '));
       let familyFilter=null;
-      if(/\\b(?:bujia|bujias|spark plug|spark plugs)\\b/.test(q)){
-        familyFilter=item=>/\\b(?:bujia|bujias|spark plug|spark plugs)\\b/.test(familyText(item));
+      if(/\b(?:bujia|bujias|spark plug|spark plugs)\b/.test(q)){
+        familyFilter=item=>/\b(?:bujia|bujias|spark plug|spark plugs)\b/.test(familyText(item));
       }else if(/sensor/.test(q)&&/oxigen/.test(q)){
         familyFilter=item=>/sensor/.test(familyText(item))&&/oxigen/.test(familyText(item))&&!/bujia|correa de tiempo|correa de distribucion/.test(familyText(item));
       }else if(/correa/.test(q)&&/(tiempo|distribucion)/.test(q)){
