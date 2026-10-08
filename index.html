@@ -859,84 +859,106 @@ function guardarUsuario(){const n=document.getElementById('newUserName').value.t
 function nuevaCaja(){const n=prompt('Nombre de la nueva caja');if(!n?.trim())return;const maxId=(db.cajas||[]).reduce((m,x)=>{const n=Number(String(x.id||'').replace(/^CAJA-/i,''));return Number.isFinite(n)?Math.max(m,n):m},0);const seq=Number(db.seq?.caja);const num=Number.isFinite(seq)&&seq>maxId?Math.floor(seq):maxId+1;db.seq=db.seq||{};db.seq.caja=num+1;const idCaja='CAJA-'+String(num).padStart(2,'0');if(db.cajas.some(x=>x.id===idCaja))return toast('El identificador de caja ya existe');db.cajas.push({id:idCaja,nombre:n.trim(),abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1});save();renderView();toast(idCaja+' creada')}
 function comprasView(){
  const compras=db.compras||[];
- const total=compras.reduce((s,x)=>s+Number(x.total||0),0),pagado=compras.reduce((s,x)=>s+Number(x.pagado||0),0),saldo=compras.reduce((s,x)=>s+Number(x.saldo||0),0);
- return listPage('Entradas por compra','Control de abastecimiento, costos, inventario y cuentas por pagar',`<button class="btn primary" onclick="openPurchase()">➕ Nueva entrada por compra</button>`,
- `<div class="cards"><div class="card">Compras<b>${compras.length}</b><span>documentos registrados</span></div><div class="card">Total facturado<b>${money(total)}</b><span>valor de entradas</span></div><div class="card">Pagado<b>${money(pagado)}</b><span>cancelado</span></div><div class="card">Saldo CxP<b>${money(saldo)}</b><span>pendiente</span></div></div>
- <div class="panel"><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Factura</th><th>Proveedor</th><th>Condición</th><th>Ítems</th><th>Total</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead><tbody>
- ${compras.slice().reverse().map(x=>`<tr>
- <td>${esc(String(x.fecha||'').slice(0,10))}</td><td>${esc(x.numero||'S/N')}</td><td>${esc(x.proveedor||'')}</td>
- <td><span class="badge ${x.tipo==='contado'?'ok':x.tipo==='mixto'?'info':'warn'}">${esc(x.tipo||'credito')}</span>${x.fechaVencimiento?'<br><small>Vence '+esc(x.fechaVencimiento)+'</small>':''}</td>
- <td class="num">${Array.isArray(x.lineas)?x.lineas.length:0}</td><td class="num">${money(x.total)}</td><td class="num">${money(x.pagado)}</td><td class="num">${money(x.saldo)}</td>
- <td><button class="btn" onclick="showPurchaseDetail('${x.numero}')">Ver detalle</button></td></tr>`).join('')||'<tr><td colspan="9">No hay entradas por compra.</td></tr>'}
- </tbody></table></div></div>`);
+ const total=compras.reduce((s,x)=>s+Number(x.total||0),0),pagado=compras.reduce((s,x)=>s+Number(x.pagado||0),0),saldo=compras.reduce((s,x)=>s+Number(x.saldo||x.pendiente||0),0);
+ return listPage('Compras','Entradas por compra — proveedores, costos, inventario, IVA y CxP',\`<button class="btn primary" onclick="openPurchase()">➕ Nueva Compra</button>\`,
+ \`<div class="cards"><div class="card">Compras<b>\${compras.length}</b><span>documentos</span></div><div class="card">Total<b>\${money(total)}</b><span>compras registradas</span></div><div class="card">Pagado<b>\${money(pagado)}</b><span>cancelado</span></div><div class="card">Pendiente CxP<b>\${money(saldo)}</b><span>por pagar</span></div></div>
+ <div class="panel"><div class="panelbody"><table><thead><tr><th>N°</th><th>Factura proveedor</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Tipo</th><th>Pagado</th><th>Pendiente</th><th>Estado</th><th></th></tr></thead><tbody>
+ \${compras.slice().reverse().map(x=>\`<tr><td>\${esc(x.numero||x.nro||'S/N')}</td><td>\${esc(x.nroFactura||'—')}</td><td>\${esc(String(x.fecha||'').slice(0,10))}</td><td>\${esc(x.proveedor||'')}</td><td class="num">\${money(x.total)}</td><td>\${esc(x.tipo||'Contado')}</td><td class="num">\${money(x.pagado||0)}</td><td class="num">\${money(x.saldo??x.pendiente??0)}</td><td>\${esc(x.estatus||'Recibida')}</td><td><button class="btn" onclick="showPurchaseDetail('\${esc(x.numero||x.nro||'')}')">Ver detalle</button></td></tr>\`).join('')||'<tr><td colspan="10">No hay compras registradas.</td></tr>'}
+ </tbody></table></div></div>\`);
 }
-function openPurchase(){
- window.purchaseDraft={proveedorId:'',numeroFactura:'',fecha:new Date().toISOString().slice(0,10),tasa:Number(bcvData().rate)||1,condicion:'contado',diasPlazo:30,pagadoUSD:0,pagadoBS:0,lineas:[]};
- const p=db.productos[0];
- openModal('Registro de entradas por compra',`<div class="formgrid">
- <div class="field"><label>Proveedor</label><select id="buySupplier" onchange="purchaseDraft.proveedorId=this.value">${db.proveedores.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select></div>
- <div class="field"><label>Número de factura</label><input id="buyInvoice" placeholder="Número de factura" oninput="purchaseDraft.numeroFactura=this.value"></div>
- <div class="field"><label>Fecha de compra</label><input id="buyDate" type="date" value="${window.purchaseDraft.fecha}" onchange="purchaseDraft.fecha=this.value"></div>
- <div class="field"><label>Tasa de compra (Bs/USD)</label><input id="buyRate" type="number" step=".0001" min=".0001" value="${window.purchaseDraft.tasa}" oninput="purchaseDraft.tasa=Number(this.value)||1;refreshPurchaseDraft()"></div>
- <div class="field"><label>Condición</label><select id="buyType" onchange="purchaseDraft.condicion=this.value;refreshPurchaseDraft()"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="mixto">Mixto</option></select></div>
- <div class="field" id="buyTermWrap" style="display:none"><label>Días de plazo</label><input id="buyDays" type="number" min="0" step="1" value="30" oninput="purchaseDraft.diasPlazo=Number(this.value)||0;refreshPurchaseDraft()"></div><div class="field" id="buyPaidUSDWrap" style="display:none"><label>Monto pagado USD</label><input id="buyPaidUSD" type="number" min="0" step=".0001" value="0" oninput="purchaseDraft.pagadoUSD=Math.max(0,Number(this.value)||0);purchaseDraft.pagadoBS=purchaseDraft.pagadoUSD*(Number(purchaseDraft.tasa)||1);const e=document.getElementById('buyPaidBS');if(e)e.value=purchaseDraft.pagadoBS.toFixed(2);refreshPurchaseDraft()"></div><div class="field" id="buyPaidBSWrap" style="display:none"><label>Monto pagado Bs</label><input id="buyPaidBS" type="number" min="0" step=".01" value="0" oninput="purchaseDraft.pagadoBS=Math.max(0,Number(this.value)||0);purchaseDraft.pagadoUSD=purchaseDraft.pagadoBS/(Number(purchaseDraft.tasa)||1);const e=document.getElementById('buyPaidUSD');if(e)e.value=purchaseDraft.pagadoUSD.toFixed(4);refreshPurchaseDraft()"></div>
- </div>
- <div class="panel" style="margin-top:12px"><div class="panelhead">Agregar artículos / bienes facturados</div><div class="panelbody">
- <div class="formgrid"><div class="field"><label>Artículo</label><select id="buyProduct">${db.productos.map(x=>`<option value="${x.id}">${esc(x.nombre)} — costo ${money(x.costo||0)}</option>`).join('')}</select></div>
- <div class="field"><label>Cantidad</label><input id="buyQty" type="number" min="0.01" step="0.01" value="1"></div>
- <div class="field"><label>Costo unitario USD</label><input id="buyCost" type="number" min="0" step=".0001" value="${p?.costo||0}"></div>
- <div class="field" style="align-self:end"><button class="btn" onclick="addPurchaseLine()">➕ Agregar artículo</button></div></div>
- <div id="purchaseDraftTable"></div></div></div>
- <div id="purchaseTotals" class="cards" style="margin-top:12px"></div>`,
- `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="purchase-save" onclick="savePurchase()">Procesar e importar inventario</button>`);
- const first=db.proveedores[0]; if(first)window.purchaseDraft.proveedorId=first.id;
- refreshPurchaseDraft();
+function purchaseIvaRate(){return Number(db.config?.impuesto??7)||0}
+function purchaseBcvRate(){return Number(bcvData()?.rate||db.config?.bcv?.rate||1)||1}
+function purchaseRate(){const v=Number(document.getElementById('buyRate')?.value||0);return v>0?v:purchaseBcvRate()}
+function purchaseCurrency(){return document.getElementById('buyCurrency')?.value||'USDT'}
+function purchaseDecimals(){return Number(document.getElementById('buyDecimals')?.value||2)}
+function purchaseFmt(n){return Number(n||0).toLocaleString('es-VE',{minimumFractionDigits:purchaseDecimals(),maximumFractionDigits:purchaseDecimals()})}
+function purchaseCostBCV(costo){const tasa=purchaseRate(),bcv=purchaseBcvRate();return bcv>0?Number(costo||0)*tasa/bcv:Number(costo||0)}
+function purchaseFindProduct(q){q=String(q||'').trim().toLowerCase();if(!q)return null;return (db.productos||[]).find(p=>String(p.codigo||'').toLowerCase()===q)|| (db.productos||[]).find(p=>String(p.nombre||'').toLowerCase().includes(q)||String(p.codigo||'').toLowerCase().includes(q))}
+function purchaseSearchProducts(){
+ const q=document.getElementById('buyProductSearch')?.value||'',box=document.getElementById('buyProductResults');if(!box)return;
+ const words=q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+ const rows=(db.productos||[]).filter(p=>{const s=[p.codigo,p.nombre,p.categoria,p.marca,p.unidad].map(x=>String(x||'').toLowerCase());return !q.trim()||words.every(w=>s.some(v=>v.includes(w)))}).slice(0,12);
+ box.innerHTML=rows.map((p,i)=>'<button type="button" class="btn" style="display:block;width:100%;text-align:left" onclick="selectPurchaseProduct('+i+')">'+esc(p.codigo)+' — '+esc(p.nombre)+'</button>').join('')||'<div style="padding:8px">Sin coincidencias</div>';
+ window._purchaseMatches=rows;box.style.display=rows.length?'block':'none';
 }
-function refreshPurchaseDraft(){
- const d=window.purchaseDraft;if(!d)return;
- const wrap=document.getElementById('buyTermWrap');if(wrap)wrap.style.display=d.condicion==='contado'?'none':'block';const pw=document.getElementById('buyPaidUSDWrap'),pb=document.getElementById('buyPaidBSWrap');if(pw)pw.style.display=d.condicion==='mixto'?'block':'none';if(pb)pb.style.display=d.condicion==='mixto'?'block':'none';
- const total=d.lineas.reduce((s,x)=>s+Number(x.subtotal||0),0);
- if(d.condicion==='contado'){d.pagadoUSD=total;d.pagadoBS=total*(Number(d.tasa)||1)}
- if(d.condicion==='credito'){d.pagadoUSD=0;d.pagadoBS=0}
- const saldo=Math.max(0,total-Number(d.pagadoUSD||0));
- const due=d.condicion==='contado'?d.fecha:new Date(new Date(d.fecha+'T00:00:00').getTime()+Number(d.diasPlazo||0)*86400000).toISOString().slice(0,10);
- const t=document.getElementById('purchaseDraftTable');if(t)t.innerHTML='<table><thead><tr><th>Producto</th><th>Cant.</th><th>Costo unit.</th><th>Subtotal</th><th></th></tr></thead><tbody>'+d.lineas.map((x,i)=>'<tr><td>'+esc(x.nombre)+'</td><td class="num">'+x.cantidad+'</td><td class="num">'+money(x.costoUnitarioUSD)+'</td><td class="num">'+money(x.subtotal)+'</td><td><button class="btn" onclick="removePurchaseLine('+i+')">✖</button></td></tr>').join('')+(d.lineas.length?'':'<tr><td colspan="5">No hay artículos agregados.</td></tr>')+'</tbody></table>';
- const totals=document.getElementById('purchaseTotals');if(totals)totals.innerHTML='<div class="card">Total factura<b>'+money(total)+'</b><span>Equiv. Bs '+(total*(Number(d.tasa)||1)).toFixed(2)+'</span></div><div class="card">Pagado USD<b>'+money(d.pagadoUSD)+'</b><span>Pagado Bs '+Number(d.pagadoBS||0).toFixed(2)+'</span></div><div class="card">Saldo CxP<b>'+money(saldo)+'</b><span>'+((d.condicion==='contado')?'Sin saldo':('Vence '+due))+'</span></div><div class="card">Tasa<b>'+Number(d.tasa||0).toFixed(4)+'</b><span>Bs/USD</span></div>';
+function selectPurchaseProduct(i){const p=window._purchaseMatches?.[i];if(!p)return;document.getElementById('buyProductSearch').value=p.codigo;document.getElementById('buyCost').value=Number(p.costo||0).toFixed(2);document.getElementById('buyPrevCost').value=purchaseFmt(p.costo||0);refreshPurchaseLine();document.getElementById('buyProductResults').style.display='none'}
+function refreshPurchaseLine(){
+ const p=purchaseFindProduct(document.getElementById('buyProductSearch')?.value),qty=Number(document.getElementById('buyQty')?.value||1),cost=Number(document.getElementById('buyCost')?.value||0),prev=Number(p?.costo||0),stock=Number(p?.stock||0),pond=qty>0&&stock+qty>0?((prev*stock)+(purchaseCostBCV(cost)*qty))/(stock+qty):purchaseCostBCV(cost);
+ const a=document.getElementById('buyPrevCost'),b=document.getElementById('buyWeightedCost');if(a)a.value=p?purchaseFmt(prev):'';if(b)b.value=p?purchaseFmt(pond):'';
 }
 function addPurchaseLine(){
- const d=window.purchaseDraft;if(!d)return;
- const pid=document.getElementById('buyProduct').value,q=Number(document.getElementById('buyQty').value)||0,cost=Number(document.getElementById('buyCost').value)||0,p=db.productos.find(x=>x.id===pid);
- if(!p||q<=0||cost<0)return toast('Artículo, cantidad o costo inválido');
- d.lineas.push({productoId:pid,nombre:p.nombre,cantidad:q,costoUnitarioUSD:cost,subtotal:q*cost});
- refreshPurchaseDraft();
+ const d=window.purchaseDraft;if(!d)return;const p=purchaseFindProduct(document.getElementById('buyProductSearch')?.value),qty=Number(document.getElementById('buyQty')?.value||0),cost=Number(document.getElementById('buyCost')?.value||0),exento=!!document.getElementById('buyExempt')?.checked;
+ if(!p)return toast('Seleccione un producto válido del catálogo');
+ if(qty<=0)return toast('La cantidad debe ser mayor que cero');
+ if(cost<=0)return toast('Ingrese un costo unitario mayor que cero');
+ const tasa=purchaseRate(),bcv=purchaseBcvRate(),base=cost*tasa,ivaPct=exento?0:purchaseIvaRate(),subtotal=base*qty,iva=subtotal*ivaPct/100;
+ d.lineas.push({productoId:p.id,codigo:p.codigo,nombre:p.nombre,cantidad:qty,costo:cost,costoUnitarioUSD:cost,costoVES:base,costoBCV:purchaseCostBCV(cost),exentoIva:exento,ivaPct,subtotal:subtotal,iva,totalLinea:subtotal+iva});
+ renderPurchaseDraft();document.getElementById('buyProductSearch').value='';document.getElementById('buyQty').value='1';document.getElementById('buyCost').value='';document.getElementById('buyExempt').checked=false;document.getElementById('buyPrevCost').value='';document.getElementById('buyWeightedCost').value='';document.getElementById('buyProductSearch').focus();
 }
-function removePurchaseLine(i){if(window.purchaseDraft)window.purchaseDraft.lineas.splice(i,1);refreshPurchaseDraft()}
+function removePurchaseLine(i){window.purchaseDraft?.lineas.splice(i,1);renderPurchaseDraft()}
+function togglePurchaseExempt(i,v){const d=window.purchaseDraft?.lineas?.[i];if(!d)return;d.exentoIva=!!v;d.ivaPct=v?0:purchaseIvaRate();d.iva=d.subtotal*d.ivaPct/100;d.totalLinea=d.subtotal+d.iva;renderPurchaseDraft()}
+function changePurchaseType(){const t=document.getElementById('buyType').value;document.getElementById('buyCreditWrap').style.display=(t==='Credito'||t==='Mixto')?'block':'none';document.getElementById('buyMixedWrap').style.display=t==='Mixto'?'block':'none';renderPurchaseDraft()}
+function recalcPurchaseMixed(src){const d=window.purchaseDraft,tasa=purchaseRate();let bs=Number(document.getElementById('buyPaidBs')?.value||0),usd=Number(document.getElementById('buyPaidUsd')?.value||0);if(src==='bs')usd=tasa>0?bs/tasa:0;else if(src==='usd')bs=usd*tasa;if(document.getElementById('buyPaidBs'))document.getElementById('buyPaidBs').value=bs.toFixed(2);if(document.getElementById('buyPaidUsd'))document.getElementById('buyPaidUsd').value=usd.toFixed(4);d.pagadoBS=bs;d.pagadoUSDProv=usd;renderPurchaseDraft()}
+function renderPurchaseDraft(){
+ const d=window.purchaseDraft;if(!d)return;const tasa=purchaseRate(),bcv=purchaseBcvRate(),sub=d.lineas.reduce((s,x)=>s+Number(x.subtotal||0),0),iva=d.lineas.reduce((s,x)=>s+Number(x.iva||0),0),total=sub+iva,type=document.getElementById('buyType')?.value||'Contado';
+ let paid=type==='Contado'?total:type==='Mixto'?Number(d.pagadoBS||0):0;if(type==='Mixto'&&document.getElementById('buyPaidBs')?.value==='')paid=0;
+ const pending=Math.max(0,total-paid),paidProv=tasa>0?paid/tasa:0,paidBcv=bcv>0?paid/bcv:0,pendingBcv=bcv>0?pending/bcv:0;
+ d.pagadoBS=paid;d.pagadoUSDProv=paidProv;
+ const body=document.getElementById('purchaseDraftTable');if(body)body.innerHTML='<table><thead><tr><th>Código</th><th>Producto</th><th>Cant.</th><th>Costo Prov. USD</th><th>Costo Base USD BCV</th><th>Exento IVA</th><th>Subtotal Bs.</th><th>IVA</th><th>Total</th><th></th></tr></thead><tbody>'+d.lineas.map((x,i)=>'<tr><td>'+esc(x.codigo)+'</td><td>'+esc(x.nombre)+'</td><td class="num">'+purchaseFmt(x.cantidad)+'</td><td class="num">'+purchaseFmt(x.costo)+'</td><td class="num">'+purchaseFmt(x.costoBCV)+'</td><td><input type="checkbox" '+(x.exentoIva?'checked':'')+' onchange="togglePurchaseExempt('+i+',this.checked)"></td><td class="num">'+purchaseFmt(x.subtotal)+'</td><td class="num">'+purchaseFmt(x.iva)+'</td><td class="num">'+purchaseFmt(x.totalLinea)+'</td><td><button class="btn" onclick="removePurchaseLine('+i+')">✖</button></td></tr>').join('')+(d.lineas.length?'':'<tr><td colspan="10">Sin productos agregados</td></tr>')+'</tbody></table>';
+ const totals=document.getElementById('purchaseTotals');if(totals)totals.innerHTML='<div class="card">Total Factura (Bs.)<b>'+purchaseFmt(total)+'</b></div><div class="card">Total Factura (USD Prov.)<b>'+purchaseFmt(tasa>0?total/tasa:0)+' $</b></div><div class="card">Total Factura (USD BCV)<b>'+purchaseFmt(bcv>0?total/bcv:0)+' $</b></div><div class="card">Total Pagado (USD Prov.)<b>'+purchaseFmt(paidProv)+' $</b><span>Bs. '+purchaseFmt(paid)+'</span></div><div class="card">Total Pendiente (Crédito) USD<b>'+purchaseFmt(pendingBcv)+' $</b><span>Bs. '+purchaseFmt(pending)+'</span></div><div class="card">Total IVA<b>'+purchaseFmt(iva)+'</b></div>';
+}
+function openPurchase(){
+ const rate=purchaseBcvRate();window.purchaseDraft={numero:id('CMP','compra'),fecha:new Date().toISOString().slice(0,10),proveedorId:'',proveedor:'',numeroFactura:'',observaciones:'',moneda:'USDT',tasaBCV:rate,tasaCompra:rate,costeo:'promedio',tipo:'Contado',diasCredito:30,pagadoBS:0,pagadoUSDProv:0,lineas:[]};
+ openModal('Nueva Compra',\`<div class="formgrid">
+ <div class="field"><label>N°</label><input id="buyNumber" readonly value="\${window.purchaseDraft.numero}"></div>
+ <div class="field"><label>Fecha</label><input id="buyDate" type="date" value="\${window.purchaseDraft.fecha}"></div>
+ <div class="field"><label>Nro. de Factura</label><input id="buyInvoice" placeholder="N° de factura del proveedor"></div>
+ <div class="field"><label>Proveedor</label><select id="buySupplier"><option value="">Seleccione un proveedor</option>\${(db.proveedores||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('')}</select></div>
+ <div class="field"><label>Tasa BCV del día</label><input id="buyBcv" type="number" step=".0001" value="\${rate}" oninput="renderPurchaseDraft()"></div>
+ <div class="field"><label>Moneda de Compra</label><select id="buyCurrency" onchange="if(this.value==='BCV'){document.getElementById('buyRate').value=document.getElementById('buyBcv').value}else if(!Number(document.getElementById('buyRate').value))document.getElementById('buyRate').value=document.getElementById('buyBcv').value;renderPurchaseDraft()"><option value="USDT">USDT / Paralelo</option><option value="BCV">BCV</option></select></div>
+ <div class="field"><label>Valor Tasa de Compra</label><input id="buyRate" type="number" step=".0001" value="\${rate}" oninput="renderPurchaseDraft()"></div>
+ <div class="field"><label>Costeo Inventario</label><select id="buyCosting"><option value="promedio">Promedio Ponderado</option><option value="ultima">Última Compra</option></select></div>
+ <div class="field"><label>Observaciones</label><input id="buyObs"></div>
+ </div>
+ <div class="panel" style="margin-top:12px"><div class="panelhead">2. Tipo de Compra y Condiciones de Pago</div><div class="formgrid">
+ <div class="field"><label>Tipo de Compra</label><select id="buyType" onchange="changePurchaseType()"><option value="Contado">Contado</option><option value="Credito">Crédito</option><option value="Mixto">Mixto</option></select></div>
+ <div class="field" id="buyCreditWrap" style="display:none"><label>Días de Crédito</label><input id="buyDays" type="number" min="0" value="30" oninput="renderPurchaseDraft()"></div>
+ </div>
+ <div id="buyMixedWrap" style="display:none"><div class="formgrid"><div class="field"><label>Monto Pagado (Bs.)</label><input id="buyPaidBs" type="number" min="0" step=".01" oninput="recalcPurchaseMixed('bs')"></div><div class="field"><label>Monto Pagado (USD Prov.)</label><input id="buyPaidUsd" type="number" min="0" step=".0001" oninput="recalcPurchaseMixed('usd')"></div></div></div></div>
+ <div class="panel" style="margin-top:12px"><div class="panelhead">3. Agregar Producto</div><div class="formgrid">
+ <div class="field"><label>Producto (código o palabra clave)</label><input id="buyProductSearch" autocomplete="off" placeholder="Código, nombre o palabra clave" oninput="purchaseSearchProducts()" onkeydown="if(event.key==='Enter'){event.preventDefault();if(window._purchaseMatches?.length)selectPurchaseProduct(0);else addPurchaseLine()}"><div id="buyProductResults" style="display:none"></div></div>
+ <div class="field"><label>Cantidad</label><input id="buyQty" type="number" min=".01" step=".01" value="1" oninput="refreshPurchaseLine()"></div>
+ <div class="field"><label>Costo Unit. Proveedor (USD)</label><input id="buyCost" type="number" min="0" step=".0001" placeholder="En la moneda de compra" oninput="refreshPurchaseLine()"></div>
+ <div class="field"><label>Exento de IVA</label><label><input type="checkbox" id="buyExempt" onchange="refreshPurchaseLine()"> Sí, esta línea no paga I.V.A.</label></div>
+ <div class="field"><label>Precio Anterior</label><input id="buyPrevCost" readonly></div>
+ <div class="field"><label>Precio Ponderado Actual</label><input id="buyWeightedCost" readonly></div>
+ <div class="field"><label>Decimales</label><select id="buyDecimals" onchange="renderPurchaseDraft()"><option value="2">2 decimales</option><option value="3">3 decimales</option><option value="4">4 decimales</option></select></div>
+ <div class="field" style="align-self:end"><button class="btn" onclick="addPurchaseLine()">➕ Agregar a Compra (Enter)</button></div>
+ </div></div>
+ <div id="purchaseDraftTable" class="panel" style="margin-top:12px"></div><div id="purchaseTotals" class="cards" style="margin-top:12px"></div>\`,
+ \`<button class="btn" onclick="closeModal()">✖ Cancelar</button><button class="btn primary" onclick="savePurchase()">💾 Guardar Compra (Recibida)</button>\`);
+ const s=document.getElementById('buySupplier');if(s&&db.proveedores?.length){s.value=db.proveedores[0].id||'';window.purchaseDraft.proveedorId=s.value;window.purchaseDraft.proveedor=db.proveedores[0].nombre||''}
+ renderPurchaseDraft();
+}
 function showPurchaseDetail(numero){
- const x=(db.compras||[]).find(c=>c.numero===numero);if(!x)return;
- const items=Array.isArray(x.lineas)?x.lineas:[];
- openModal('Detalle de entrada por compra',`<div class="formgrid"><div class="field"><label>Proveedor</label><input readonly value="${esc(x.proveedor)}"></div><div class="field"><label>Factura</label><input readonly value="${esc(x.numero)}"></div><div class="field"><label>Fecha</label><input readonly value="${esc(String(x.fecha||'').slice(0,10))}"></div><div class="field"><label>Condición</label><input readonly value="${esc(x.tipo||'credito')}"></div><div class="field"><label>Tasa compra</label><input readonly value="${Number(x.tasaCompra||0).toFixed(4)} Bs/USD"></div><div class="field"><label>Vencimiento</label><input readonly value="${esc(x.fechaVencimiento||'—')}"></div></div><div class="panel" style="margin-top:12px"><div class="panelbody"><table><thead><tr><th>Artículo</th><th>Cantidad</th><th>Costo unit. USD</th><th>Subtotal USD</th></tr></thead><tbody>${items.map(i=>`<tr><td>${esc(i.nombre||i.id)}</td><td class="num">${i.qty||i.cantidad}</td><td class="num">${money(i.costo||i.costoUnitarioUSD)}</td><td class="num">${money((i.qty||i.cantidad)*(i.costo||i.costoUnitarioUSD))}</td></tr>`).join('')}</tbody></table></div></div><div class="cards" style="margin-top:12px"><div class="card">Total<b>${money(x.total)}</b></div><div class="card">Pagado<b>${money(x.pagado)}</b></div><div class="card">Saldo<b>${money(x.saldo)}</b></div></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);
+ const x=(db.compras||[]).find(c=>(c.numero||c.nro)===numero);if(!x)return;const items=Array.isArray(x.lineas)?x.lineas:[];
+ const tasa=Number(x.purchase_rate_value||x.tasaCompra||1),bcv=Number(x.bcv_rate_at_purchase||x.tasaBCV||purchaseBcvRate()),total=Number(x.total||0),paid=Number(x.pagado||0),pending=Number(x.saldo??x.pendiente??0);
+ openModal('Detalle de compra',\`<div class="formgrid"><div class="field"><label>N°</label><input readonly value="\${esc(x.numero||x.nro)}"></div><div class="field"><label>Factura proveedor</label><input readonly value="\${esc(x.nroFactura||x.numeroFactura||'')}"></div><div class="field"><label>Fecha</label><input readonly value="\${esc(String(x.fecha||'').slice(0,10))}"></div><div class="field"><label>Proveedor</label><input readonly value="\${esc(x.proveedor||'')}"></div><div class="field"><label>Moneda</label><input readonly value="\${esc(x.cost_supplier_currency||x.moneda||'')}"></div><div class="field"><label>Tasa compra</label><input readonly value="\${tasa.toFixed(4)}"></div><div class="field"><label>Costeo</label><input readonly value="\${esc(x.costeo||'promedio')}"></div><div class="field"><label>Tipo</label><input readonly value="\${esc(x.tipo||'Contado')}"></div><div class="field"><label>Días crédito</label><input readonly value="\${x.diasCredito||x.diasPlazo||0}"></div><div class="field"><label>Observaciones</label><input readonly value="\${esc(x.observaciones||'')}"></div></div><div class="panel" style="margin-top:12px"><div class="panelbody"><table><thead><tr><th>Código</th><th>Producto</th><th>Cant.</th><th>Costo Prov.</th><th>Costo BCV</th><th>Exento IVA</th><th>Subtotal</th><th>IVA</th><th>Total</th></tr></thead><tbody>\${items.map(i=>\`<tr><td>\${esc(i.codigo||i.id||'')}</td><td>\${esc(i.nombre||i.descripcion||'')}</td><td class="num">\${purchaseFmt(i.cantidad||i.qty)}</td><td class="num">\${purchaseFmt(i.costo||i.costoUnitarioUSD)}</td><td class="num">\${purchaseFmt(i.costoBCV||0)}</td><td>\${i.exentoIva?'Sí':'No'}</td><td class="num">\${purchaseFmt(i.subtotal||0)}</td><td class="num">\${purchaseFmt(i.iva||0)}</td><td class="num">\${purchaseFmt(i.totalLinea||0)}</td></tr>\`).join('')}</tbody></table></div></div><div class="cards" style="margin-top:12px"><div class="card">Total factura<b>\${money(total)}</b><span>USD BCV \${purchaseFmt(bcv?total/bcv:0)} · USD Prov. \${purchaseFmt(tasa?total/tasa:0)}</span></div><div class="card">Pagado<b>\${money(paid)}</b></div><div class="card">Pendiente<b>\${money(pending)}</b></div></div>\`,\`<button class="btn" onclick="closeModal()">Cerrar</button>\`);
 }
 function savePurchase(){
- const d=window.purchaseDraft;if(!d)return;
- const sid=d.proveedorId||document.getElementById('buySupplier')?.value,pidLines=d.lineas||[],s=db.proveedores.find(x=>x.id===sid);
- const total=pidLines.reduce((sum,x)=>sum+Number(x.subtotal||0),0),paid=Number(d.pagadoUSD||0),saldo=Math.max(0,total-paid);
- if(!s)return toast('Seleccione un proveedor');
- if(!d.numeroFactura.trim())return toast('Ingrese el número de factura');
- if(!d.fecha)return toast('Ingrese la fecha de compra');
- if(!pidLines.length)return toast('Agregue al menos un artículo');
+ const d=window.purchaseDraft;if(!d)return;const sid=document.getElementById('buySupplier')?.value,s=(db.proveedores||[]).find(x=>x.id===sid),type=document.getElementById('buyType')?.value||'Contado',total=d.lineas.reduce((sum,x)=>sum+Number(x.totalLinea||0),0),paid=type==='Contado'?total:type==='Mixto'?Number(d.pagadoBS||0):0,pending=Math.max(0,total-paid);
+ if(!s)return toast('Seleccione el proveedor');
+ if(!document.getElementById('buyInvoice').value.trim())return toast('Ingrese el número de factura');
+ if(!document.getElementById('buyDate').value)return toast('Ingrese la fecha de compra');
+ if(!d.lineas.length)return toast('Agregue al menos un producto');
  if(total<=0)return toast('El total de la compra debe ser mayor que cero');
- if(d.condicion==='contado'&&!cajaActual().abierta)return toast('Abra la caja antes de registrar una compra de contado');
- if(d.condicion==='mixto'&&paid<=0)return toast('En una compra mixta indique un monto pagado');
- if((d.condicion==='credito'||d.condicion==='mixto')&&Number(d.diasPlazo||0)<0)return toast('El plazo no puede ser negativo');
- const fechaVencimiento=d.condicion==='contado'?d.fecha:new Date(new Date(d.fecha+'T00:00:00').getTime()+Number(d.diasPlazo||0)*86400000).toISOString().slice(0,10);
- const num=id('CMP','compra');
- pidLines.forEach(line=>{const p=db.productos.find(x=>x.id===line.productoId);if(p){p.stock=(Number(p.stock)||0)+Number(line.cantidad||0);p.costo=Number(line.costoUnitarioUSD)||p.costo||0;}});
- const x={numero:num,fecha:d.fecha,fechaHora:fmt(),proveedor:s.nombre,proveedorId:sid,total,pagado:paid,saldo,tipo:d.condicion,lineas:pidLines.map(i=>({id:i.productoId,qty:i.cantidad,costo:i.costoUnitarioUSD,nombre:i.nombre,subtotal:i.subtotal})),tasaCompra:Number(d.tasa)||1,diasPlazo:Number(d.diasPlazo||0),fechaVencimiento,eqBs:total*(Number(d.tasa)||1),pagadoBS:Number(d.pagadoBS||paid*(Number(d.tasa)||1))};
- db.compras.push(x);
- if(saldo){db.cxp.push({id:id('CXP','cxp'),fecha:d.fecha,documento:num,proveedorId:sid,proveedor:s.nombre,total,saldo,estado:'Pendiente',diasPlazo:Number(d.diasPlazo||0),fechaVencimiento,items:x.lineas.map(i=>({productoId:i.id,nombre:i.nombre,cantidad:i.qty,costoUnitarioUSD:i.costo,subtotalUSD:i.subtotal}))});s.saldo=(s.saldo||0)+saldo}
- if(paid>0)cajaActual().saldo-=paid;
- db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:num,detalle:s.nombre,monto:paid?-paid:0});
- save('purchase-created');delete window.purchaseDraft;closeModal();renderView();toast(num+' registrada e inventario actualizado');
+ if(type==='Contado'&&!cajaActual().abierta)return toast('Abra la caja antes de registrar una compra de contado');
+ if(type==='Mixto'&&paid<=0)return toast('Indique el monto pagado de la compra mixta');
+ const fecha=document.getElementById('buyDate').value,days=type==='Contado'?0:Number(document.getElementById('buyDays')?.value||30),due=type==='Contado'?fecha:new Date(new Date(fecha+'T00:00:00').getTime()+days*86400000).toISOString().slice(0,10),tasa=purchaseRate(),bcv=purchaseBcvRate();
+ const x={numero:d.numero,fecha,fechaHora:fmt(),proveedor:s.nombre,proveedorId:s.id,nroFactura:document.getElementById('buyInvoice').value.trim(),observaciones:document.getElementById('buyObs').value.trim(),cost_supplier_currency:purchaseCurrency(),purchase_rate_type:purchaseCurrency(),purchase_rate_value:tasa,bcv_rate_at_purchase:bcv,totalUSDProv:tasa>0?total/tasa:0,totalUSDBcv:bcv>0?total/bcv:0,pagadoUSDProv:tasa>0?paid/tasa:0,pagadoUSDBcv:bcv>0?paid/bcv:0,pendienteUSD:bcv>0?pending/bcv:0,costeo:document.getElementById('buyCosting').value,tipo,diasCredito:days,pagos:type==='Mixto'?[{moneda:'Bs',monto:Number(document.getElementById('buyPaidBs').value||0)},{moneda:'USD',monto:Number(document.getElementById('buyPaidUsd').value||0)}].filter(p=>p.monto>0):[],pagado:paid,pendiente:pending,total,subtotal:d.lineas.reduce((sum,l)=>sum+Number(l.subtotal||0),0),impuesto:d.lineas.reduce((sum,l)=>sum+Number(l.iva||0),0),estatus:'Recibida',lineas:d.lineas.map(l=>({...l}))};
+ d.lineas.forEach(l=>{const p=db.productos.find(p=>p.id===l.productoId);if(p){const old=Number(p.stock||0),base=Number(l.costoBCV||l.costo||0);p.stock=old+Number(l.cantidad||0);if(base>0)p.costo=document.getElementById('buyCosting').value==='promedio'&&old>0?((Number(p.costo||0)*old)+(base*Number(l.cantidad||0)))/p.stock:base}});
+ db.compras=db.compras||[];db.compras.push(x);if(pending>0){db.cxp=db.cxp||[];db.cxp.push({id:id('CXP','cxp'),fecha,documento:d.numero,proveedorId:s.id,proveedor:s.nombre,total,saldo:pending,estado:'Pendiente',diasPlazo:days,fechaVencimiento:due,items:x.lineas.map(l=>({productoId:l.productoId,nombre:l.nombre,cantidad:l.cantidad,costoUnitarioUSD:l.costo,subtotalUSD:l.subtotal}))});s.saldo=(Number(s.saldo)||0)+pending}
+ if(paid>0)cajaActual().saldo-=paid;db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:d.numero,detalle:s.nombre,monto:-paid});save('purchase-created');delete window.purchaseDraft;closeModal();renderView();toast(d.numero+' registrada y recibida');
 }
 function clientesView(){return listPage('Clientes','Maestro de clientes, crédito y estados de cuenta',`<button class="btn primary" onclick="openClient()">➕ Nuevo cliente</button>`,`<div class="searchbar"><input placeholder="Buscar cliente o documento" oninput="filterTable(this,'clientsTable')"></div><div class="panel"><div class="panelbody"><table id="clientsTable"><thead><tr><th>Cliente</th><th>Documento</th><th>Teléfono</th><th>Límite</th><th>Saldo CxC</th><th></th></tr></thead><tbody>${db.clientes.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${esc(c.telefono)}</td><td>${money(c.limite)}</td><td>${money(c.saldo||0)}</td><td><button class="btn" onclick="openClient('${c.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`)}
 function openClient(cid){let c=cid?db.clientes.find(x=>x.id===cid):{id:'',nombre:'',documento:'',telefono:'',email:'',direccion:'',limite:0,saldo:0};openModal(cid?'Editar cliente':'Nuevo cliente',`<div class="formgrid"><div class="field"><label>Nombre / Razón social</label><input id="cNombre" value="${esc(c.nombre)}"></div><div class="field"><label>Documento</label><input id="cDoc" value="${esc(c.documento)}"></div><div class="field"><label>Teléfono</label><input id="cTel" value="${esc(c.telefono)}"></div><div class="field"><label>Correo</label><input id="cEmail" value="${esc(c.email)}"></div><div class="field"><label>Límite de crédito</label><input id="cLim" type="number" step=".01" value="${c.limite}"></div><div class="field full"><label>Dirección</label><textarea id="cDir">${esc(c.direccion)}</textarea></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="client-save" onclick="saveClient('${cid||''}')">Guardar</button>`)}
