@@ -676,6 +676,7 @@ function renderCatalogTab(){
               <td style="text-align:center">
                 <div style="display:flex;gap:3px;justify-content:center">
                   <button class="btn" style="padding:2px 5px;font-size:10px" onclick="openRepuestoDetail('${r.id}')" title="Ver ficha técnica">👁️</button>
+                  <button class="btn" style="padding:2px 5px;font-size:10px" onclick="openRepuestoCrossReference('${r.id}')" title="Ver referencias cruzadas y equivalencias">🔗</button>
                   <button class="btn" style="padding:2px 5px;font-size:10px" onclick="openRepuestoModal('${r.id}')" title="Editar">✎</button>
                   <button class="btn green" style="padding:2px 5px;font-size:10px" onclick="venderRepuestoEnPOS('${r.id}')" title="Cargar y vender en POS">🛒</button>
                 </div>
