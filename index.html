@@ -879,7 +879,7 @@ function openPurchase(){
  <div class="field"><label>Fecha de compra</label><input id="buyDate" type="date" value="${window.purchaseDraft.fecha}" onchange="purchaseDraft.fecha=this.value"></div>
  <div class="field"><label>Tasa de compra (Bs/USD)</label><input id="buyRate" type="number" step=".0001" min=".0001" value="${window.purchaseDraft.tasa}" oninput="purchaseDraft.tasa=Number(this.value)||1;refreshPurchaseDraft()"></div>
  <div class="field"><label>Condición</label><select id="buyType" onchange="purchaseDraft.condicion=this.value;refreshPurchaseDraft()"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="mixto">Mixto</option></select></div>
- <div class="field" id="buyTermWrap" style="display:none"><label>Días de plazo</label><input id="buyDays" type="number" min="0" step="1" value="30" oninput="purchaseDraft.diasPlazo=Number(this.value)||0;refreshPurchaseDraft()"></div>
+ <div class="field" id="buyTermWrap" style="display:none"><label>Días de plazo</label><input id="buyDays" type="number" min="0" step="1" value="30" oninput="purchaseDraft.diasPlazo=Number(this.value)||0;refreshPurchaseDraft()"></div><div class="field" id="buyPaidUSDWrap" style="display:none"><label>Monto pagado USD</label><input id="buyPaidUSD" type="number" min="0" step=".0001" value="0" oninput="purchaseDraft.pagadoUSD=Math.max(0,Number(this.value)||0);purchaseDraft.pagadoBS=purchaseDraft.pagadoUSD*(Number(purchaseDraft.tasa)||1);const e=document.getElementById('buyPaidBS');if(e)e.value=purchaseDraft.pagadoBS.toFixed(2);refreshPurchaseDraft()"></div><div class="field" id="buyPaidBSWrap" style="display:none"><label>Monto pagado Bs</label><input id="buyPaidBS" type="number" min="0" step=".01" value="0" oninput="purchaseDraft.pagadoBS=Math.max(0,Number(this.value)||0);purchaseDraft.pagadoUSD=purchaseDraft.pagadoBS/(Number(purchaseDraft.tasa)||1);const e=document.getElementById('buyPaidUSD');if(e)e.value=purchaseDraft.pagadoUSD.toFixed(4);refreshPurchaseDraft()"></div>
  </div>
  <div class="panel" style="margin-top:12px"><div class="panelhead">Agregar artículos / bienes facturados</div><div class="panelbody">
  <div class="formgrid"><div class="field"><label>Artículo</label><select id="buyProduct">${db.productos.map(x=>`<option value="${x.id}">${esc(x.nombre)} — costo ${money(x.costo||0)}</option>`).join('')}</select></div>
@@ -894,7 +894,7 @@ function openPurchase(){
 }
 function refreshPurchaseDraft(){
  const d=window.purchaseDraft;if(!d)return;
- const wrap=document.getElementById('buyTermWrap');if(wrap)wrap.style.display=d.condicion==='contado'?'none':'block';
+ const wrap=document.getElementById('buyTermWrap');if(wrap)wrap.style.display=d.condicion==='contado'?'none':'block';const pw=document.getElementById('buyPaidUSDWrap'),pb=document.getElementById('buyPaidBSWrap');if(pw)pw.style.display=d.condicion==='mixto'?'block':'none';if(pb)pb.style.display=d.condicion==='mixto'?'block':'none';
  const total=d.lineas.reduce((s,x)=>s+Number(x.subtotal||0),0);
  if(d.condicion==='contado'){d.pagadoUSD=total;d.pagadoBS=total*(Number(d.tasa)||1)}
  if(d.condicion==='credito'){d.pagadoUSD=0;d.pagadoBS=0}
