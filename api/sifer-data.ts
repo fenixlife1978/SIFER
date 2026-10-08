@@ -13,7 +13,7 @@ export default async function handler(req:any,res:any){
         subtotal REAL NOT NULL DEFAULT 0,impuesto REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,
         saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,caja_id TEXT,operador_id TEXT,created_at TEXT NOT NULL
       )`,args:[]});
-      const r=await db.execute({sql:`SELECT numero,fecha,total,pagado,saldo,tipo,estado FROM sifer_sales
+      const r=await db.execute({sql:`SELECT numero,fecha,total,pagado,saldo,tipo FROM sifer_sales
         WHERE date(substr(fecha,1,10),'localtime')=date('now','localtime')
         ORDER BY created_at DESC`,args:[]});
       const sales=r.rows.filter((x:any)=>String(x.tipo||'').toLowerCase()!=='anulada');
