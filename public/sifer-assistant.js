@@ -1043,7 +1043,20 @@
         const hay=normalizeLocal([item.nombre,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,item.subcategoria,item.descripcionTecnica,item.especificaciones].filter(Boolean).join(' '));
         return toks.reduce((s,t)=>s+(hay.includes(t)?1:0),0);
       };
-      return [...new Map(candidates.map(x=>[x.masterId,x])).values()].sort((a,b)=>score(b)-score(a))[0]||null;
+      const uniqueItems=[...new Map(candidates.map(x=>[x.masterId||x.codigoOEM||x.nombre,x])).values()];
+      // La referencia cruzada debe respetar la familia solicitada; nunca devolver
+      // una correa o un sensor cuando el usuario pidió bujías, aunque puntúe alto por Aveo.
+      const familyText=item=>normalizeLocal([item.nombre,item.categoria,item.subcategoria,item.descripcionTecnica,item.especificaciones].filter(Boolean).join(' '));
+      let familyFilter=null;
+      if(/\\b(?:bujia|bujias|spark plug|spark plugs)\\b/.test(q)){
+        familyFilter=item=>/\\b(?:bujia|bujias|spark plug|spark plugs)\\b/.test(familyText(item));
+      }else if(/sensor/.test(q)&&/oxigen/.test(q)){
+        familyFilter=item=>/sensor/.test(familyText(item))&&/oxigen/.test(familyText(item))&&!/bujia|correa de tiempo|correa de distribucion/.test(familyText(item));
+      }else if(/correa/.test(q)&&/(tiempo|distribucion)/.test(q)){
+        familyFilter=item=>/correa/.test(familyText(item))&&/(tiempo|distribucion)/.test(familyText(item))&&!/bujia|sensor de oxigen/.test(familyText(item));
+      }
+      const eligible=familyFilter?uniqueItems.filter(familyFilter):uniqueItems;
+      return eligible.sort((a,b)=>score(b)-score(a))[0]||null;
     }catch{return null;}
   }
 
