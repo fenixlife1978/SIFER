@@ -59,6 +59,11 @@ export default async function handler(req:any,res:any){
     const state:any={};
     for(const r of meta.rows as any[])state[String(r.key)]=String(r.value);
     let cursor=Math.max(0,Number(state.materialize_cursor)||0);
+    // GET solo consulta el estado; únicamente POST modifica/materializa el catálogo.
+    if(req.method==='GET'){
+      const persistent=await db.execute({sql:'SELECT COUNT(*) AS n FROM sifer_master_catalog',args:[]});
+      return res.status(200).json({ok:true,done:cursor>=gen.count,cursor,totalCatalog:gen.count,status:state.materialize_status||'pending',persistentTotal:Number(persistent.rows?.[0]?.n)||0});
+    }
     if(cursor>=gen.count){
       return res.status(200).json({ok:true,done:true,cursor,totalCatalog:gen.count,inserted:0,status:'complete'});
     }
