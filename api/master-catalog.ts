@@ -68,7 +68,22 @@ function normalize(s:any){
 }
 
 function tokens(s:any){
-  return normalize(s).split(/\s+/).filter(Boolean);
+  const raw=normalize(s).split(/\s+/).filter(Boolean);
+  const aliases:any={
+    banda:'correa',
+    belt:'correa',
+    timing:'tiempo',
+    distribution:'distribucion',
+    distribucion:'distribucion',
+    kit:'kit'
+  };
+  const out:string[]=[];
+  for(const token of raw){
+    out.push(token);
+    const alias=aliases[token];
+    if(alias && !out.includes(alias)) out.push(alias);
+  }
+  return out;
 }
 
 function score(text:string,q:string){
