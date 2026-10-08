@@ -1406,6 +1406,8 @@
   global.setMasterViewCategory = setMasterViewCategory;
   global.changeMasterViewPage = changeMasterViewPage;
   global.queryMasterCatalog = queryMasterCatalog;
+  global.getMasterItemByIndex = getMasterItemByIndex;
+  global.getMasterCatalogCount = () => TOTAL_VIRTUAL_CATALOG_COUNT;
   global.TOTAL_VIRTUAL_CATALOG_COUNT = TOTAL_VIRTUAL_CATALOG_COUNT;
 
 })(window);
