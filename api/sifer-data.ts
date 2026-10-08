@@ -42,6 +42,28 @@ export default async function handler(req:any,res:any){
       const items=r.rows.map((x:any)=>({...x,total:Number(x.total||0),saldo:Number(x.saldo||0)}));
       return res.status(200).json({ok:true,query:'cxp',count:items.length,total:items.reduce((s:any,x:any)=>s+x.total,0),saldo:items.reduce((s:any,x:any)=>s+x.saldo,0),items});
     }
+    if(query==='cash'){
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
+        id TEXT PRIMARY KEY,nombre TEXT NOT NULL,abierta INTEGER NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,
+        apertura TEXT,ultimo_corte_at TEXT,seq_venta INTEGER NOT NULL DEFAULT 1,seq_devolucion INTEGER NOT NULL DEFAULT 1,
+        seq_z INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
+      )`,args:[]});
+      const r=await db.execute({sql:`SELECT id,nombre,abierta,saldo,apertura,ultimo_corte_at,seq_venta,seq_devolucion,seq_z,updated_at
+        FROM sifer_cash_registers ORDER BY nombre,id`,args:[]});
+      const items=r.rows.map((x:any)=>({...x,abierta:Number(x.abierta||0)===1,saldo:Number(x.saldo||0),seq_venta:Number(x.seq_venta||1),seq_devolucion:Number(x.seq_devolucion||1),seq_z:Number(x.seq_z||1)}));
+      return res.status(200).json({ok:true,query:'cash',count:items.length,open:items.filter((x:any)=>x.abierta),items});
+    }
+    if(query==='last-z'){
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
+        id TEXT PRIMARY KEY,nombre TEXT NOT NULL,abierta INTEGER NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,
+        apertura TEXT,ultimo_corte_at TEXT,seq_venta INTEGER NOT NULL DEFAULT 1,seq_devolucion INTEGER NOT NULL DEFAULT 1,
+        seq_z INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
+      )`,args:[]});
+      const r=await db.execute({sql:`SELECT id,nombre,abierta,saldo,apertura,ultimo_corte_at,seq_z
+        FROM sifer_cash_registers WHERE ultimo_corte_at IS NOT NULL ORDER BY ultimo_corte_at DESC LIMIT 1`,args:[]});
+      const x=r.rows?.[0];
+      return res.status(200).json({ok:true,query:'last-z',found:!!x,item:x?{...x,abierta:Number(x.abierta||0)===1,saldo:Number(x.saldo||0),seq_z:Number(x.seq_z||1)}:null});
+    }
     if(query==='inventory'){
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
         product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL
