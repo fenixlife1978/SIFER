@@ -414,32 +414,19 @@
     return /(cuanto.*vend|vendimos|ventas.*hoy|venta.*hoy|vendido.*hoy|total.*ventas.*hoy|total.*vendido)/i.test(value);
   }
 
-  function answerTodaySales(){
+  async function answerTodaySales(){
     try{
-      const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
-      const list=Array.isArray(db.ventas)?db.ventas:[];
-      const todayKey=new Date().toLocaleDateString('es-ES');
-      const isToday=(value)=>{
-        if(!value)return false;
-        const text=String(value), direct=text.split(',')[0].trim();
-        if(direct===todayKey)return true;
-        const parsed=new Date(value);
-        return !Number.isNaN(parsed.getTime()) && parsed.toLocaleDateString('es-ES')===todayKey;
-      };
-      const sales=list.filter(v=>isToday(v.fecha)&&String(v.estado||'').toLowerCase()!=='anulada');
-      const total=sales.reduce((sum,v)=>sum+Number(v.total||0),0);
-      const cajas=Array.isArray(db.cajas)?db.cajas:[];
-      const current=cajas.find(x=>x.id===db.terminalId)||cajas[0]||null;
-      const currency=db.config?.moneda||'USD';
-      if(!sales.length){
-        return current && !current.abierta
-          ? 'La caja está cerrada y no se han registrado ventas hoy.'
-          : 'Hoy no se han registrado ventas hasta el momento.';
-      }
-      const base='Hoy se han registrado '+sales.length+' '+(sales.length===1?'venta':'ventas')+' por un total de '+formatSalesAmount(total,currency)+'.';
-      return current && !current.abierta ? base+' La caja actual está cerrada.' : base+' La caja está abierta.';
+      const raw=localStorage.getItem('sifer360_v1'); const localDb=raw?JSON.parse(raw):{};
+      const currency=localDb.config?.moneda||'USD';
+      const response=await fetch('/api/sifer-data?query=today-sales',{cache:'no-store'});
+      if(!response.ok) throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok) throw new Error(data.error||'Consulta no disponible');
+      const total=Number(data.total||0), count=Number(data.count||0);
+      if(!count) return 'Turso confirma que hoy no se han registrado ventas.';
+      return 'Turso confirma '+count+' '+(count===1?'venta':'ventas')+' registradas hoy por un total de '+formatSalesAmount(total,currency)+'.';
     }catch{
-      return 'No pude consultar las ventas de hoy en el estado local del POS.';
+      return 'No pude consultar las ventas de hoy en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
     }
   }
 
