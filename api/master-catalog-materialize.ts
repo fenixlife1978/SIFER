@@ -2,39 +2,6 @@ import { createClient } from '@libsql/client';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import crypto from 'node:crypto';
-
-function verifyAdminSession(req:any){
-  const secret=String(process.env.CRON_SECRET||'').trim();
-  if(!secret)return false;
-  const token=String(req.cookies?.sifer_admin_session||'');
-  const [value,sig]=token.split('.');
-  if(!value||!sig||!value.startsWith('admin:'))return false;
-  const exp=Number(value.slice(6));
-  if(!Number.isFinite(exp)||exp<Date.now())return false;
-  const expected=crypto.createHmac('sha256',secret).update(value).digest('base64url');
-  try{return crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected));}catch{return false;}
-}
-function authOk(req:any){
-  const secret=String(process.env.CRON_SECRET||'').trim();
-  if(!secret)return false;
-  const auth=String(req.headers?.authorization||'');
-  if(auth===`Bearer ${secret}`)return true;
-  return verifyAdminSession(req);
-}
-function unlock(req:any,res:any){
-  const secret=String(process.env.CRON_SECRET||'').trim();
-  if(!secret)return res.status(503).json({ok:false,error:'CRON_SECRET no configurado en Vercel.'});
-  const body=req.body||{};
-  const provided=String(req.headers?.authorization||'').replace(/^Bearer\\s+/i,'').trim()||String(body.secret||'').trim();
-  if(provided!==secret)return res.status(401).json({ok:false,error:'Credencial administrativa inválida'});
-  const exp=Date.now()+60*60*1000;
-  const value='admin:'+String(exp);
-  const sig=crypto.createHmac('sha256',secret).update(value).digest('base64url');
-  res.setHeader('Set-Cookie',`sifer_admin_session=${value}.${sig}; Path=/; Max-Age=3600; HttpOnly; Secure; SameSite=Lax`);
-  return res.status(200).json({ok:true,expiresAt:new Date(exp).toISOString()});
-}
-
 async function loadGenerator(req:any){
   let source='';
   const localPath=path.join(process.cwd(),'public','master_catalog.js');
@@ -80,9 +47,7 @@ function stmt(x:any,version:string,now:string){
 }
 
 export default async function handler(req:any,res:any){
-  if(req.method==='POST') return unlock(req,res);
-  if(req.method!=='GET')return res.status(405).json({ok:false,error:'Method not allowed'});
-  if(!authOk(req))return res.status(401).json({ok:false,error:'No autorizado'});
+  if(req.method!=='GET' && req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
   const url=process.env.TURSO_DATABASE_URL,authToken=process.env.TURSO_AUTH_TOKEN;
   if(!url||!authToken)return res.status(503).json({ok:false,error:'Turso no configurado'});
   const db=createClient({url,authToken});
