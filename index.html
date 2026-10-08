@@ -857,20 +857,86 @@ function seleccionarCaja(id){const u=usuarioActual();if(u.rol==='Administrador')
 function nuevoUsuario(){openModal('Nuevo operador',`<div class="formgrid"><div class="field"><label>Nombre</label><input id="newUserName"></div><div class="field"><label>Rol</label><select id="newUserRole" onchange="document.getElementById('newUserBoxWrap').style.display=this.value==='Cajero'?'block':'none'"><option>Operador</option><option>Cajero</option><option>Supervisor</option></select></div><div class="field" id="newUserBoxWrap" style="display:none"><label>Caja asignada</label><select id="newUserBox"><option value="">Sin asignar</option>${db.cajas.filter(c=>c.id!=='CAJA-01').map(c=>'<option value="'+c.id+'">'+esc(c.nombre)+' — '+c.id+'</option>').join('')}</select></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="user-save" onclick="guardarUsuario()">Crear</button>`)}
 function guardarUsuario(){const n=document.getElementById('newUserName').value.trim(),rol=document.getElementById('newUserRole').value;if(!n)return toast('Indique el nombre');const cajaId=rol==='Cajero'?(document.getElementById('newUserBox')?.value||null):null;db.usuarios.push({id:'USR-'+String(db.seq.usuario++).padStart(3,'0'),nombre:n,rol,activo:true,cajaId});save();closeModal();renderView();toast('Usuario creado')}
 function nuevaCaja(){const n=prompt('Nombre de la nueva caja');if(!n?.trim())return;const maxId=(db.cajas||[]).reduce((m,x)=>{const n=Number(String(x.id||'').replace(/^CAJA-/i,''));return Number.isFinite(n)?Math.max(m,n):m},0);const seq=Number(db.seq?.caja);const num=Number.isFinite(seq)&&seq>maxId?Math.floor(seq):maxId+1;db.seq=db.seq||{};db.seq.caja=num+1;const idCaja='CAJA-'+String(num).padStart(2,'0');if(db.cajas.some(x=>x.id===idCaja))return toast('El identificador de caja ya existe');db.cajas.push({id:idCaja,nombre:n.trim(),abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1});save();renderView();toast(idCaja+' creada')}
-function comprasView(){let total=db.compras.reduce((s,x)=>s+x.total,0);return listPage('Compras','Órdenes, recepción y cuentas por pagar',`<button class="btn primary" onclick="openPurchase()">➕ Registrar compra</button>`,`<div class="cards"><div class="card">Compras<b>${money(total)}</b><span>${db.compras.length} documentos</span></div><div class="card">CxP<b>${money(db.cxp.reduce((s,x)=>s+x.saldo,0))}</b><span>saldo pendiente</span></div></div><div class="panel"><div class="panelbody"><table><thead><tr><th>Documento</th><th>Proveedor</th><th>Fecha</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>${db.compras.map(x=>`<tr><td>${x.numero}</td><td>${esc(x.proveedor)}</td><td>${x.fecha}</td><td>${money(x.total)}</td><td>${money(x.pagado)}</td><td>${money(x.saldo)}</td></tr>`).join('')||'<tr><td colspan="6">No hay compras.</td></tr>'}</tbody></table></div></div>`)}
-function openPurchase(){let p=db.productos[0],s=db.proveedores[0];openModal('Registrar compra',`<div class="formgrid"><div class="field"><label>Proveedor</label><select id="buySupplier">${db.proveedores.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select></div><div class="field"><label>Producto</label><select id="buyProduct">${db.productos.map(x=>`<option value="${x.id}">${esc(x.nombre)} — ${money(x.costo)}</option>`).join('')}</select></div><div class="field"><label>Cantidad</label><input id="buyQty" type="number" min="1" value="1"></div><div class="field"><label>Costo unitario</label><input id="buyCost" type="number" step=".01" value="${p?.costo||0}"></div><div class="field"><label>Condición</label><select id="buyType"><option value="contado">Contado</option><option value="credito">Crédito</option></select></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="purchase-save" onclick="savePurchase()">Registrar</button>`)}
+function comprasView(){
+ const compras=db.compras||[];
+ const total=compras.reduce((s,x)=>s+Number(x.total||0),0),pagado=compras.reduce((s,x)=>s+Number(x.pagado||0),0),saldo=compras.reduce((s,x)=>s+Number(x.saldo||0),0);
+ return listPage('Entradas por compra','Control de abastecimiento, costos, inventario y cuentas por pagar',`<button class="btn primary" onclick="openPurchase()">➕ Nueva entrada por compra</button>`,
+ `<div class="cards"><div class="card">Compras<b>${compras.length}</b><span>documentos registrados</span></div><div class="card">Total facturado<b>${money(total)}</b><span>valor de entradas</span></div><div class="card">Pagado<b>${money(pagado)}</b><span>cancelado</span></div><div class="card">Saldo CxP<b>${money(saldo)}</b><span>pendiente</span></div></div>
+ <div class="panel"><div class="panelbody"><table><thead><tr><th>Fecha</th><th>Factura</th><th>Proveedor</th><th>Condición</th><th>Ítems</th><th>Total</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead><tbody>
+ ${compras.slice().reverse().map(x=>`<tr>
+ <td>${esc(String(x.fecha||'').slice(0,10))}</td><td>${esc(x.numero||'S/N')}</td><td>${esc(x.proveedor||'')}</td>
+ <td><span class="badge ${x.tipo==='contado'?'ok':x.tipo==='mixto'?'info':'warn'}">${esc(x.tipo||'credito')}</span>${x.fechaVencimiento?'<br><small>Vence '+esc(x.fechaVencimiento)+'</small>':''}</td>
+ <td class="num">${Array.isArray(x.lineas)?x.lineas.length:0}</td><td class="num">${money(x.total)}</td><td class="num">${money(x.pagado)}</td><td class="num">${money(x.saldo)}</td>
+ <td><button class="btn" onclick="showPurchaseDetail('${x.numero}')">Ver detalle</button></td></tr>`).join('')||'<tr><td colspan="9">No hay entradas por compra.</td></tr>'}
+ </tbody></table></div></div>`);
+}
+function openPurchase(){
+ window.purchaseDraft={proveedorId:'',numeroFactura:'',fecha:new Date().toISOString().slice(0,10),tasa:Number(bcvData().rate)||1,condicion:'contado',diasPlazo:30,pagadoUSD:0,pagadoBS:0,lineas:[]};
+ const p=db.productos[0];
+ openModal('Registro de entradas por compra',`<div class="formgrid">
+ <div class="field"><label>Proveedor</label><select id="buySupplier" onchange="purchaseDraft.proveedorId=this.value">${db.proveedores.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select></div>
+ <div class="field"><label>Número de factura</label><input id="buyInvoice" placeholder="Número de factura" oninput="purchaseDraft.numeroFactura=this.value"></div>
+ <div class="field"><label>Fecha de compra</label><input id="buyDate" type="date" value="${window.purchaseDraft.fecha}" onchange="purchaseDraft.fecha=this.value"></div>
+ <div class="field"><label>Tasa de compra (Bs/USD)</label><input id="buyRate" type="number" step=".0001" min=".0001" value="${window.purchaseDraft.tasa}" oninput="purchaseDraft.tasa=Number(this.value)||1;refreshPurchaseDraft()"></div>
+ <div class="field"><label>Condición</label><select id="buyType" onchange="purchaseDraft.condicion=this.value;refreshPurchaseDraft()"><option value="contado">Contado</option><option value="credito">Crédito</option><option value="mixto">Mixto</option></select></div>
+ <div class="field" id="buyTermWrap" style="display:none"><label>Días de plazo</label><input id="buyDays" type="number" min="0" step="1" value="30" oninput="purchaseDraft.diasPlazo=Number(this.value)||0;refreshPurchaseDraft()"></div>
+ </div>
+ <div class="panel" style="margin-top:12px"><div class="panelhead">Agregar artículos / bienes facturados</div><div class="panelbody">
+ <div class="formgrid"><div class="field"><label>Artículo</label><select id="buyProduct">${db.productos.map(x=>`<option value="${x.id}">${esc(x.nombre)} — costo ${money(x.costo||0)}</option>`).join('')}</select></div>
+ <div class="field"><label>Cantidad</label><input id="buyQty" type="number" min="0.01" step="0.01" value="1"></div>
+ <div class="field"><label>Costo unitario USD</label><input id="buyCost" type="number" min="0" step=".0001" value="${p?.costo||0}"></div>
+ <div class="field" style="align-self:end"><button class="btn" onclick="addPurchaseLine()">➕ Agregar artículo</button></div></div>
+ <div id="purchaseDraftTable"></div></div></div>
+ <div id="purchaseTotals" class="cards" style="margin-top:12px"></div>`,
+ `<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="purchase-save" onclick="savePurchase()">Procesar e importar inventario</button>`);
+ const first=db.proveedores[0]; if(first)window.purchaseDraft.proveedorId=first.id;
+ refreshPurchaseDraft();
+}
+function refreshPurchaseDraft(){
+ const d=window.purchaseDraft;if(!d)return;
+ const wrap=document.getElementById('buyTermWrap');if(wrap)wrap.style.display=d.condicion==='contado'?'none':'block';
+ const total=d.lineas.reduce((s,x)=>s+Number(x.subtotal||0),0);
+ if(d.condicion==='contado'){d.pagadoUSD=total;d.pagadoBS=total*(Number(d.tasa)||1)}
+ if(d.condicion==='credito'){d.pagadoUSD=0;d.pagadoBS=0}
+ const saldo=Math.max(0,total-Number(d.pagadoUSD||0));
+ const due=d.condicion==='contado'?d.fecha:new Date(new Date(d.fecha+'T00:00:00').getTime()+Number(d.diasPlazo||0)*86400000).toISOString().slice(0,10);
+ const t=document.getElementById('purchaseDraftTable');if(t)t.innerHTML='<table><thead><tr><th>Producto</th><th>Cant.</th><th>Costo unit.</th><th>Subtotal</th><th></th></tr></thead><tbody>'+d.lineas.map((x,i)=>'<tr><td>'+esc(x.nombre)+'</td><td class="num">'+x.cantidad+'</td><td class="num">'+money(x.costoUnitarioUSD)+'</td><td class="num">'+money(x.subtotal)+'</td><td><button class="btn" onclick="removePurchaseLine('+i+')">✖</button></td></tr>').join('')+(d.lineas.length?'':'<tr><td colspan="5">No hay artículos agregados.</td></tr>')+'</tbody></table>';
+ const totals=document.getElementById('purchaseTotals');if(totals)totals.innerHTML='<div class="card">Total factura<b>'+money(total)+'</b><span>Equiv. Bs '+(total*(Number(d.tasa)||1)).toFixed(2)+'</span></div><div class="card">Pagado USD<b>'+money(d.pagadoUSD)+'</b><span>Pagado Bs '+Number(d.pagadoBS||0).toFixed(2)+'</span></div><div class="card">Saldo CxP<b>'+money(saldo)+'</b><span>'+((d.condicion==='contado')?'Sin saldo':('Vence '+due))+'</span></div><div class="card">Tasa<b>'+Number(d.tasa||0).toFixed(4)+'</b><span>Bs/USD</span></div>';
+}
+function addPurchaseLine(){
+ const d=window.purchaseDraft;if(!d)return;
+ const pid=document.getElementById('buyProduct').value,q=Number(document.getElementById('buyQty').value)||0,cost=Number(document.getElementById('buyCost').value)||0,p=db.productos.find(x=>x.id===pid);
+ if(!p||q<=0||cost<0)return toast('Artículo, cantidad o costo inválido');
+ d.lineas.push({productoId:pid,nombre:p.nombre,cantidad:q,costoUnitarioUSD:cost,subtotal:q*cost});
+ refreshPurchaseDraft();
+}
+function removePurchaseLine(i){if(window.purchaseDraft)window.purchaseDraft.lineas.splice(i,1);refreshPurchaseDraft()}
+function showPurchaseDetail(numero){
+ const x=(db.compras||[]).find(c=>c.numero===numero);if(!x)return;
+ const items=Array.isArray(x.lineas)?x.lineas:[];
+ openModal('Detalle de entrada por compra',`<div class="formgrid"><div class="field"><label>Proveedor</label><input readonly value="${esc(x.proveedor)}"></div><div class="field"><label>Factura</label><input readonly value="${esc(x.numero)}"></div><div class="field"><label>Fecha</label><input readonly value="${esc(String(x.fecha||'').slice(0,10))}"></div><div class="field"><label>Condición</label><input readonly value="${esc(x.tipo||'credito')}"></div><div class="field"><label>Tasa compra</label><input readonly value="${Number(x.tasaCompra||0).toFixed(4)} Bs/USD"></div><div class="field"><label>Vencimiento</label><input readonly value="${esc(x.fechaVencimiento||'—')}"></div></div><div class="panel" style="margin-top:12px"><div class="panelbody"><table><thead><tr><th>Artículo</th><th>Cantidad</th><th>Costo unit. USD</th><th>Subtotal USD</th></tr></thead><tbody>${items.map(i=>`<tr><td>${esc(i.nombre||i.id)}</td><td class="num">${i.qty||i.cantidad}</td><td class="num">${money(i.costo||i.costoUnitarioUSD)}</td><td class="num">${money((i.qty||i.cantidad)*(i.costo||i.costoUnitarioUSD))}</td></tr>`).join('')}</tbody></table></div></div><div class="cards" style="margin-top:12px"><div class="card">Total<b>${money(x.total)}</b></div><div class="card">Pagado<b>${money(x.pagado)}</b></div><div class="card">Saldo<b>${money(x.saldo)}</b></div></div>`,`<button class="btn" onclick="closeModal()">Cerrar</button>`);
+}
 function savePurchase(){
-  const sid=document.getElementById('buySupplier').value,pid=document.getElementById('buyProduct').value,q=Number(document.getElementById('buyQty').value)||0,cost=Number(document.getElementById('buyCost').value)||0,type=document.getElementById('buyType').value;
-  if(q<=0||cost<0)return toast('Cantidad o costo inválido');
-  if(type==='contado'&&!cajaActual().abierta)return toast('Abra la caja antes de registrar una compra de contado');
-  const total=q*cost,s=db.proveedores.find(x=>x.id===sid),p=db.productos.find(x=>x.id===pid),num=id('CMP','compra'),paid=type==='contado'?total:0,saldo=total-paid;
-  if(!s||!p)return toast('Proveedor o producto no encontrado');
-  p.stock+=q;
-  const x={numero:num,fecha:fmt(),proveedor:s.nombre,proveedorId:sid,total,pagado:paid,saldo,tipo:type,lineas:[{id:pid,qty:q,costo:cost}]};
-  db.compras.push(x);
-  if(saldo){db.cxp.push({id:id('CXP','cxp'),fecha:fmt(),documento:num,proveedorId:sid,proveedor:s.nombre,total,saldo,estado:'Pendiente'});s.saldo=(s.saldo||0)+saldo}else cajaActual().saldo-=paid;
-  db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:num,detalle:s.nombre,monto:paid? -paid:0});
-  save('purchase-created');closeModal();renderView();toast(num+' registrada');
+ const d=window.purchaseDraft;if(!d)return;
+ const sid=d.proveedorId||document.getElementById('buySupplier')?.value,pidLines=d.lineas||[],s=db.proveedores.find(x=>x.id===sid);
+ const total=pidLines.reduce((sum,x)=>sum+Number(x.subtotal||0),0),paid=Number(d.pagadoUSD||0),saldo=Math.max(0,total-paid);
+ if(!s)return toast('Seleccione un proveedor');
+ if(!d.numeroFactura.trim())return toast('Ingrese el número de factura');
+ if(!d.fecha)return toast('Ingrese la fecha de compra');
+ if(!pidLines.length)return toast('Agregue al menos un artículo');
+ if(total<=0)return toast('El total de la compra debe ser mayor que cero');
+ if(d.condicion==='contado'&&!cajaActual().abierta)return toast('Abra la caja antes de registrar una compra de contado');
+ if(d.condicion==='mixto'&&paid<=0)return toast('En una compra mixta indique un monto pagado');
+ if((d.condicion==='credito'||d.condicion==='mixto')&&Number(d.diasPlazo||0)<0)return toast('El plazo no puede ser negativo');
+ const fechaVencimiento=d.condicion==='contado'?d.fecha:new Date(new Date(d.fecha+'T00:00:00').getTime()+Number(d.diasPlazo||0)*86400000).toISOString().slice(0,10);
+ const num=id('CMP','compra');
+ pidLines.forEach(line=>{const p=db.productos.find(x=>x.id===line.productoId);if(p){p.stock=(Number(p.stock)||0)+Number(line.cantidad||0);p.costo=Number(line.costoUnitarioUSD)||p.costo||0;}});
+ const x={numero:num,fecha:d.fecha,fechaHora:fmt(),proveedor:s.nombre,proveedorId:sid,total,pagado:paid,saldo,tipo:d.condicion,lineas:pidLines.map(i=>({id:i.productoId,qty:i.cantidad,costo:i.costoUnitarioUSD,nombre:i.nombre,subtotal:i.subtotal})),tasaCompra:Number(d.tasa)||1,diasPlazo:Number(d.diasPlazo||0),fechaVencimiento,eqBs:total*(Number(d.tasa)||1),pagadoBS:Number(d.pagadoBS||paid*(Number(d.tasa)||1))};
+ db.compras.push(x);
+ if(saldo){db.cxp.push({id:id('CXP','cxp'),fecha:d.fecha,documento:num,proveedorId:sid,proveedor:s.nombre,total,saldo,estado:'Pendiente',diasPlazo:Number(d.diasPlazo||0),fechaVencimiento,items:x.lineas.map(i=>({productoId:i.id,nombre:i.nombre,cantidad:i.qty,costoUnitarioUSD:i.costo,subtotalUSD:i.subtotal}))});s.saldo=(s.saldo||0)+saldo}
+ if(paid>0)cajaActual().saldo-=paid;
+ db.movimientos.push({fecha:fmt(),tipo:'Compra',documento:num,detalle:s.nombre,monto:paid?-paid:0});
+ save('purchase-created');delete window.purchaseDraft;closeModal();renderView();toast(num+' registrada e inventario actualizado');
 }
 function clientesView(){return listPage('Clientes','Maestro de clientes, crédito y estados de cuenta',`<button class="btn primary" onclick="openClient()">➕ Nuevo cliente</button>`,`<div class="searchbar"><input placeholder="Buscar cliente o documento" oninput="filterTable(this,'clientsTable')"></div><div class="panel"><div class="panelbody"><table id="clientsTable"><thead><tr><th>Cliente</th><th>Documento</th><th>Teléfono</th><th>Límite</th><th>Saldo CxC</th><th></th></tr></thead><tbody>${db.clientes.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.documento)}</td><td>${esc(c.telefono)}</td><td>${money(c.limite)}</td><td>${money(c.saldo||0)}</td><td><button class="btn" onclick="openClient('${c.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div></div>`)}
 function openClient(cid){let c=cid?db.clientes.find(x=>x.id===cid):{id:'',nombre:'',documento:'',telefono:'',email:'',direccion:'',limite:0,saldo:0};openModal(cid?'Editar cliente':'Nuevo cliente',`<div class="formgrid"><div class="field"><label>Nombre / Razón social</label><input id="cNombre" value="${esc(c.nombre)}"></div><div class="field"><label>Documento</label><input id="cDoc" value="${esc(c.documento)}"></div><div class="field"><label>Teléfono</label><input id="cTel" value="${esc(c.telefono)}"></div><div class="field"><label>Correo</label><input id="cEmail" value="${esc(c.email)}"></div><div class="field"><label>Límite de crédito</label><input id="cLim" type="number" step=".01" value="${c.limite}"></div><div class="field full"><label>Dirección</label><textarea id="cDir">${esc(c.direccion)}</textarea></div></div>`,`<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-sifer="client-save" onclick="saveClient('${cid||''}')">Guardar</button>`)}
