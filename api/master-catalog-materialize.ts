@@ -39,6 +39,9 @@ async function ensureSchema(db:any){
   ],'write');
 }
 
+
+async function ensureSchema(db:any){ await db.batch([{sql:`CREATE TABLE IF NOT EXISTS sifer_master_catalog (master_id TEXT PRIMARY KEY,nombre TEXT NOT NULL,descripcion_tecnica TEXT,categoria TEXT,subcategoria TEXT,marca TEXT,origen_marca TEXT,tipo_marca TEXT,codigo_proveedor TEXT,codigo_oem TEXT,unidad_medida TEXT,costo_referencial REAL NOT NULL DEFAULT 0,margen_sugerido REAL NOT NULL DEFAULT 35,especificaciones TEXT,foto_real TEXT,distribuidor TEXT,referencias_json TEXT NOT NULL DEFAULT '[]',compatibilidad_json TEXT NOT NULL DEFAULT '[]',searchable_text TEXT NOT NULL,source_version TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`,args:[]},{sql:`CREATE INDEX IF NOT EXISTS idx_sifer_master_catalog_categoria ON sifer_master_catalog(categoria)`,args:[]},{sql:`CREATE INDEX IF NOT EXISTS idx_sifer_master_catalog_marca ON sifer_master_catalog(marca)`,args:[]},{sql:`CREATE INDEX IF NOT EXISTS idx_sifer_master_catalog_oem ON sifer_master_catalog(codigo_oem)`,args:[]},{sql:`CREATE INDEX IF NOT EXISTS idx_sifer_master_catalog_search ON sifer_master_catalog(searchable_text)`,args:[]}],'write'); }
+
 function stmt(x:any,version:string,now:string){
   const normalize=(s:any)=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return {
@@ -70,6 +73,7 @@ export default async function handler(req:any,res:any){
   const db=createClient({url,authToken});
   try{
     await ensureSchema(db);
+    await ensureSchema(db);
     await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_master_catalog_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL)`,args:[]});
     const gen=await loadGenerator(req);
     if(req.method==='GET' && String(req.query?.mode||'')==='search'){
@@ -84,6 +88,18 @@ export default async function handler(req:any,res:any){
       if(category && category!=='Todos'){where.push('categoria = ?');args.push(category);}
       const whereSql=where.length?' WHERE '+where.join(' AND '):'';
       const offset=(page-1)*pageSize;
+      const rows=await db.execute({sql:`SELECT master_id AS masterId,nombre,descripcion_tecnica AS descripcionTecnica,categoria,subcategoria,marca,origen_marca AS origenMarca,tipo_marca AS tipoMarca,codigo_proveedor AS codigoProveedor,codigo_oem AS codigoOEM,unidad_medida AS unidadMedida,costo_referencial AS costoReferencial,margen_sugerido AS margenSugerido,especificaciones,foto_real AS fotoReal,distribuidor,referencias_json AS referenciasJson,compatibilidad_json AS compatibilidadJson FROM sifer_master_catalog${whereSql} ORDER BY nombre,master_id LIMIT ? OFFSET ?`,args:[...args,pageSize,offset]});
+      const items=(rows.rows as any[]).map(r=>({...r,referenciasCruzadas:JSON.parse(String(r.referenciasJson||'[]')),compatibilidad:JSON.parse(String(r.compatibilidadJson||'[]'))}));
+      return res.status(200).json({ok:true,persistentSource:true,items,totalMatched:items.length,totalCatalog:items.length,page,totalPages:items.length===pageSize?page+1:page});
+    }
+    if(req.method==='GET' && String(req.query?.mode||'')==='search'){
+      const q=String(req.query?.q||'').trim(), category=String(req.query?.category||'Todos').trim();
+      const page=Math.max(1,Number(req.query?.page)||1), pageSize=Math.min(50,Math.max(1,Number(req.query?.pageSize)||20));
+      const norm=(s:any)=>String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+      const terms=norm(q).split(/\\s+/).filter(Boolean).slice(0,8), where:string[]=[], args:any[]=[];
+      for(const term of terms){where.push('searchable_text LIKE ?');args.push('%'+term+'%');}
+      if(category&&category!=='Todos'){where.push('categoria = ?');args.push(category);}
+      const whereSql=where.length?' WHERE '+where.join(' AND '):'', offset=(page-1)*pageSize;
       const rows=await db.execute({sql:`SELECT master_id AS masterId,nombre,descripcion_tecnica AS descripcionTecnica,categoria,subcategoria,marca,origen_marca AS origenMarca,tipo_marca AS tipoMarca,codigo_proveedor AS codigoProveedor,codigo_oem AS codigoOEM,unidad_medida AS unidadMedida,costo_referencial AS costoReferencial,margen_sugerido AS margenSugerido,especificaciones,foto_real AS fotoReal,distribuidor,referencias_json AS referenciasJson,compatibilidad_json AS compatibilidadJson FROM sifer_master_catalog${whereSql} ORDER BY nombre,master_id LIMIT ? OFFSET ?`,args:[...args,pageSize,offset]});
       const items=(rows.rows as any[]).map(r=>({...r,referenciasCruzadas:JSON.parse(String(r.referenciasJson||'[]')),compatibilidad:JSON.parse(String(r.compatibilidadJson||'[]'))}));
       return res.status(200).json({ok:true,persistentSource:true,items,totalMatched:items.length,totalCatalog:items.length,page,totalPages:items.length===pageSize?page+1:page});
