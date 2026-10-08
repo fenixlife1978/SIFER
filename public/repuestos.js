@@ -514,7 +514,7 @@ const REPUESTOS_SEED = [
 
 
 let repuestoSubTab = 'catalogo';
-let fitmentFilter = { marca: '', modelo: '', anio: '', motor: '' };
+let fitmentFilter = { marca: '', modelo: '', anio: '', motor: '', repuesto: '' };
 
 function getRepuestos(){
   if (!Array.isArray(db.repuestos)) {
@@ -724,12 +724,16 @@ function renderFitmentSearchTab(){
   });
 
   const matchingParts = repuestos.filter(r => {
-    if (!fitmentFilter.marca && !fitmentFilter.modelo && !fitmentFilter.anio) return true;
+    const partQuery=String(fitmentFilter.repuesto||'').trim().toLowerCase();
+    const partHay=[r.nombre,r.sku,r.codigoOEM,r.marca,r.categoria,r.descripcion,r.especificaciones].filter(Boolean).join(' ').toLowerCase();
+    if(partQuery && !partHay.includes(partQuery)) return false;
+    if (!fitmentFilter.marca && !fitmentFilter.modelo && !fitmentFilter.anio && !fitmentFilter.motor) return true;
     return (r.compatibilidad || []).some(c => {
       const matchMarca = !fitmentFilter.marca || c.marca.toLowerCase() === fitmentFilter.marca.toLowerCase();
       const matchModelo = !fitmentFilter.modelo || c.modelo.toLowerCase().includes(fitmentFilter.modelo.toLowerCase());
       const matchAnio = !fitmentFilter.anio || c.anios.includes(fitmentFilter.anio);
-      return matchMarca && matchModelo && matchAnio;
+      const matchMotor = !fitmentFilter.motor || [c.motor,c.posicion,c.sistema].filter(Boolean).join(' ').toLowerCase().includes(fitmentFilter.motor.toLowerCase());
+      return matchMarca && matchModelo && matchAnio && matchMotor;
     });
   });
 
@@ -737,7 +741,11 @@ function renderFitmentSearchTab(){
   <div class="panel">
     <div class="panelhead" style="background:#0b63ce;color:#fff">🚘 Selector de Compatibilidad Vehicular (Filtro por Auto)</div>
     <div class="panelbody" style="background:#f9fbfe">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:8px;align-items:flex-end">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:flex-end">
+        <div class="field">
+          <label>Buscar repuesto</label>
+          <input id="fitRepuesto" placeholder="Nombre, SKU, OEM o marca del repuesto..." value="${esc(fitmentFilter.repuesto||"")}" oninput="fitmentFilter.repuesto=this.value;renderView()">
+        </div>
         <div class="field">
           <label>1. Marca del Auto</label>
           <select id="fitMarca" onchange="fitmentFilter.marca=this.value;renderView()">
@@ -758,10 +766,10 @@ function renderFitmentSearchTab(){
         </div>
         <div class="field">
           <label>4. Posición / Sistema</label>
-          <input id="fitMotor" placeholder="Ej: Delantero, Motor..." oninput="filterTable(this,'fitmentResultsTable')">
+          <input id="fitMotor" placeholder="Ej: Delantero, Motor..." value="${esc(fitmentFilter.motor||"")}" oninput="fitmentFilter.motor=this.value;renderView()">
         </div>
         <div>
-          <button class="btn" onclick="fitmentFilter={marca:'',modelo:'',anio:'',motor:''};renderView()">Limpiar Filtros</button>
+          <button class="btn" onclick="fitmentFilter={marca:'',modelo:'',anio:'',motor:'',repuesto:''};renderView()">Limpiar Filtros</button>
         </div>
       </div>
     </div>
