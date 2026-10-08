@@ -597,103 +597,137 @@
   }
 
   // Búsqueda inteligente multicriterio por palabras claves dentro del espacio de +900.000 productos
+  function catalogCategoryMatches(item, category) {
+    if (!category || category === 'Todos') return true;
+    const cat = normalizeSearchText(category);
+    const hay = normalizeSearchText([
+      item.categoria, item.subcategoria, item.nombre, item.marca, item.origenMarca, item.tipoMarca
+    ].join(' '));
+    if (category === 'Nacionales Venezolanas') return hay.includes('venezuela') || item.tipoMarca === 'nacional_lider' || item.tipoMarca === 'nacional';
+    if (category === 'Importadas Premium') return item.tipoMarca === 'importada_premium' || item.tipoMarca === 'premium';
+    if (category === 'Repuestos Chinos') return ['chery','jac','changan','great wall'].some(x => hay.includes(x)) || item.tipoMarca === 'economica';
+    if (category === 'Aceites y Lubricantes') return hay.includes('aceite') || hay.includes('lubricante');
+    return hay.includes(cat) || (
+      category === 'Distribución' &&
+      (hay.includes('tiempo') || hay.includes('distribucion') || hay.includes('tensor'))
+    );
+  }
+
+  function persistMasterCatalogItems(items) {
+    if (!Array.isArray(items) || !items.length || typeof fetch !== 'function') return;
+    const payload = items.slice(0, 50);
+    Promise.resolve().then(() => fetch('/api/master-catalog', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({action:'upsert-batch',sourceVersion:'master-v1',items:payload})
+    })).catch(() => {});
+  }
+
   function queryMasterCatalog(query = '', category = 'Todos', page = 1, pageSize = ITEMS_PER_PAGE) {
-    const rawQ = (query || '').trim();
+    const rawQ = String(query || '').trim();
     const results = [];
-    const maxScanLimit = 4500;
-
-    // Nunca recorrer millones de registros virtuales en el hilo principal.
-    // Esto evita congelar el POS mientras el usuario escribe o cambia de página.
-    let step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
-    if (rawQ && (category !== 'Todos')) {
-      step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
-    }
-
-    let matchCount = 0;
-    const startIndex = (page - 1) * pageSize;
+    const startIndex = Math.max(0, (page - 1) * pageSize);
     const endIndex = startIndex + pageSize;
 
-    for (let i = 0, scanned = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && matchCount < 1200 && scanned < maxScanLimit; i += step, scanned++) {
-      const item = getMasterItemByIndex(i);
+    // Para consultas de repuestos con vehículo/producto reconocible NO usamos muestreo.
+    // Resolvemos directamente las combinaciones que pueden satisfacer la consulta.
+    const qNorm = normalizeSearchText(rawQ);
+    const qTokens = qNorm.split(/\\s+/).filter(Boolean);
+    const vehicleMatches = [];
+    const templateMatches = [];
 
-      let matchesCat = true;
-      if (category !== 'Todos') {
-        const catLow = category.toLowerCase();
-        if (category === 'Aceites y Lubricantes') {
-          matchesCat = item.categoria.includes('Aceite');
-        } else if (category === 'Nacionales Venezolanas') {
-          matchesCat = (item.origenMarca && item.origenMarca.includes('Venezuela')) || item.tipoMarca === 'nacional_lider' || item.tipoMarca === 'nacional';
-        } else if (category === 'Importadas Premium') {
-          matchesCat = item.tipoMarca === 'importada_premium' || item.tipoMarca === 'premium';
-        } else if (category === 'Repuestos Chinos') {
-          matchesCat = item.subcategoria === 'Chery' || item.subcategoria === 'Jac' || item.subcategoria === 'Changan' || item.subcategoria === 'Great Wall' || item.tipoMarca === 'economica';
-        } else if (category === 'Bujes y Gomas') {
-          matchesCat = item.categoria === 'Bujes y Gomas' || item.nombre.toLowerCase().includes('buje') || item.nombre.toLowerCase().includes('goma');
-        } else if (category === 'Lápiz y Bieletas') {
-          matchesCat = item.categoria === 'Lápiz y Bieletas' || item.nombre.toLowerCase().includes('lapiz') || item.nombre.toLowerCase().includes('bieleta');
-        } else if (category === 'Rodamientos') {
-          matchesCat = item.categoria === 'Rodamientos' || item.nombre.toLowerCase().includes('rodamiento') || item.nombre.toLowerCase().includes('maza');
-        } else if (category === 'Baterías') {
-          matchesCat = item.categoria === 'Baterías' || item.nombre.toLowerCase().includes('bateria');
-        } else if (category === 'Luces y Faros') {
-          matchesCat = item.categoria === 'Luces y Faros' || item.nombre.toLowerCase().includes('bombillo') || item.nombre.toLowerCase().includes('faro') || item.nombre.toLowerCase().includes('led');
-        } else if (category === 'Cilindros de Ignición') {
-          matchesCat = item.categoria === 'Cilindros de Ignición' || item.nombre.toLowerCase().includes('cilindro') || item.nombre.toLowerCase().includes('switchera');
-        } else if (category === 'Relex y Relés') {
-          matchesCat = item.categoria === 'Relex y Relés' || item.nombre.toLowerCase().includes('relex') || item.nombre.toLowerCase().includes('rele') || item.nombre.toLowerCase().includes('relay');
-        } else if (category === 'Mangueras') {
-          matchesCat = item.categoria === 'Mangueras' || item.nombre.toLowerCase().includes('manguera');
-        } else if (category === 'Cables de Bujías') {
-          matchesCat = item.categoria === 'Cables de Bujías' || item.nombre.toLowerCase().includes('cables de buj');
-        } else if (category === 'Sensores') {
-          matchesCat = item.categoria === 'Sensores' || item.nombre.toLowerCase().includes('sensor');
-        } else if (category === 'Empacaduras de Motor') {
-          matchesCat = item.categoria === 'Empacaduras de Motor' || item.nombre.toLowerCase().includes('empacadura');
-        } else if (category === 'Bombas de Agua') {
-          matchesCat = item.categoria === 'Bombas de Agua' || item.nombre.toLowerCase().includes('bomba de agua');
-        } else if (category === 'Anillos de Motor') {
-          matchesCat = item.categoria === 'Anillos de Motor' || item.nombre.toLowerCase().includes('anillos');
-        } else if (category === 'Conchas de Biela y Bancada') {
-          matchesCat = item.categoria === 'Conchas de Biela y Bancada' || item.nombre.toLowerCase().includes('conchas de');
-        } else if (category === 'Cerraduras y Mandos') {
-          matchesCat = item.categoria === 'Cerraduras y Mandos' || item.nombre.toLowerCase().includes('cerradura');
-        } else if (category === 'Solenoides') {
-          matchesCat = item.categoria === 'Solenoides' || item.nombre.toLowerCase().includes('solenoide');
-        } else if (category === 'Conectores y Terminales') {
-          matchesCat = item.categoria === 'Conectores y Terminales' || item.nombre.toLowerCase().includes('conector');
-        } else if (category === 'Distribución') {
-          matchesCat = item.categoria === 'Distribución' || item.nombre.toLowerCase().includes('cadena de tiempo') || item.nombre.toLowerCase().includes('kit de tiempo') || item.nombre.toLowerCase().includes('tensor');
-        } else if (category === 'Tripoides y Homocinéticas') {
-          matchesCat = item.categoria === 'Tripoides y Homocinéticas' || item.nombre.toLowerCase().includes('tripoide') || item.nombre.toLowerCase().includes('homocin');
-        } else if (category === 'Aditivos y Químicos') {
-          matchesCat = item.categoria === 'Aditivos y Químicos' || item.nombre.toLowerCase().includes('aditivo');
-        } else {
-          matchesCat = item.categoria.toLowerCase().includes(catLow) || item.subcategoria.toLowerCase().includes(catLow);
+    if (qNorm) {
+      VEHICLES_IN_VENEZUELA.forEach((veh, vIdx) => {
+        const vehText = normalizeSearchText([veh.marca, veh.modelo, veh.anios, veh.motor].join(' '));
+        const hits = qTokens.filter(t => vehText.includes(t));
+        if (hits.length >= Math.min(2, qTokens.length) || qTokens.some(t => t === normalizeSearchText(veh.marca) || t === normalizeSearchText(veh.modelo.split(' ')[0]))) {
+          vehicleMatches.push({vIdx, score:hits.length});
+        }
+      });
+      AUTO_PART_TEMPLATES.forEach((tpl, tplIdx) => {
+        const tplText = normalizeSearchText([tpl.nameTpl, tpl.cat, tpl.u, tpl.oemPref].join(' '));
+        const hits = qTokens.filter(t => tplText.includes(t));
+        if (hits.length) templateMatches.push({tplIdx, score:hits.length});
+      });
+    }
+
+    const candidateIndexes = new Set();
+
+    if (vehicleMatches.length && templateMatches.length) {
+      // La fórmula es exactamente la misma usada por getMasterItemByIndex().
+      // Así podemos encontrar Aveo + correa/tiempo sin recorrer millones de filas.
+      for (const vm of vehicleMatches) {
+        for (const tm of templateMatches) {
+          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
+            const adjIdx =
+              bIdx * VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length +
+              tm.tplIdx * VEHICLES_IN_VENEZUELA.length +
+              vm.vIdx;
+            const index = 120000 + adjIdx;
+            if (index < TOTAL_VIRTUAL_CATALOG_COUNT) candidateIndexes.add(index);
+          }
         }
       }
-
-      if (!matchesCat) continue;
-
-      let matchesQ = true;
-      if (rawQ) {
-        const fullSearchableText = `${item.nombre} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
-        matchesQ = matchKeywords(fullSearchableText, rawQ);
-      }
-
-      if (matchesQ) {
-        if (matchCount >= startIndex && matchCount < endIndex) {
-          results.push(item);
+    } else if (templateMatches.length && !vehicleMatches.length) {
+      for (const tm of templateMatches) {
+        for (let vIdx = 0; vIdx < VEHICLES_IN_VENEZUELA.length; vIdx++) {
+          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
+            const adjIdx =
+              bIdx * VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length +
+              tm.tplIdx * VEHICLES_IN_VENEZUELA.length +
+              vIdx;
+            const index = 120000 + adjIdx;
+            if (index < TOTAL_VIRTUAL_CATALOG_COUNT) candidateIndexes.add(index);
+          }
         }
-        matchCount++;
       }
     }
 
+    // Fallback para búsquedas genéricas: conserva el límite para no congelar el POS.
+    if (!candidateIndexes.size) {
+      const maxScanLimit = 4500;
+      const step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
+      for (let i = 0, scanned = 0; i < TOTAL_VIRTUAL_CATALOG_COUNT && scanned < maxScanLimit; i += step, scanned++) {
+        candidateIndexes.add(i);
+      }
+    }
+
+    const matches = [];
+    for (const index of candidateIndexes) {
+      const item = getMasterItemByIndex(index);
+      if (!catalogCategoryMatches(item, category)) continue;
+      const fullSearchableText = normalizeSearchText([
+        item.nombre, item.marca, item.codigoOEM, item.codigoProveedor, item.categoria,
+        item.subcategoria, item.descripcionTecnica, item.especificaciones, item.origenMarca,
+        item.unidadMedida
+      ].join(' '));
+      if (qNorm && !qTokens.every(token => fullSearchableText.includes(token))) continue;
+      matches.push(item);
+    }
+
+    // Las coincidencias más específicas primero.
+    matches.sort((a,b) => {
+      const scoreItem = item => {
+        const text = normalizeSearchText([item.nombre,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,item.subcategoria].join(' '));
+        return qTokens.reduce((n,t) => n + (text.includes(t) ? 1 : 0), 0);
+      };
+      return scoreItem(b) - scoreItem(a) || String(a.nombre).localeCompare(String(b.nombre));
+    });
+
+    const totalMatched = matches.length;
+    const paged = matches.slice(startIndex, endIndex);
+
+    // Cada consulta exitosa deja los artículos identificados en Turso.
+    // La persistencia es asíncrona y nunca bloquea el POS.
+    persistMasterCatalogItems(paged);
+
     return {
-      items: results,
-      totalMatched: matchCount,
+      items: paged,
+      totalMatched,
       totalCatalog: TOTAL_VIRTUAL_CATALOG_COUNT,
-      page: page,
-      totalPages: Math.max(1, Math.ceil(matchCount / pageSize))
+      page,
+      totalPages: Math.max(1, Math.ceil(totalMatched / pageSize)),
+      persistentSource: true
     };
   }
 
