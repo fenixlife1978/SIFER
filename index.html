@@ -867,7 +867,7 @@ function comprasView(){
  </tbody></table></div></div>\`);
 }
 function purchaseIvaRate(){return Number(db.config?.impuesto??7)||0}
-function purchaseBcvRate(){return Number(bcvData()?.rate||db.config?.bcv?.rate||1)||1}
+function purchaseBcvRate(){const input=Number(document.getElementById('buyBcv')?.value||0);return input>0?input:(Number(bcvData()?.rate||db.config?.bcv?.rate||1)||1)}
 function purchaseRate(){const v=Number(document.getElementById('buyRate')?.value||0);return v>0?v:purchaseBcvRate()}
 function purchaseCurrency(){return document.getElementById('buyCurrency')?.value||'USDT'}
 function purchaseDecimals(){return Number(document.getElementById('buyDecimals')?.value||2)}
