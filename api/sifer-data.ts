@@ -19,6 +19,29 @@ export default async function handler(req:any,res:any){
       const sales=r.rows.filter((x:any)=>String(x.tipo||'').toLowerCase()!=='anulada');
       return res.status(200).json({ok:true,query:'today-sales',count:sales.length,total:sales.reduce((s:any,x:any)=>s+Number(x.total)||0,0),sales});
     }
+    if(query==='cxc'){
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sales (
+        numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,total REAL NOT NULL,
+        subtotal REAL NOT NULL DEFAULT 0,impuesto REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,
+        saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,caja_id TEXT,operador_id TEXT,created_at TEXT NOT NULL
+      )`,args:[]});
+      const r=await db.execute({sql:`SELECT numero,fecha,cliente_id,cliente,total,pagado,saldo,tipo FROM sifer_sales
+        WHERE saldo>0 AND lower(coalesce(tipo,'')) NOT IN ('anulada','cancelada')
+        ORDER BY fecha ASC,created_at ASC`,args:[]});
+      const items=r.rows.map((x:any)=>({...x,total:Number(x.total||0),pagado:Number(x.pagado||0),saldo:Number(x.saldo||0)}));
+      return res.status(200).json({ok:true,query:'cxc',count:items.length,total:items.reduce((s:any,x:any)=>s+x.total,0),pagado:items.reduce((s:any,x:any)=>s+x.pagado,0),saldo:items.reduce((s:any,x:any)=>s+x.saldo,0),items});
+    }
+    if(query==='cxp'){
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable (
+        id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,
+        total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL
+      )`,args:[]});
+      const r=await db.execute({sql:`SELECT documento,proveedor_id,proveedor,total,saldo,fecha,estado FROM sifer_accounts_payable
+        WHERE saldo>0 AND lower(coalesce(estado,'')) NOT IN ('pagado','anulada','cancelada') ORDER BY fecha ASC,created_at ASC`,args:[]});
+      const items=r.rows.map((x:any)=>({...x,total:Number(x.total||0),saldo:Number(x.saldo||0)}));
+      return res.status(200).json({ok:true,query:'cxp',count:items.length,total:items.reduce((s:any,x:any)=>s+x.total,0),saldo:items.reduce((s:any,x:any)=>s+x.saldo,0),items});
+    }
     if(query==='inventory'){
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
         product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL
