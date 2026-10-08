@@ -48,6 +48,12 @@ export default async function handler(req:any,res:any){
         apertura TEXT,ultimo_corte_at TEXT,seq_venta INTEGER NOT NULL DEFAULT 1,seq_devolucion INTEGER NOT NULL DEFAULT 1,
         seq_z INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
       )`,args:[]});
+      const bad=await db.execute({sql:`SELECT id FROM sifer_cash_registers WHERE id='CAJA-NaN' LIMIT 1`,args:[]});
+      const valid=await db.execute({sql:`SELECT id FROM sifer_cash_registers WHERE id='CAJA-02' LIMIT 1`,args:[]});
+      if(bad.rows?.length && !valid.rows?.length){
+        await db.execute({sql:`UPDATE sifer_cash_registers SET id='CAJA-02',nombre=CASE WHEN trim(nombre)='' THEN 'Caja 2' ELSE nombre END WHERE id='CAJA-NaN'`,args:[]});
+        for(const table of ['sifer_sales','sifer_customer_orders']){try{await db.execute({sql:`UPDATE ${table} SET caja_id='CAJA-02' WHERE caja_id='CAJA-NaN'`,args:[]})}catch(e){}}
+      }
       const r=await db.execute({sql:`SELECT id,nombre,abierta,saldo,apertura,ultimo_corte_at,seq_venta,seq_devolucion,seq_z,updated_at
         FROM sifer_cash_registers ORDER BY nombre,id`,args:[]});
       const items=r.rows.map((x:any)=>({...x,abierta:Number(x.abierta||0)===1,saldo:Number(x.saldo||0),seq_venta:Number(x.seq_venta||1),seq_devolucion:Number(x.seq_devolucion||1),seq_z:Number(x.seq_z||1)}));
