@@ -1359,13 +1359,19 @@
     const setStatus=(s)=>{if(statusEl)statusEl.textContent=s;};
     if(btn)btn.disabled=true;
     try{
-      const r=await fetch('/api/master-catalog-materialize',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:'{}',cache:'no-store'});
-      const data=await r.json().catch(()=>({}));
-      if(!r.ok||!data.ok)throw new Error(data.error||'No fue posible ejecutar el lote.');
-      const pct=data.totalCatalog?Math.min(100,(Number(data.cursor||0)/Number(data.totalCatalog))*100):0;
-      setStatus(data.done
-        ? '✅ Catálogo completamente materializado en Turso.'
-        : `Lote ejecutado: ${Number(data.cursor||0).toLocaleString()} / ${Number(data.totalCatalog||0).toLocaleString()} (${pct.toFixed(2)}%). Registros persistentes: ${Number(data.persistentTotal||0).toLocaleString()}. Pulsa nuevamente para continuar.`);
+      let data=null;
+      const maxAutomaticBatches=10;
+      for(let n=0;n<maxAutomaticBatches;n++){
+        const r=await fetch('/api/master-catalog-materialize',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:'{}',cache:'no-store'});
+        data=await r.json().catch(()=>({}));
+        if(!r.ok||!data.ok)throw new Error(data.error||'No fue posible ejecutar el lote.');
+        const pct=data.totalCatalog?Math.min(100,(Number(data.cursor||0)/Number(data.totalCatalog))*100):0;
+        setStatus(data.done
+          ? '✅ Catálogo completamente materializado en Turso.'
+          : `Materializando catálogo: ${Number(data.cursor||0).toLocaleString()} / ${Number(data.totalCatalog||0).toLocaleString()} (${pct.toFixed(2)}%). Registros persistentes: ${Number(data.persistentTotal||0).toLocaleString()}.`);
+        if(data.done)break;
+      }
+      if(data&&!data.done)setStatus(`⏳ Avance guardado en Turso: ${Number(data.cursor||0).toLocaleString()} / ${Number(data.totalCatalog||0).toLocaleString()}. Pulsa nuevamente para continuar.`);
     }catch(e){
       setStatus('❌ '+String(e?.message||e));
     }finally{
