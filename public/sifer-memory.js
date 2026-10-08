@@ -53,7 +53,7 @@
 
   async function pullSync(){
     try{
-      const data=await push('/api/sifer-memory',{op:'sync',facts:allFacts(),episodes:store.episodes.slice(0,150)});
+      const rr=await fetch('/api/sifer-memory?op=search&limit=50',{cache:'no-store'}); if(!rr.ok) return false; const data=await rr.json();
       if(!data||!data.ok) return false;
       const now=new Date().toISOString();
       for(const f of (data.facts||[])){
