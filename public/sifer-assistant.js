@@ -657,7 +657,7 @@
     const q=String(query||'').trim();
     if(!q)return null;
     try{
-      const r=await fetch('/api/master-catalog?q='+encodeURIComponent(q)+'&page=1&pageSize=20',{cache:'no-store'});
+      const r=await fetch('/api/master-catalog-materialize?mode=search&q='+encodeURIComponent(q)+'&page=1&pageSize=20',{cache:'no-store'});
       if(r.ok){
         const data=await r.json();
         const rows=Array.isArray(data?.items)?data.items:[];
