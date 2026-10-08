@@ -729,25 +729,7 @@
         if(!id){
           const query=String(args.query||args.nombre||args.producto||'').trim();
           p=findProductForCommand(query);
-          if(!p&&query&&typeof queryMasterCatalog==='function'){
-            const item=findMasterCatalogItemForCommand(query);
-            if(item){
-              const normS=s=>normalizeLocal(s);
-              const reps=typeof getRepuestos==='function'?getRepuestos():[];
-              const existing=reps.find(r=>normS(r.sku)===normS(item.codigoProveedor)||normS(r.codigoOEM)===normS(item.codigoOEM))
-                ||(Array.isArray(db?.productos)?db.productos.find(x=>normS(x.codigo)===normS(item.codigoProveedor)||normS(x.codigoOEM)===normS(item.codigoOEM)):null);
-              if(existing) p=existing;
-              else{
-                const need=Math.max(1,Math.floor(Number(args.quantity||args.qty||1)));
-                const stock=Math.max(need,Math.floor(Number(args.stock??need)));
-                const min=args.min===undefined?0:Math.max(0,Math.floor(Number(args.min)));
-                const reorder=args.reorderPoint===undefined?Math.max(min,Math.ceil(min*1.6)):Math.max(0,Math.floor(Number(args.reorderPoint)));
-                p=pushMasterItem(item,stock,min,reorder);
-                extra=' (importado desde el Catálogo Máster con '+stock+' unidades)';
-              }
-            }
-          }
-          if(!p) throw new Error('No encontré el artículo '+(query?'"'+query+'"':'indicado')+' ni en el inventario ni en el Catálogo Máster. Usa un nombre más preciso o dime "busca …" para localizarlo.');
+          if(!p) throw new Error('No encontré el artículo '+(query?'"'+query+'"':'indicado')+' en el inventario. Buscar en el Catálogo Máster no modifica el inventario; si quieres incorporarlo, indícame explícitamente "importa … con N unidades".');
           id=String(p.id); type=(p.sku&&!p.codigo?'repuesto':'producto');
         }else{
           const raw=localStorage.getItem('sifer360_v1'),d=raw?JSON.parse(raw):{};
