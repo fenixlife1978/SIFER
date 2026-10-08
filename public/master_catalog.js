@@ -612,7 +612,11 @@
     const matchedVehicles = rawQ ? VEHICLES_IN_VENEZUELA.filter(v => {
       const hay = normalizeSearchText(v.marca + ' ' + v.modelo + ' ' + v.anios + ' ' + v.motor);
       const hits = qTokens.filter(t => t.length >= 3 && hay.includes(t));
-      return hits.length >= Math.min(2, qTokens.length);
+      // Basta una coincidencia inequívoca con marca/modelo/año/motor para
+      // activar la búsqueda determinística del vehículo. Consultas reales
+      // como "correa de tiempo Aveo" y "sensor oxígeno Aveo" tienen un solo
+      // token del vehículo; exigir dos hacía que volvieran al muestreo.
+      return hits.length >= 1;
     }) : [];
 
     const candidateIndices = [];
