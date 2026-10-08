@@ -73,17 +73,10 @@ function tokens(s:any){
     banda:'correa',
     belt:'correa',
     timing:'tiempo',
-    distribution:'distribucion',
-    distribucion:'distribucion',
-    kit:'kit'
+    distribution:'distribucion'
   };
-  const out:string[]=[];
-  for(const token of raw){
-    out.push(token);
-    const alias=aliases[token];
-    if(alias && !out.includes(alias)) out.push(alias);
-  }
-  return out;
+  return raw.map((token:string)=>aliases[token]||token).filter(Boolean)
+    .filter((token:string,i:number,a:string[])=>a.indexOf(token)===i);
 }
 
 function score(text:string,q:string){
