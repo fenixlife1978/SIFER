@@ -417,6 +417,45 @@
     }
   }
 
+  function isCashQuery(text){
+    const q=normalizeLocal(text);
+    return /(cuanto hay en caja|cu[aá]nto hay en caja|cuanto tengo en caja|saldo de caja|saldo en caja|caja est[aá] abierta|caja abierta|cajas abiertas|estado de caja|efectivo en caja|dinero en caja)/.test(q);
+  }
+  async function answerCash(){
+    try{
+      const response=await fetch('/api/sifer-data?query=cash',{cache:'no-store'});
+      if(!response.ok)throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok)throw new Error(data.error||'Consulta no disponible');
+      const items=Array.isArray(data.items)?data.items:[];
+      const open=Array.isArray(data.open)?data.open:items.filter(x=>x.abierta);
+      if(!items.length)return 'Turso no tiene cajas registradas todavía.';
+      if(!open.length)return 'Turso confirma que no hay ninguna caja abierta en este momento.';
+      const detail=open.map(x=>(x.nombre||x.id)+' — saldo '+formatSalesAmount(x.saldo,'USD')+(x.apertura?' — apertura '+String(x.apertura):'')).join('; ');
+      return 'Turso confirma '+open.length+' '+(open.length===1?'caja abierta':'cajas abiertas')+'. '+detail+'.';
+    }catch{
+      return 'No pude consultar el estado real de caja en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
+    }
+  }
+  function isLastZQuery(text){
+    const q=normalizeLocal(text);
+    return /(ultimo corte z|último corte z|ultimo z|último z|ultimo corte|último corte|cuando fue el ultimo corte|cuando fue el último corte|fecha del ultimo corte|fecha del último corte)/.test(q);
+  }
+  async function answerLastZ(){
+    try{
+      const response=await fetch('/api/sifer-data?query=last-z',{cache:'no-store'});
+      if(!response.ok)throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok)throw new Error(data.error||'Consulta no disponible');
+      const x=data.item;
+      if(!x)return 'Turso confirma que todavía no hay un Corte Z registrado para las cajas sincronizadas.';
+      const when=x.ultimo_corte_at?new Date(x.ultimo_corte_at).toLocaleString('es-VE'):'sin fecha';
+      return 'Turso registra el último Corte Z sincronizado en '+(x.nombre||x.id)+' el '+when+'. El saldo registrado actualmente en esa caja es '+formatSalesAmount(x.saldo,'USD')+'.';
+    }catch{
+      return 'No pude consultar el último Corte Z real en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
+    }
+  }
+
   function isExploreSystemQuery(text){
     const q=normalizeLocal(text);
     return /(explora|explorar|explorate|recorre|recorrer|map(ea|ear)|mapea|mapear|conoce|aprende|explota|reexplora|re-explora).*(sistema|pos|modulos|modulo|botones|acciones|mapa)/.test(q)
@@ -1353,8 +1392,18 @@
       if(isLowStockQuery(command)){
         messages.push({role:'assistant',text:await answerLowStockQuery(command)}); render(); return;
       }
-      if(isAccountsReceivableQuery(command)) return {text:await answerAccountsReceivable()};
-    if(isAccountsPayableQuery(command)) return {text:await answerAccountsPayable()};
+      if(isAccountsReceivableQuery(command)){
+        messages.push({role:'assistant',text:await answerAccountsReceivable()}); render(); return;
+      }
+      if(isAccountsPayableQuery(command)){
+        messages.push({role:'assistant',text:await answerAccountsPayable()}); render(); return;
+      }
+      if(isCashQuery(command)){
+        messages.push({role:'assistant',text:await answerCash()}); render(); return;
+      }
+      if(isLastZQuery(command)){
+        messages.push({role:'assistant',text:await answerLastZ()}); render(); return;
+      }
     if(isInventoryQuery(command)){
         messages.push({role:'assistant',text:await answerInventoryQuery()}); render(); return;
       }
