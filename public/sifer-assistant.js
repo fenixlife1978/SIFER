@@ -478,6 +478,14 @@
     return 'Exploración completada. SIFER recorrió '+c.visited+' de '+total+' módulos y guardó botones, campos, selectores, diálogos, modales y navegación en su memoria persistente (local y en la nube).'+(c.failed?' No pudo observar '+c.failed+' módulo(s).':'');
   }
 
+  function isNaturalCatalogLookup(command){
+    const q=normalizeLocal(command);
+    if(!q || /\b(?:agrega|añade|mete|pon|importa|incorpora|compra|registra|cobra|factura|vende|elimina|cancela|anula)\b/.test(q)) return false;
+    const lookupVerb=/(?:busca|buscar|buscame|encuentra|encontrar|tenemos|hay|existe|disponemos|dame|dime|precio|cuanto cuesta|cuanto vale|cual es el precio)/.test(q);
+    const productWord=/(sensor|oxigeno|bateria|correa|cables?|bujia|filtro|aceite|bombillo|repuesto|pieza|articulo|producto|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|corolla|sentra|tiida)/.test(q);
+    const excluded=/(referencias? cruzadas?|equivalencias?|ficha tecnica|ficha del|agrega al carrito|para vender)/.test(q);
+    return lookupVerb&&productWord&&!excluded;
+  }
   function isTodaySalesQuery(text){
     const value=String(text||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     return /(cuanto.*vend|vendimos|ventas.*hoy|venta.*hoy|vendido.*hoy|total.*ventas.*hoy|total.*vendido)/i.test(value);
@@ -1444,6 +1452,12 @@
       // Así frases como "esas son las referencias?", "dame las referencias de ese artículo"
       // o "revisa las referencias cruzadas" no pueden ser interpretadas como una búsqueda
       // nueva ni delegadas al LLM.
+      if(isNaturalCatalogLookup(command)){
+        const query=deriveCatalogQuery(command);
+        if(!query) throw new Error('Dime qué artículo quieres buscar.');
+        const execution=await executeSiferAction({name:'search_catalog',args:{query}});
+        messages.push({role:'assistant',text:execution?.message||'Búsqueda realizada.'}); render(); return;
+      }
       const referenceIntent=/(?:referencias? cruzadas?|referencias?|equivalencias?|numeros? de parte|numeros? equivalentes?)/i.test(normalizeLocal(command));
       let action;
       const fichaIntent=/(?:muestra|mostrar|ensena|enseña|ver|dame|abre|abrir).*(?:ficha|ficha tecnica|ficha técnica|detalles?)|ficha.*(?:sensor|repuesto|producto|articulo|aveo|chevrolet)/i.test(normalizeLocal(command));
