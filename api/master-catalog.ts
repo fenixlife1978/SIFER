@@ -241,7 +241,23 @@ export default async function handler(req:any,res:any){
         args:tokens(q).map((t:string)=>'%'+t+'%')
       });
       if(!probe.rows?.length){
-        const generated=await generatePersistentCandidates(req,q,category);
+        // No dependemos de que la combinación completa exista en el generador.
+        // Reconstruimos candidatos por cada término y luego aplicamos el filtro
+        // completo; esto permite consultas naturales como "correa tiempo Aveo".
+        const queryParts=[q,...tokens(q)].filter((v:string,i:number,a:string[])=>a.indexOf(v)===i);
+        const generatedMap=new Map<string,any>();
+        for(const part of queryParts){
+          const generated=await generatePersistentCandidates(req,part,category);
+          for(const item of generated) generatedMap.set(String(item.masterId),item);
+          if(generatedMap.size>=500) break;
+        }
+        const generated=[...generatedMap.values()].filter((item:any)=>{
+          const hay=normalize([
+            item.nombre,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,
+            item.subcategoria,item.descripcionTecnica,item.especificaciones,item.origenMarca,item.unidadMedida
+          ].join(' '));
+          return tokens(q).every((t:string)=>hay.includes(t));
+        });
         if(generated.length){
           const now=new Date().toISOString();
           const stmts=generated.slice(0,100).map((x:any)=>itemToStmt(x,'master-v1',now));
