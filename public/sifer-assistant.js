@@ -349,37 +349,35 @@
       || /(minimo|minimos|minimas).*(inventario|stock|productos|articulos|repuestos)/.test(q);
   }
 
-  function answerLowStockQuery(text){
+  async function answerLowStockQuery(text){
     try{
-      const raw=localStorage.getItem('sifer360_v1'); const db=raw?JSON.parse(raw):{};
-      const productos=Array.isArray(db.productos)?db.productos:[];
-      const repuestos=typeof getRepuestos==='function'?(getRepuestos()||[]):[];
-      const all=[...productos,...repuestos], seen=new Set();
-      const unique=all.filter(p=>{
-        const key=String(p.id||p.codigo||p.sku||p.nombre||'');
-        if(!key||seen.has(key))return false; seen.add(key); return true;
-      });
+      const response=await fetch('/api/sifer-data?query=inventory',{cache:'no-store'});
+      if(!response.ok)throw new Error('Turso no disponible');
+      const data=await response.json();
+      if(!data.ok)throw new Error(data.error||'Consulta no disponible');
       const threshold=extractStockThreshold(text);
-      const low=unique.filter(p=>{
+      const items=Array.isArray(data.items)?data.items:[];
+      const low=items.filter(p=>{
         const stock=Number(p.stock??0);
         if(!Number.isFinite(stock))return false;
         if(threshold!==null)return stock<threshold;
-        const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
+        const minimo=Number(p.min??0);
         return Number.isFinite(minimo)&&minimo>0&&stock<minimo;
       });
       if(!low.length)return threshold!==null
-        ? 'No hay artículos con menos de '+threshold+' unidades de existencia.'
-        : 'No hay artículos por debajo del mínimo configurado.';
+        ? 'Turso confirma que no hay artículos con menos de '+threshold+' unidades de existencia.'
+        : 'Turso confirma que no hay artículos por debajo del mínimo configurado.';
       const detail=low.slice(0,30).map(p=>{
-        const stock=Number(p.stock??0);
-        const minimo=Number(p.min??p.stockMin??p.minStock??p.stockMinimo??p.existenciaMinima??0);
+        const stock=Number(p.stock??0), minimo=Number(p.min??0);
         return (p.nombre||p.codigo||p.id)+' — existencia '+stock+(threshold===null?' — mínimo '+minimo:'');
       }).join('; ');
       const intro=threshold!==null
-        ? 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' con menos de '+threshold+' unidades.'
-        : 'Sí. Encontré '+low.length+' artículo'+(low.length===1?'':'s')+' por debajo del mínimo.';
+        ? 'Turso confirma '+low.length+' artículo'+(low.length===1?'':'s')+' con menos de '+threshold+' unidades.'
+        : 'Turso confirma '+low.length+' artículo'+(low.length===1?'':'s')+' por debajo del mínimo.';
       return intro+' '+detail+(low.length>30?' …':'');
-    }catch{return 'No pude consultar las existencias del inventario real en este momento.';}
+    }catch{
+      return 'No pude consultar las existencias reales en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
+    }
   }
 
   function isExploreSystemQuery(text){
