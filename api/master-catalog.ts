@@ -64,11 +64,11 @@ function rowToItem(r:any){
 }
 
 function normalize(s:any){
-  return String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 
 function tokens(s:any){
-  return normalize(s).split(/\\s+/).filter(Boolean);
+  return normalize(s).split(/\s+/).filter(Boolean);
 }
 
 function score(text:string,q:string){
