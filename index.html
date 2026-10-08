@@ -688,10 +688,21 @@ async function finishSale(total){
 function productosView(){
   const productos = Array.isArray(db.productos)?db.productos:[];
   const repuestos = typeof getRepuestos==='function' ? getRepuestos() : [];
-  const inventario = [
-    ...productos.map(p=>({...p,_source:'Producto',_sourceId:p.id})),
-    ...repuestos.map(r=>({...r,_source:'Repuesto',_sourceId:r.id,codigo:r.sku||r.id,codigoOEM:r.codigoOEM,unidad:r.unidad||'Unidad'}))
-  ];
+  // Productos y repuestos pueden contener la misma fila sincronizada desde Turso.
+  // Deduplicar evita que el dashboard cuente dos veces las mismas existencias.
+  const inventarioMap = new Map();
+  for (const p of productos) {
+    const key = String(p.id || p.codigo || p.sku || p.nombre || '').trim().toLowerCase();
+    if (key) inventarioMap.set(key, {...p,_source:'Producto',_sourceId:p.id});
+  }
+  for (const r of repuestos) {
+    const key = String(r.id || r.codigo || r.sku || r.nombre || '').trim().toLowerCase();
+    if (!key) continue;
+    const existing = inventarioMap.get(key);
+    if (!existing) inventarioMap.set(key,{...r,_source:'Repuesto',_sourceId:r.id,codigo:r.sku||r.id,codigoOEM:r.codigoOEM,unidad:r.unidad||'Unidad'});
+    else inventarioMap.set(key,{...existing,stock:Number(existing.stock ?? r.stock ?? 0)});
+  }
+  const inventario = [...inventarioMap.values()];
   const totalUnidades=inventario.reduce((s,p)=>s+Number(p.stock||0),0);
   const bajos=inventario.filter(p=>Number(p.stock||0)<=Number(p.min||0)).length;
   return listPage(
