@@ -87,16 +87,19 @@ window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.g
 function cajaActual(){if(!Array.isArray(db.cajas)||!db.cajas.length)db.cajas=structuredClone(seed.cajas);let c=db.cajas.find(x=>x.id===db.terminalId);if(!c){c=structuredClone(db.cajas[0]);db.terminalId=c.id}return c}
 function usuarioActual(){return (db.usuarios||[]).find(x=>x.id===db.usuarioActualId)||db.usuarios?.[0]||{nombre:'Administrador',rol:'Administrador'}}
 async function reserveDocumentNumber(kind){
-  const c=cajaActual(),fallback=()=>kind==='DEV'?'DEV-'+String(c.seqDevolucion++).padStart(5,'0'):kind==='Z'?'Z-'+String(c.seqZ++).padStart(5,'0'):'VTA-'+String(c.seqVenta++).padStart(5,'0');
-  if(!navigator.onLine)return fallback();
+  const c=cajaActual();
+  if(!navigator.onLine){
+    throw new Error('No hay conexión con Turso. La numeración de ventas, devoluciones y cortes Z requiere conexión para evitar duplicados.');
+  }
   try{
     const r=await fetch('/api/turso-sequence',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cajaId:c.id,tipo:kind})});
-    const data=await r.json();
-    if(!r.ok||!data.ok)throw new Error(data.error||'No se pudo reservar numeración');
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok||!data.ok)throw new Error(data.error||'No se pudo reservar numeración en Turso');
     return data.documento;
   }catch(e){
-    toast('Turso no disponible: se usará numeración local para esta operación');
-    return fallback();
+    const msg=String(e?.message||e);
+    toast('No se puede completar la operación: Turso no está disponible.');
+    throw new Error('Numeración no disponible en Turso. La operación fue detenida para proteger la numeración: '+msg);
   }
 }
 function money(n){return new Intl.NumberFormat('es-US',{style:'currency',currency:db.config.moneda}).format(Number(n)||0)}
