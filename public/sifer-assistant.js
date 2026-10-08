@@ -419,7 +419,7 @@
 
   function isCashQuery(text){
     const q=normalizeLocal(text);
-    return /(cuanto hay en caja|cu[aá]nto hay en caja|cuanto tengo en caja|saldo de caja|saldo en caja|caja est[aá] abierta|caja abierta|cajas abiertas|estado de caja|efectivo en caja|dinero en caja)/.test(q);
+    return /(cuanto hay en caja|cu[aá]nto hay en caja|cuanto tengo en caja|saldo de caja|saldo en caja|caja est[aá] abierta|caja abierta|cajas abiertas|estado de caja|efectivo en caja|dinero en caja|efectivo.*(?:bolivar|bolívar|bolivares|bolívares|usd|dolar|dólar|sistema|deberia|debería)|(?:bolivar|bolívar|bolivares|bolívares).*efectivo|(?:usd|dolar|dólar).*efectivo)/.test(q);
   }
   async function answerCash(){
     try{
@@ -431,8 +431,14 @@
       const open=Array.isArray(data.open)?data.open:items.filter(x=>x.abierta);
       if(!items.length)return 'Turso no tiene cajas registradas todavía.';
       if(!open.length)return 'Turso confirma que no hay ninguna caja abierta en este momento.';
-      const detail=open.map(x=>(x.nombre||x.id)+' — saldo '+formatSalesAmount(x.saldo,'USD')+(x.apertura?' — apertura '+String(x.apertura):'')).join('; ');
-      return 'Turso confirma '+open.length+' '+(open.length===1?'caja abierta':'cajas abiertas')+'. '+detail+'.';
+      let rate=Number(typeof db!=='undefined'&&db.config?.bcv?.rate);
+      const hasCurrencyDetail=/(bolivar|bolívar|bolivares|bolívares|usd|dolar|dólar|deberia|debería|sistema)/.test(normalizeLocal(arguments?.[0]||''));
+      const detail=open.map(x=>{
+        const usd=Number(x.saldo||0);
+        const bs=Number.isFinite(rate)&&rate>0?usd*rate:null;
+        return (x.nombre||x.id)+' — '+formatSalesAmount(usd,'USD')+(bs!==null?' — equivalente '+bs.toLocaleString('es-VE',{style:'currency',currency:'VES'}):'');
+      }).join('; ');
+      return 'Turso confirma '+open.length+' '+(open.length===1?'caja abierta':'cajas abiertas')+'. '+detail+'.'+(hasCurrencyDetail&&Number.isFinite(rate)&&rate>0?' Tasa BCV usada para la equivalencia: '+rate.toLocaleString('es-VE',{minimumFractionDigits:4,maximumFractionDigits:4})+' Bs/USD.':'');
     }catch{
       return 'No pude consultar el estado real de caja en Turso. No usaré el caché local para darte una cifra que podría ser incorrecta.';
     }
@@ -1410,6 +1416,16 @@
       }
       if(isAccountsPayableQuery(command)){
         messages.push({role:'assistant',text:await answerAccountsPayable()}); render(); return;
+      }
+      if(/(?:cuando|cu[aá]ndo|en cuantos|en cu[aá]ntos|que dia|qué día|fecha).*(?:vence|vencimiento)|(?:vence|vencimiento).*(?:cada|cxp|proveedor|proveedores)/i.test(normalizeLocal(command))){
+        const response=await fetch('/api/sifer-data?query=cxp',{cache:'no-store'});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok) throw new Error(data.error||'No pude consultar CxP en Turso.');
+        const items=Array.isArray(data.items)?data.items:[];
+        const answer=items.length
+          ? 'Turso tiene '+items.length+' CxP pendientes, pero actualmente no existe un campo de fecha de vencimiento registrado para esos documentos. No voy a inventar una fecha. Documentos: '+items.map(x=>(x.proveedor||'Proveedor')+' — '+String(x.documento||'sin documento')+' — fecha registrada '+String(x.fecha||'sin fecha')).join('; ')+'.'
+          : 'Turso confirma que no hay CxP pendientes.';
+        messages.push({role:'assistant',text:answer}); render(); return;
       }
       if(isCashQuery(command)){
         messages.push({role:'assistant',text:await answerCash()}); render(); return;
