@@ -632,7 +632,9 @@
     // Para consultas de repuestos con vehículo/producto reconocible NO usamos muestreo.
     // Resolvemos directamente las combinaciones que pueden satisfacer la consulta.
     const qNorm = normalizeSearchText(rawQ);
-    const qTokens = qNorm.split(/\\s+/).filter(Boolean);
+    const rawTokens = qNorm.split(/\s+/).filter(Boolean);
+    const aliases = { banda: 'correa', belt: 'correa', timing: 'tiempo', distribution: 'distribucion' };
+    const qTokens = rawTokens.map(token => aliases[token] || token).filter((token, i, a) => a.indexOf(token) === i);
     const vehicleMatches = [];
     const templateMatches = [];
 
