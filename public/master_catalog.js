@@ -616,7 +616,7 @@
   function persistMasterCatalogItems(items) {
     if (!Array.isArray(items) || !items.length || typeof fetch !== 'function') return;
     const payload = items.slice(0, 50);
-    Promise.resolve().then(() => fetch('/api/master-catalog', {
+    Promise.resolve().then(() => fetch('/api/master-catalog-materialize', {
       method: 'POST',
       headers: {'content-type':'application/json'},
       body: JSON.stringify({action:'upsert-batch',sourceVersion:'master-v1',items:payload})
@@ -740,7 +740,7 @@
 
     // Cada consulta exitosa deja los artículos identificados en Turso.
     // La persistencia es asíncrona y nunca bloquea el POS.
-    persistMasterCatalogItems(paged);
+    
 
     return {
       items: paged,
