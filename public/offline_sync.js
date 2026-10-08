@@ -56,6 +56,24 @@
     }
     updateStatus();
   }
+  async function bootstrapProductsInventory(){
+    if(!navigator.onLine)return {ok:false,skipped:true};
+    try{
+      const remote=await fetch('/api/turso-products',{method:'GET',cache:'no-store'});
+      if(!remote.ok)return {ok:false,status:remote.status};
+      const current=await remote.json();
+      if(!current.ok)return {ok:false,error:current.error||'Consulta remota no disponible'};
+      if(Array.isArray(current.products)&&current.products.length>0)return {ok:true,count:current.products.length,bootstrapped:false};
+      const local=await loadStateValue();
+      const products=Array.isArray(local?.productos)?clone(local.productos):[];
+      if(!products.length)return {ok:true,count:0,bootstrapped:false};
+      const push=await fetch('/api/turso-products',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({products})});
+      const data=await push.json().catch(()=>({}));
+      if(!push.ok||!data.ok)throw new Error(data.error||'No se pudo inicializar el inventario en Turso');
+      return {ok:true,count:products.length,bootstrapped:true};
+    }catch(e){return {ok:false,error:String(e?.message||e)}}
+  }
+
   async function pullProductsInventory(){
     if(!navigator.onLine)return {ok:false,skipped:true};
     const count=await getQueueCount();
