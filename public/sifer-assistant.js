@@ -720,7 +720,8 @@
         if(!item) throw new Error('No encontré una coincidencia suficientemente clara en el Catálogo Máster.');
         lastCatalogItem=item;
         try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
-        return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · costo referencial '+money(item.costoReferencial)};
+        const precio=Number((Number(item.costoReferencial||0)*(1+(Number(item.margenSugerido||35)/100))).toFixed(2));
+        return {ok:true,message:'Encontré: '+item.nombre+' · '+item.marca+' · OEM '+item.codigoOEM+' · precio de venta referencial '+money(precio)+' · costo referencial '+money(item.costoReferencial)};
       }
       case 'catalog_ficha': {
         const query=String(args.query||args.search||'').trim();
@@ -1011,7 +1012,7 @@
       .replace(/\b(?:100|\d+)\s*(?:unidades?|uds?|piezas?)\b/g,' ')
       .replace(/\b(?:minimo|minima|min|reorden|reordenar|reordenacion)\s*\d+(?:[.,]\d+)?\b/g,' ')
       .replace(/\s+/g,' ').trim();
-    const hasEntity=/(sensor|repuesto|producto|articulo|pieza|bujia|bujia|aceite|filtro|bateria|bombillo|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|corolla|sentra|tiida)/i.test(direct);
+    const hasEntity=/(sensor|repuesto|producto|articulo|pieza|bujia|aceite|filtro|bateria|bombillo|correa|tiempo|distribucion|kit|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|corolla|sentra|tiida)/i.test(direct);
     if(direct && hasEntity && !/^(el|la|los|las|ese|esa|eso|esto|lo|la)$/i.test(direct)) return direct;
     const recent=messages.slice().reverse().find(m=>m.role==='user' && /(?:sensor|repuesto|producto|articulo|pieza|aveo|chevrolet|toyota|ford|nissan|hyundai|kia|bujia|bujia)/i.test(String(m.text||'')));
     if(recent) return removeFiller(String(recent.text||''))
@@ -1026,6 +1027,8 @@
       const query=deriveCatalogQuery(command);
       if(!query) return null;
       const variants=[query];
+      if(q.includes('correa') && q.includes('tiempo') && q.includes('aveo')) variants.push('correa de tiempo aveo');
+      if(q.includes('correa') && q.includes('aveo')) variants.push('correa aveo');
       const q=normalizeLocal(query);
       if(q.includes('sensor') && q.includes('oxigen')) variants.push('sensor oxigeno aveo');
       if(q.includes('aveo') && q.includes('sensor')) variants.push('sensor aveo');
