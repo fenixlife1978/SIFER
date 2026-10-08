@@ -1353,6 +1353,45 @@
     `;
   }
 
+  async function materializeMasterCatalogBatch(){
+    const statusEl=document.getElementById('masterMaterializeStatus');
+    const btn=document.getElementById('masterMaterializeBtn');
+    const setStatus=(s)=>{if(statusEl)statusEl.textContent=s;};
+    if(btn)btn.disabled=true;
+    try{
+      let r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
+      if(r.status===401){
+        const secret=prompt('Acceso administrativo\\n\\nIntroduzca la clave administrativa configurada en CRON_SECRET para habilitar la materialización por lotes:');
+        if(!secret){setStatus('Materialización cancelada.');return;}
+        const u=await fetch('/api/master-catalog-admin',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'unlock',secret})});
+        const ud=await u.json().catch(()=>({}));
+        if(!u.ok||!ud.ok)throw new Error(ud.error||'No fue posible validar la credencial administrativa.');
+        r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
+      }
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok||!data.ok)throw new Error(data.error||'No fue posible ejecutar el lote.');
+      const pct=data.totalCatalog?Math.min(100,(Number(data.cursor||0)/Number(data.totalCatalog))*100):0;
+      setStatus(data.done
+        ? '✅ Catálogo completamente materializado en Turso.'
+        : `Lote ejecutado: ${Number(data.cursor||0).toLocaleString()} / ${Number(data.totalCatalog||0).toLocaleString()} (${pct.toFixed(2)}%). Registros persistentes: ${Number(data.persistentTotal||0).toLocaleString()}. Pulsa nuevamente para continuar.`);
+    }catch(e){
+      setStatus('❌ '+String(e?.message||e));
+    }finally{
+      if(btn)btn.disabled=false;
+    }
+  }
+
+  async function checkMasterCatalogMaterialization(){
+    const statusEl=document.getElementById('masterMaterializeStatus');
+    try{
+      const r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
+      if(r.status===401){if(statusEl)statusEl.textContent='Materialización administrativa bloqueada. Pulsa el botón para desbloquear.';return;}
+      const d=await r.json().catch(()=>({}));
+      if(!d.ok){if(statusEl)statusEl.textContent='Estado no disponible: '+String(d.error||'error');return;}
+      if(statusEl)statusEl.textContent=d.done?'✅ Catálogo completamente materializado en Turso.':`Materialización: ${Number(d.cursor||0).toLocaleString()} / ${Number(d.totalCatalog||0).toLocaleString()} · Pulsa el botón para continuar.`;
+    }catch{}
+  }
+
   function masterCatalogView() {
     return `
     <div class="pagehead">
@@ -1362,6 +1401,7 @@
       </div>
       <div class="actions" style="margin:0">
         <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar Nuevo Producto a Mi Tienda</button>
+        <button id="masterMaterializeBtn" class="btn" onclick="materializeMasterCatalogBatch()" title="Avanza un lote seguro de materialización en Turso">🗄️ Materializar Catálogo</button>
       </div>
     </div>
 
@@ -1372,6 +1412,9 @@
       <div class="card">Frenos, Cloche y Caja<b>480.000+</b><span>Pastillas, discos, embragues...</span></div>
       <div class="card">Baterías, Luces y Relex<b>550.000+</b><span>Duncan, H4/LED, 12V 40A...</span></div>
       <div class="card">Mi Inventario Activo<b>${db.productos.length + getRepuestos().length}</b><span>en mi tienda local</span></div>
+    </div>
+    <div id="masterMaterializeStatus" style="font-size:11px;color:#555;background:#f6f8fb;border:1px solid #d9e1ea;padding:7px 9px;border-radius:4px;margin-bottom:8px">
+      Materialización persistente: consulta de estado…
     </div>
 
     <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #ddd">
@@ -1404,6 +1447,8 @@
   global.saveCommercialProductFromForm = saveCommercialProductFromForm;
   global.openCommercialRepuestoFormWithMaster = openCommercialRepuestoFormWithMaster;
   global.masterCatalogView = masterCatalogView;
+  global.materializeMasterCatalogBatch = materializeMasterCatalogBatch;
+  global.checkMasterCatalogMaterialization = checkMasterCatalogMaterialization;
   global.onMasterSearchInput = onMasterSearchInput;
   global.setMasterViewCategory = setMasterViewCategory;
   global.changeMasterViewPage = changeMasterViewPage;
