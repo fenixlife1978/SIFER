@@ -712,6 +712,20 @@
       if (rawQ) {
         const fullSearchableText = `${item.nombre} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
         matchesQ = matchKeywords(fullSearchableText, rawQ);
+        // Evita falsos positivos entre familias de repuestos: el término principal
+        // solicitado debe estar presente en el artículo, no solo el vehículo.
+        const nq = normalizeSearchText(rawQ);
+        const ni = normalizeSearchText(fullSearchableText);
+        const families = [
+          { terms: ["bujia", "bujias", "spark plug"], accept: ["bujia", "bujias", "spark plug"], reject: ["sensor de oxigeno", "sensor oxigeno", "correa de tiempo", "correa de distribucion"] },
+          { terms: ["sensor de oxigeno", "sensor oxigeno"], accept: ["sensor", "oxigeno"], reject: ["bujia", "correa de tiempo", "correa de distribucion"] },
+          { terms: ["correa de tiempo", "correa de distribucion", "kit de distribucion"], accept: ["correa", "distribucion", "tiempo"], reject: ["bujia", "sensor de oxigeno"] },
+          { terms: ["bateria", "baterias"], accept: ["bateria"], reject: ["bujia", "sensor de oxigeno"] }
+        ];
+        const family = families.find(f => f.terms.some(t => nq.includes(t)));
+        if (matchesQ && family && (!family.accept.some(t => ni.includes(t)) || family.reject.some(t => ni.includes(t)))) {
+          matchesQ = false;
+        }
       }
 
       if (matchesQ) {
