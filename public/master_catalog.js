@@ -1363,7 +1363,7 @@
       if(r.status===401){
         const secret=prompt('Acceso administrativo\\n\\nIntroduzca la clave administrativa configurada en CRON_SECRET para habilitar la materialización por lotes:');
         if(!secret){setStatus('Materialización cancelada.');return;}
-        const u=await fetch('/api/master-catalog-admin',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'unlock',secret})});
+        const u=await fetch('/api/master-catalog-materialize',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'unlock',secret})});
         const ud=await u.json().catch(()=>({}));
         if(!u.ok||!ud.ok)throw new Error(ud.error||'No fue posible validar la credencial administrativa.');
         r=await fetch('/api/master-catalog-materialize',{method:'GET',credentials:'same-origin',cache:'no-store'});
