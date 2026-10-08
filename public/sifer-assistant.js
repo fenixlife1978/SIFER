@@ -652,6 +652,28 @@
     try{ const r=await fn(); return {result:r,captured}; }
     finally{ if(orig)window.toast=orig; else delete window.toast; }
   }
+
+  async function findPersistentMasterCatalogItem(query){
+    const q=String(query||'').trim();
+    if(!q)return null;
+    try{
+      const r=await fetch('/api/master-catalog?q='+encodeURIComponent(q)+'&page=1&pageSize=20',{cache:'no-store'});
+      if(r.ok){
+        const data=await r.json();
+        const rows=Array.isArray(data?.items)?data.items:[];
+        if(rows.length)return rows[0];
+      }
+    }catch{}
+    try{
+      if(typeof queryMasterCatalog==='function'){
+        const local=await Promise.resolve(queryMasterCatalog(q));
+        const rows=Array.isArray(local)?local:(Array.isArray(local?.items)?local.items:[]);
+        if(rows.length)return rows[0];
+      }
+    }catch{}
+    return null;
+  }
+
   async function executeSiferActionOriginal(action){
     const name=String(action?.name||'').trim(),args=action?.args&&typeof action.args==='object'?action.args:{},cap=SIFER_CAPABILITIES[name];
     if(!cap) throw new Error('Acción no permitida por SIFER: '+name);
@@ -716,7 +738,9 @@
         return {ok:true,message:'Compra '+num+' registrada '+(isMixed?'como mixta':('a '+(isCash?'contado':'credito')))+': '+qty+' unidades de '+p.nombre+' con '+supplier.nombre+'. Total '+money(total)+'. Contado '+money(paid)+'.'+(saldo?' Saldo a crédito '+money(saldo)+(creditDays?' con vencimiento a '+creditDays+' días.':''):' Sin saldo pendiente.')};
       }
       case 'search_catalog': {
-        const item=findMasterCatalogItemForCommand(args.query||args.search||'');
+        const query=String(args.query||args.search||'').trim();
+        let item=await findPersistentMasterCatalogItem(query);
+        if(!item) item=findMasterCatalogItemForCommand(query);
         if(!item) throw new Error('No encontré una coincidencia suficientemente clara en el Catálogo Máster.');
         lastCatalogItem=item;
         try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
@@ -726,7 +750,7 @@
       case 'catalog_ficha': {
         const query=String(args.query||args.search||'').trim();
         let item=lastCatalogItem;
-        if(query) item=findMasterCatalogItemForCommand(query);
+        if(query) item=await findPersistentMasterCatalogItem(query);
         if(!item) throw new Error('No tengo un artículo identificado. Dime cuál artículo quieres consultar.');
         lastCatalogItem=item;
         try{localStorage.setItem('sifer360_last_catalog_item_v1',JSON.stringify(item));}catch{}
@@ -757,7 +781,7 @@
         let item=lastCatalogItem;
         if(!item){
           const query=String(args.query||args.search||'').trim();
-          if(query) item=findMasterCatalogItemForCommand(query);
+          if(query) item=await findPersistentMasterCatalogItem(query);
         }
         if(!item) throw new Error('No tengo un artículo identificado recientemente. Dime cuál artículo quieres consultar.');
         lastCatalogItem=item;
