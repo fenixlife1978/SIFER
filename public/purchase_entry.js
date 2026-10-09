@@ -72,6 +72,7 @@
   }
   function closeSuggest(id){var box=el(id);if(box){box.classList.remove('show');box.innerHTML=''}}
   function searchSupplier(){
+    el('pe-proveedor-id').value='';
     var q=(el('pe-proveedor').value||'').trim().toLowerCase(),box=el('pe-supplier-results');
     if(!q){closeSuggest('pe-supplier-results');return}
     supplierMatches=(global.db.proveedores||[]).filter(function(s){return [s.nombre,s.documento,s.rif,s.telefono].some(function(v){return String(v||'').toLowerCase().includes(q)})}).slice(0,10);
@@ -85,7 +86,7 @@
   }
   function productSearch(){
     var q=(el('pe-product-search').value||'').trim().toLowerCase(),box=el('pe-product-results');
-    selectedProductId='';
+    selectedProductId='';if(el('pe-product-id'))el('pe-product-id').value='';
     if(!q){closeSuggest('pe-product-results');return}
     var words=q.split(/\s+/).filter(Boolean);
     productMatches=(global.db.productos||[]).filter(function(p){
@@ -218,7 +219,7 @@
   }
   function openPurchase(){
     var modal=el('modal');modal.classList.add('purchase-modal');
-    global.openModal('Entrada por Compra',formHtml(),'<span style="margin-right:auto;font-size:11px;color:#667085">SIFER · Entrada de mercancía y costo</span><button class="btn" onclick="SIFERPurchaseEntry.closePurchase()">Cancelar</button>');
+    global.openModal('Entrada por Compra',formHtml(),'<span style="font-size:11px;color:#667085">SIFER · Entrada de mercancía, costo real e IVA</span>');
     resetForm();bindForm();el('pe-product-search').focus();
   }
   function closePurchase(){el('modal').classList.remove('purchase-modal');global.closeModal()}
@@ -237,12 +238,13 @@
     if(type==='Mixto'&&res.pagado>0&&!global.cajaActual().abierta)return global.toast('Abra la caja antes de registrar el pago de una entrada mixta');
     if(type==='Mixto'&&n(el('pe-pago-bs').value)>total+0.01)return global.toast('El pago no puede superar el total de la factura');
     var numero=el('pe-nro').value,paid=type==='Contado'?total:res.pagado,pending=r2(total-paid);
+    var dueDate='';if(type!=='Contado'){var due=new Date(date+'T12:00:00');due.setDate(due.getDate()+Math.max(1,Math.floor(n(el('pe-dias').value)||30)));dueDate=due.toISOString().slice(0,10)}
     var purchase={
       numero:numero,fecha:date,proveedor:supplierName,proveedorId:supplier.id,nroFactura:el('pe-factura').value.trim(),
       observaciones:el('pe-obs').value.trim(),cost_supplier_currency:moneda(),purchase_rate_type:moneda(),purchase_rate_value:rate,
       bcv_rate_at_purchase:bcv,totalUSDProv:r2(total/rate),totalUSDBcv:r2(total/bcv),pagadoUSDProv:r2(paid/rate),
       pagadoUSDBcv:r2(paid/bcv),pendienteUSD:r2(pending/bcv),costeo:el('pe-costeo').value,tipo:type,
-      diasCredito:type==='Contado'?0:Math.max(1,Math.floor(n(el('pe-dias').value)||30)),
+      diasCredito:type==='Contado'?0:Math.max(1,Math.floor(n(el('pe-dias').value)||30)),vencimiento:dueDate,
       pagos:type==='Mixto'?[{moneda:'Bs',monto:n(el('pe-pago-bs').value)},{moneda:'USD',monto:n(el('pe-pago-usd').value)}].filter(function(p){return p.monto>0}):[],
       pagado:paid,pendiente:pending,total:total,subtotal:totalBase(),impuesto:totalIva(),estatus:'Recibida',
       cajaId:global.cajaActual().id,operadorId:global.usuarioActual().id,lineas:tempLines.map(function(l){return Object.assign({},l)})
@@ -260,9 +262,8 @@
     global.db.compras=Array.isArray(global.db.compras)?global.db.compras:[];
     global.db.compras.push(purchase);
     if(pending>0){
-      var due=new Date(date+'T12:00:00');due.setDate(due.getDate()+purchase.diasCredito);
       global.db.cxp=Array.isArray(global.db.cxp)?global.db.cxp:[];
-      global.db.cxp.push({id:global.id('CXP','cxp'),fecha:date,documento:numero,proveedorId:supplier.id,proveedor:supplierName,total:total,saldo:pending,estado:'Pendiente',vencimiento:due.toISOString().slice(0,10),tipo:type});
+      global.db.cxp.push({id:global.id('CXP','cxp'),fecha:date,documento:numero,proveedorId:supplier.id,proveedor:supplierName,total:total,saldo:pending,estado:'Pendiente',vencimiento:dueDate,tipo:type});
       supplier.saldo=n(supplier.saldo)+pending;
     }
     if(paid>0)global.cajaActual().saldo-=paid;
