@@ -2,7 +2,7 @@ import { createClient } from '@libsql/client';
 
 function json(res:any,status:number,payload:any){return res.status(status).json(payload)}
 function categoryCode(value:any){
-  const raw=String(value||'GEN').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toUpperCase();
+  const raw=String(value||'GEN').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
   const rules:[RegExp,string][]=[
     [/BUJIA|BUJIAS|SPARK/, 'BUJ'],[/FILTRO|FILTER/,'FIL'],[/LUBRIC|ACEITE|OIL/,'LUB'],
     [/FRENO|BRAKE/,'FRE'],[/SUSPENSION|SUSPEN/,'SUS'],[/DIRECCION|STEERING/,'DIR'],
@@ -28,7 +28,7 @@ export default async function handler(req:any,res:any){
       for(const row of r.rows||[]){
         const candidates=[String(row.codigo||'')];
         try{const d=JSON.parse(String(row.detalles_json||'{}'));candidates.push(String(d.sku||''));}catch(e){}
-        for(const value of candidates){const m=value.match(/^SKU-([A-Z0-9]+)-(\\d+)$/i);if(m&&m[1].toUpperCase()===category)seed=Math.max(seed,Number(m[2])+1);}
+        for(const value of candidates){const m=value.match(/^SKU-([A-Z0-9]+)-(\d+)$/i);if(m&&m[1].toUpperCase()===category)seed=Math.max(seed,Number(m[2])+1);}
       }
     }catch(e){}
     const now=new Date().toISOString();
