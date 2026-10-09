@@ -185,11 +185,11 @@ export default async function handler(req:any,res:any){
       const p=body.payload?.product;
       if(!p?.id||!p?.nombre||!String(p.codigo||'').trim())throw new Error('La sincronización del producto requiere ID, código y descripción.');
       const now=new Date().toISOString();
-      await db.execute({sql:\`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+      await db.execute({sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,marca=excluded.marca,
         unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,imagen=excluded.imagen,fuente_url=excluded.fuente_url,
-        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at\`,
+        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at`,
         args:[String(p.id),String(p.codigo),String(p.nombre),p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',JSON.stringify(p.detalles||{}),now]});
       const current=await db.execute({sql:'SELECT stock FROM sifer_inventory WHERE product_id=? LIMIT 1',args:[String(p.id)]});
       if(current.rows.length)await db.execute({sql:'UPDATE sifer_inventory SET min_stock=?,updated_at=? WHERE product_id=?',args:[Math.max(0,Number(p.min)||0),now,String(p.id)]});
