@@ -477,6 +477,88 @@
     { nameTpl: 'Filtro de Aire Motor Tipo Panel de Microfibras de Celulosa', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '17801', u: 'Unidad' },
     { nameTpl: 'Filtro de Gasolina en Línea Metálico de Alta Presión', cat: 'Filtros y Mantenimiento', cost: 3.90, margen: 45, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: '23300', u: 'Unidad' },
     { nameTpl: 'Filtro de Cabina / Polen de Aire Acondicionado con Carbón Activado', cat: 'Filtros y Mantenimiento', cost: 5.20, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '87139', u: 'Unidad' }
+
+    // 21. LUBRICACIÓN Y COMPONENTES INTERNOS DEL MOTOR
+    { nameTpl: 'Bomba de Aceite de Motor con Engranajes / Rotor Interno', cat: 'Lubricación del Motor', cost: 38.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-PUMP', u: 'Unidad', keywords: 'oil pump bomba lubricacion bomba aceite motor engranajes rotor' },
+    { nameTpl: 'Bomba de Aceite de Motor Completa con Válvula Reguladora de Presión', cat: 'Lubricación del Motor', cost: 44.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-PUMP-REG', u: 'Unidad', keywords: 'bomba aceite presion reguladora lubricacion' },
+    { nameTpl: 'Pescador / Colador de Aceite del Cárter con Tubo de Succión', cat: 'Lubricación del Motor', cost: 9.50, margen: 40, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-PICKUP', u: 'Unidad', keywords: 'pescador colador chupador tubo succion aceite carter' },
+    { nameTpl: 'Válvula de Alivio / Reguladora de Presión de Aceite', cat: 'Lubricación del Motor', cost: 8.50, margen: 40, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-RELIEF', u: 'Unidad', keywords: 'valvula presion aceite alivio lubricacion' },
+    { nameTpl: 'Enfriador de Aceite de Motor con Juntas', cat: 'Lubricación del Motor', cost: 42.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-COOLER', u: 'Unidad', keywords: 'enfriador radiador aceite motor' },
+    { nameTpl: 'Sensor / Bulbo de Presión de Aceite de Motor', cat: 'Lubricación del Motor', cost: 6.50, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'OIL-SWITCH', u: 'Unidad', keywords: 'sensor bulbo testigo presion aceite' },
+    { nameTpl: 'Varilla Medidora de Nivel de Aceite con Mango y Tubo Guía', cat: 'Lubricación del Motor', cost: 7.50, margen: 40, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-DIPSTICK', u: 'Unidad', keywords: 'varilla nivel aceite medidor bayoneta' },
+    { nameTpl: 'Tapa de Llenado de Aceite de Motor con Empaque', cat: 'Lubricación del Motor', cost: 3.50, margen: 50, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-CAP', u: 'Unidad', keywords: 'tapa llenado aceite motor' },
+    { nameTpl: 'Cárter / Depósito Inferior de Aceite de Motor', cat: 'Lubricación del Motor', cost: 32.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-PAN', u: 'Unidad', keywords: 'carter deposito bandeja aceite motor' },
+    { nameTpl: 'Empacadura de Cárter de Aceite de Motor', cat: 'Empacaduras de Motor', cost: 8.00, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'OIL-PAN-GSK', u: 'Juego', keywords: 'junta empacadura carter aceite' },
+
+    // 22. CULATA, DISTRIBUCIÓN Y SELLADO DEL MOTOR
+    { nameTpl: 'Culata / Cámara de Motor Completa', cat: 'Motor Interno', cost: 180.00, margen: 20, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'CYL-HEAD', u: 'Unidad', keywords: 'culata camara cabezote cabeza motor' },
+    { nameTpl: 'Empacadura de Culata / Junta de Cámara', cat: 'Empacaduras de Motor', cost: 18.00, margen: 40, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'HEAD-GSK', u: 'Unidad', keywords: 'junta empacadura camara culata cabezote' },
+    { nameTpl: 'Tapa de Válvulas con Empacadura', cat: 'Motor Interno', cost: 24.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'VALVE-COVER', u: 'Unidad', keywords: 'tapa valvulas tapa punterias' },
+    { nameTpl: 'Empacadura de Tapa de Válvulas', cat: 'Empacaduras de Motor', cost: 7.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'VALVE-COVER-GSK', u: 'Juego', keywords: 'junta tapa valvulas tapa punterias' },
+    { nameTpl: 'Retén Delantero de Cigüeñal', cat: 'Retenes y Sellos', cost: 4.50, margen: 50, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'CRANK-SEAL-F', u: 'Unidad', keywords: 'reten estopera sello ciguenal delantero' },
+    { nameTpl: 'Retén Trasero de Cigüeñal', cat: 'Retenes y Sellos', cost: 8.50, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'CRANK-SEAL-R', u: 'Unidad', keywords: 'reten estopera sello ciguenal trasero' },
+    { nameTpl: 'Retenes de Árbol de Levas', cat: 'Retenes y Sellos', cost: 4.00, margen: 50, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'CAM-SEAL', u: 'Unidad', keywords: 'reten estopera sello arbol levas' },
+    { nameTpl: 'Juego de Guías de Válvulas de Culata', cat: 'Motor Interno', cost: 12.00, margen: 40, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'VALVE-GUIDE', u: 'Juego', keywords: 'guia valvula culata' },
+    { nameTpl: 'Juego de Resortes de Válvulas de Motor', cat: 'Motor Interno', cost: 16.00, margen: 35, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'VALVE-SPRING', u: 'Juego', keywords: 'resortes muelles valvulas' },
+    { nameTpl: 'Bomba de Vacío de Motor / Servofreno', cat: 'Motor Interno', cost: 36.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'VAC-PUMP', u: 'Unidad', keywords: 'bomba vacio vacio servofreno' },
+
+    // 23. REFRIGERACIÓN
+    { nameTpl: 'Termostato de Refrigerante con Junta', cat: 'Refrigeración', cost: 9.00, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'THERMOSTAT', u: 'Unidad', keywords: 'termostato agua refrigerante' },
+    { nameTpl: 'Tapa de Radiador Presurizada', cat: 'Refrigeración', cost: 3.00, margen: 50, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'RAD-CAP', u: 'Unidad', keywords: 'tapa radiador refrigerante' },
+    { nameTpl: 'Radiador de Calefacción Interna', cat: 'Refrigeración', cost: 38.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'HEATER-CORE', u: 'Unidad', keywords: 'radiador calefaccion cabina' },
+    { nameTpl: 'Bomba Auxiliar Eléctrica de Refrigerante', cat: 'Refrigeración', cost: 34.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'AUX-WATER-PUMP', u: 'Unidad', keywords: 'bomba agua electrica auxiliar refrigerante' },
+    { nameTpl: 'Sensor de Temperatura de Refrigerante', cat: 'Sensores', cost: 6.00, margen: 45, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'COOLANT-SENSOR', u: 'Unidad', keywords: 'sensor temperatura agua refrigerante ect bulbo' },
+
+    // 24. ALIMENTACIÓN DE COMBUSTIBLE Y ADMISIÓN
+    { nameTpl: 'Bomba Mecánica de Gasolina', cat: 'Sistema de Combustible', cost: 16.00, margen: 40, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: 'FUEL-PUMP-M', u: 'Unidad', keywords: 'bomba gasolina mecanica combustible' },
+    { nameTpl: 'Bomba de Gasolina Eléctrica Externa en Línea', cat: 'Sistema de Combustible', cost: 22.00, margen: 35, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: 'FUEL-PUMP-E', u: 'Unidad', keywords: 'bomba gasolina electrica pila combustible' },
+    { nameTpl: 'Regulador de Presión de Combustible', cat: 'Sistema de Combustible', cost: 12.00, margen: 40, img: '/images/prod_pila_gasolina_1791155267269.jpg', oemPref: 'FUEL-REG', u: 'Unidad', keywords: 'regulador presion gasolina combustible' },
+    { nameTpl: 'Filtro de Aire de Motor', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: 'AIR-FILTER', u: 'Unidad', keywords: 'filtro aire motor' },
+    { nameTpl: 'Filtro de Combustible / Gasolina', cat: 'Filtros y Mantenimiento', cost: 4.00, margen: 45, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: 'FUEL-FILTER', u: 'Unidad', keywords: 'filtro gasolina combustible' },
+    { nameTpl: 'Múltiple de Admisión con Juntas', cat: 'Admisión y Escape', cost: 42.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'INTAKE-MAN', u: 'Unidad', keywords: 'multiple admision colector' },
+    { nameTpl: 'Múltiple de Escape / Colector de Escape', cat: 'Admisión y Escape', cost: 45.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'EXHAUST-MAN', u: 'Unidad', keywords: 'multiple escape colector' },
+    { nameTpl: 'Válvula EGR de Recirculación de Gases', cat: 'Admisión y Escape', cost: 24.00, margen: 35, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'EGR-VALVE', u: 'Unidad', keywords: 'valvula egr recirculacion gases' },
+    { nameTpl: 'Cuerpo de Mariposa / Aceleración', cat: 'Admisión y Escape', cost: 52.00, margen: 30, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'THROTTLE-BODY', u: 'Unidad', keywords: 'cuerpo mariposa aceleracion throttle' },
+
+    // 25. TRANSMISIÓN Y DIFERENCIAL
+    { nameTpl: 'Kit de Reparación de Caja Automática con Empaques y Discos', cat: 'Transmisión y Embrague', cost: 65.00, margen: 30, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'AT-REBUILD', u: 'Kit', keywords: 'caja automatica transmision kit reparacion' },
+    { nameTpl: 'Filtro de Aceite de Transmisión Automática', cat: 'Transmisión y Embrague', cost: 12.00, margen: 40, img: '/images/rep_filtro_aceite_1791152641120.jpg', oemPref: 'AT-FILTER', u: 'Unidad', keywords: 'filtro caja automatica transmision atf' },
+    { nameTpl: 'Soporte de Cardán / Cruceta de Transmisión', cat: 'Transmisión y Embrague', cost: 14.00, margen: 40, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'DRIVESHAFT', u: 'Unidad', keywords: 'cardan cruceta transmision' },
+    { nameTpl: 'Engranaje de Diferencial / Corona y Piñón', cat: 'Transmisión y Embrague', cost: 85.00, margen: 25, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'DIFF-GEAR', u: 'Juego', keywords: 'diferencial corona pinon engranaje' },
+    { nameTpl: 'Retén de Eje de Transmisión / Semieje', cat: 'Retenes y Sellos', cost: 5.00, margen: 45, img: '/images/prod_silicon_gris_1791155249776.jpg', oemPref: 'AXLE-SEAL', u: 'Unidad', keywords: 'reten estopera sello semieje eje transmision' },
+
+    // 26. FRENOS, ABS Y SEGURIDAD
+    { nameTpl: 'Cilindro Maestro de Freno', cat: 'Frenos y Fricción', cost: 28.00, margen: 30, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRAKE-MASTER', u: 'Unidad', keywords: 'bomba freno cilindro maestro' },
+    { nameTpl: 'Servo Freno / Booster con Válvula de Vacío', cat: 'Frenos y Fricción', cost: 48.00, margen: 25, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'BRAKE-BOOSTER', u: 'Unidad', keywords: 'servofreno booster asistencia freno' },
+    { nameTpl: 'Sensor ABS de Rueda Delantero / Trasero', cat: 'Frenos y Fricción', cost: 12.50, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'ABS-SENSOR', u: 'Unidad', keywords: 'sensor abs velocidad rueda' },
+    { nameTpl: 'Cable / Guaya de Freno de Mano', cat: 'Frenos y Fricción', cost: 8.50, margen: 45, img: '/images/rep_pastillas_freno_1791152631245.jpg', oemPref: 'PARK-BRAKE', u: 'Unidad', keywords: 'guaya cable freno mano estacionamiento' },
+
+    // 27. ELECTRICIDAD Y ARRANQUE
+    { nameTpl: 'Regulador de Voltaje de Alternador', cat: 'Partes Eléctricas', cost: 14.00, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'ALT-REG', u: 'Unidad', keywords: 'regulador voltaje alternador' },
+    { nameTpl: 'Rectificador / Puente de Diodos de Alternador', cat: 'Partes Eléctricas', cost: 12.00, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'ALT-DIODE', u: 'Unidad', keywords: 'rectificador puente diodos alternador' },
+    { nameTpl: 'Solenoide / Automático de Motor de Arranque', cat: 'Partes Eléctricas', cost: 16.00, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'START-SOL', u: 'Unidad', keywords: 'solenoide automatico arranque starter' },
+    { nameTpl: 'Bendix / Piñón de Ataque de Motor de Arranque', cat: 'Partes Eléctricas', cost: 11.00, margen: 40, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'START-BENDIX', u: 'Unidad', keywords: 'bendix pinon ataque arranque' },
+    { nameTpl: 'Módulo de Control de Motor ECU / ECM', cat: 'Partes Eléctricas', cost: 95.00, margen: 25, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'ECU-ECM', u: 'Unidad', keywords: 'computadora motor ecu ecm modulo control' },
+
+    // 28. DIRECCIÓN, EJES Y RODAMIENTOS
+    { nameTpl: 'Bomba de Dirección Hidráulica', cat: 'Suspensión y Dirección', cost: 46.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'POWER-STEER-PUMP', u: 'Unidad', keywords: 'bomba direccion hidraulica power steering' },
+    { nameTpl: 'Rodamiento de Empuje / Collarín de Embrague', cat: 'Transmisión y Embrague', cost: 10.00, margen: 40, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CLUTCH-BEARING', u: 'Unidad', keywords: 'collarin rodamiento empuje embrague croche' },
+    { nameTpl: 'Semieje / Eje Homocinético Completo', cat: 'Transmisión y Embrague', cost: 38.00, margen: 30, img: '/images/rep_kit_embrague_1791152677700.jpg', oemPref: 'CV-AXLE', u: 'Unidad', keywords: 'semieje eje homocinetico tripoide' },
+
+    // 29. CARROCERÍA, CRISTALES Y ACCESORIOS
+    { nameTpl: 'Espejo Retrovisor Exterior Eléctrico / Manual', cat: 'Carrocería y Mandos', cost: 22.00, margen: 35, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'MIRROR', u: 'Unidad', keywords: 'espejo retrovisor lateral' },
+    { nameTpl: 'Cerradura Eléctrica / Actuador de Puerta', cat: 'Carrocería y Mandos', cost: 18.00, margen: 40, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'DOOR-ACT', u: 'Unidad', keywords: 'cerradura actuador puerta seguro electrico' },
+    { nameTpl: 'Máquina Elevavidrio / Regulador de Ventana', cat: 'Carrocería y Mandos', cost: 24.00, margen: 35, img: '/images/prod_bobina_encendido_1791155210560.jpg', oemPref: 'WINDOW-REG', u: 'Unidad', keywords: 'maquina vidrio elevaluna elevavidrio regulador ventana' },
+    { nameTpl: 'Motor de Limpiaparabrisas Delantero', cat: 'Carrocería y Mandos', cost: 24.00, margen: 35, img: '/images/prod_alternador_12v_1791155201792.jpg', oemPref: 'WIPER-MOTOR', u: 'Unidad', keywords: 'motor limpia parabrisas limpiavidrios' },
+    { nameTpl: 'Bomba de Lavaparabrisas con Depósito / Conector', cat: 'Carrocería y Mandos', cost: 7.50, margen: 45, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'WASHER-PUMP', u: 'Unidad', keywords: 'bomba agua parabrisas sapito lavavidrios' },
+
+    // 30. ESCAPE Y EMISIONES
+    { nameTpl: 'Catalizador de Escape', cat: 'Admisión y Escape', cost: 72.00, margen: 25, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'CATALYTIC', u: 'Unidad', keywords: 'catalizador convertidor catalitico escape' },
+    { nameTpl: 'Silenciador / Muffler de Escape', cat: 'Admisión y Escape', cost: 28.00, margen: 30, img: '/images/rep_correa_distribucion_1791152666979.jpg', oemPref: 'MUFFLER', u: 'Unidad', keywords: 'silenciador muffler escape' },
+    { nameTpl: 'Sonda Lambda / Sensor de Oxígeno', cat: 'Sensores', cost: 19.00, margen: 40, img: '/images/prod_sensor_ckp_1791155221865.jpg', oemPref: 'O2-SENSOR', u: 'Unidad', keywords: 'sonda lambda sensor oxigeno oxygen sensor' },
+
+    // Nota de integridad: estas son referencias de búsqueda/categoría, no compatibilidades OEM certificadas.
+
   ];
 
   // ==========================================
@@ -558,7 +640,7 @@
       item = {
         masterId: masterId,
         nombre: `${tpl.nameTpl} para ${veh.marca} ${veh.modelo} (${veh.anios}) — Marca ${brand.nombre}`,
-        descripcionTecnica: `Componente técnico grado equipo original para ${veh.marca} ${veh.modelo} años ${veh.anios} con motor ${veh.motor}. Garantía contra defectos de fábrica. Cumple especificaciones de ensamblaje automotriz.`,
+        descripcionTecnica: `Referencia de catálogo para investigar aplicación en ${veh.marca} ${veh.modelo} años ${veh.anios} con motor ${veh.motor}. Compatibilidad exacta y referencia OEM pendientes de verificación documental.`,
         categoria: tpl.cat,
         subcategoria: veh.marca,
         marca: brand.nombre,
@@ -569,7 +651,9 @@
         unidadMedida: tpl.u,
         costoReferencial: cost,
         margenSugerido: tpl.margen,
-        especificaciones: `Aplicación directa en ${veh.marca} ${veh.modelo} ${veh.motor}. Calidad ${brand.tipo.toUpperCase()}. Tolerancia de fábrica garantizada.`,
+        especificaciones: `Aplicación referencial para ${veh.marca} ${veh.modelo} ${veh.motor}; confirmar año exacto, versión, motor y código OEM antes de comprar o instalar. Marca comercial: ${brand.tipo.toUpperCase()}.`,
+        estadoCompatibilidad: 'REFERENCIAL — requiere validar motor, versión, año exacto y número OEM',
+        palabrasClave: tpl.keywords || '',
         fotoReal: tpl.img,
         fotoFallback: tpl.img,
         distribuidor: `Distribuidor Mayorista ${veh.marca} & Repuestos Venezuela B2B`,
@@ -625,6 +709,32 @@
       for (const vehicle of matchedVehicles.slice(0, 6)) {
         const vIdx = VEHICLES_IN_VENEZUELA.indexOf(vehicle);
         for (let tIdx = 0; tIdx < AUTO_PART_TEMPLATES.length; tIdx++) {
+          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
+            const idx = 120000 + vIdx
+              + VEHICLES_IN_VENEZUELA.length * tIdx
+              + VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length * bIdx;
+            if (idx < TOTAL_VIRTUAL_CATALOG_COUNT && !seen.has(idx)) {
+              seen.add(idx);
+              candidateIndices.push(idx);
+            }
+          }
+        }
+      }
+    }
+
+    // Si la consulta no nombra un vehículo, localizar primero las familias/plantillas
+    // solicitadas en vez de depender de una muestra dispersa que puede omitirlas.
+    if (!candidateIndices.length && rawQ) {
+      const stopWords = new Set(['de','del','la','el','los','las','un','una','para','con','por','y','en','the','of']);
+      const terms = qTokens.filter(t => t.length >= 3 && !stopWords.has(t));
+      const matchingTemplateIndexes = AUTO_PART_TEMPLATES.map((tpl, i) => {
+        const hay = normalizeSearchText([tpl.nameTpl, tpl.cat, tpl.oemPref, tpl.keywords || ''].join(' '));
+        return terms.length && terms.every(term => hay.includes(term)) ? i : -1;
+      }).filter(i => i >= 0);
+      const seen = new Set();
+      for (const tIdx of matchingTemplateIndexes) {
+        // Las marcas/modelos se presentan como referencias a validar, no como ajuste OEM confirmado.
+        for (let vIdx = 0; vIdx < VEHICLES_IN_VENEZUELA.length; vIdx++) {
           for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
             const idx = 120000 + vIdx
               + VEHICLES_IN_VENEZUELA.length * tIdx
@@ -710,7 +820,7 @@
 
       let matchesQ = true;
       if (rawQ) {
-        const fullSearchableText = `${item.nombre} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
+        const fullSearchableText = `${item.nombre} ${item.palabrasClave || ''} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
         matchesQ = matchKeywords(fullSearchableText, rawQ);
         // Evita falsos positivos entre familias de repuestos: el término principal
         // solicitado debe estar presente en el artículo, no solo el vehículo.
@@ -720,7 +830,10 @@
           { terms: ["bujia", "bujias", "spark plug"], accept: ["bujia", "bujias", "spark plug"], reject: ["sensor de oxigeno", "sensor oxigeno", "correa de tiempo", "correa de distribucion"] },
           { terms: ["sensor de oxigeno", "sensor oxigeno"], accept: ["sensor", "oxigeno"], reject: ["bujia", "correa de tiempo", "correa de distribucion"] },
           { terms: ["correa de tiempo", "correa de distribucion", "kit de distribucion"], accept: ["correa", "distribucion", "tiempo"], reject: ["bujia", "sensor de oxigeno"] },
-          { terms: ["bateria", "baterias"], accept: ["bateria"], reject: ["bujia", "sensor de oxigeno"] }
+          { terms: ["bateria", "baterias"], accept: ["bateria"], reject: ["bujia", "sensor de oxigeno"] },
+          { terms: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], accept: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], reject: ["bomba de agua", "bomba de gasolina", "bomba de direccion", "bomba de freno"] },
+          { terms: ["pescador de aceite", "colador de aceite", "chupador de aceite"], accept: ["pescador", "colador", "chupador"], reject: ["bomba de gasolina"] },
+          { terms: ["bomba de gasolina", "pila de gasolina", "fuel pump"], accept: ["bomba de gasolina", "pila", "fuel pump"], reject: ["bomba de aceite", "bomba de agua"] }
         ];
         const family = families.find(f => f.terms.some(t => nq.includes(t)));
         if (matchesQ && family && (!family.accept.some(t => ni.includes(t)) || family.reject.some(t => ni.includes(t)))) {
