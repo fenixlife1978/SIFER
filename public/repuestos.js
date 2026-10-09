@@ -807,7 +807,8 @@ function renderFitmentSearchTab(){
               </td>
               <td><span class="badge ${r.stock<=r.min?'bad':'ok'}">${r.stock} disp.</span></td>
               <td><b>${money(r.precio)}</b></td>
-              <td style="text-align:right">
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn" title="Ver referencias cruzadas de este repuesto" aria-label="Ver referencias cruzadas de ${esc(r.nombre)}" style="font-size:14px;min-width:38px;padding:7px" onclick="openRepuestoDetail('${r.id}')">🔁</button>
                 <button class="btn primary" style="font-size:10px" onclick="venderRepuestoEnPOS('${r.id}')">🛒 Cargar al POS</button>
               </td>
             </tr>`;
