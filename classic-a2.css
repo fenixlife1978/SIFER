@@ -1,0 +1,63 @@
+/* SIFER360 Classic A2 skin — visual layer only; preserves existing DOM, routes and business logic */
+:root{
+ --a2-navy:#123d70;--a2-blue:#1768b2;--a2-blue-hi:#3d8ddd;--a2-edge:#7c9bbd;
+ --a2-panel:#dce8f5;--a2-face:#d4d0c8;--a2-face-hi:#f8f7f3;--a2-face-low:#aaa69e;
+ --a2-ink:#182638;--a2-line:#8da5bf;--a2-white:#fff;
+}
+html,body,#viewport{background:#9aaec4!important;color:var(--a2-ink)}
+.app{background:var(--a2-face);border:1px solid #6e829a;box-shadow:inset 1px 1px #fff,inset -1px -1px #777}
+.titlebar{height:30px;flex-basis:30px;background:linear-gradient(90deg,#0c2f5b,#2d76b9 70%,#4b91cb);color:#fff;border:1px solid #164c82;font-weight:700;letter-spacing:.1px;text-shadow:1px 1px #173b60}
+.titlebar .dot{background:#f5d56d;box-shadow:0 0 0 1px #fff7b0}
+.window-actions{color:#fff}.win-icon{color:#fff;border:1px solid #a5c7e5;background:linear-gradient(#5294ce,#1a5794);min-width:21px;text-align:center;line-height:17px;border-radius:0}
+.win-icon:hover{background:#e9f3ff;color:#123d70}
+.menubar{height:26px;background:linear-gradient(#fdfdfb,#d6d4cd);border-bottom:1px solid #8b9bad;color:#182638;gap:0}
+.menubar>*{padding:4px 8px}.menubar>*:hover{background:#d7e9fb;outline:1px solid #80add8}
+.modulebar{background:linear-gradient(#e9f1f9,#c4d4e5);border-bottom:1px solid #8098b2;padding:4px 5px;gap:3px}
+.module{min-width:92px;border:1px solid #879eb6;border-radius:0;background:linear-gradient(#fff,#d5dce4);box-shadow:inset 1px 1px #fff,inset -1px -1px #a1a8b0;color:#172e48}
+.module:hover{background:linear-gradient(#fff,#c8e2fb);border-color:#377ebd}
+.module.active{background:linear-gradient(#3f8dd2,#145a9b);color:#fff;border-color:#0a3e70;box-shadow:inset 1px 1px #8fc8f7,inset -1px -1px #17436a}
+.toolbar{background:linear-gradient(#e8e5dc,#cbc8bf);border-bottom:1px solid #8e8c85;box-shadow:inset 0 1px #fff;gap:3px}
+.tool{border:1px solid #9b9a93;border-radius:0;background:linear-gradient(#fff,#d9d7d0);box-shadow:inset 1px 1px #fff,inset -1px -1px #b0ada5;color:#182638}
+.tool:hover{background:linear-gradient(#fff,#c7e4ff);border-color:#3981bd}
+.tool:active,.tool.active{background:linear-gradient(#bfdaf2,#eaf5ff);border-color:#286eaa;box-shadow:inset 1px 1px #6f9fc8}
+.tool.cream{background:linear-gradient(#fffdf1,#e6d9b8)}.tool.red{background:linear-gradient(#fff,#efc2c1)}
+.main{background:#e9edf2;padding:7px;color:#182638}
+.pagehead{border-bottom:1px solid #9cabbc;background:linear-gradient(#f5f8fc,#dbe5ef);padding:7px 9px;margin:-1px -1px 9px}
+.pagehead h2{color:#123d70;text-shadow:0 1px #fff}
+.card,.panel{border:1px solid #8fa5bc;border-radius:0;background:#f7f8fa;box-shadow:inset 1px 1px #fff}
+.card{background:linear-gradient(#fff,#e5ebf2);padding:9px}
+.card b{color:#123d70}
+.panelhead{background:linear-gradient(#fdfefe,#cbd9e8);border-bottom:1px solid #8fa5bc;color:#173d65;text-shadow:0 1px #fff}
+.panelbody{background:#f9fafc}
+table{color:#182638}th{background:linear-gradient(#fff,#d1deeb);border-color:#9bafc4;color:#193e64;text-shadow:0 1px #fff}
+td{border-color:#c1cbd5;background:#fff}tbody tr:nth-child(even) td{background:#f0f5fa}
+.clickrow:hover{background:#d9ebfb}.clickrow:hover td{background:#d9ebfb}
+.btn,button.btn,.fs-btn{border:1px solid #8b9cae;border-radius:0;background:linear-gradient(#fff,#d6d6d1);box-shadow:inset 1px 1px #fff,inset -1px -1px #b4b2ac;color:#193b5f}
+.btn:hover,.fs-btn:hover{background:linear-gradient(#fff,#c9e4fc);border-color:#4d8fc5}
+.btn.primary{background:linear-gradient(#4597df,#125b9e);border-color:#174f82;color:#fff;box-shadow:inset 1px 1px #91c9f4,inset -1px -1px #164b78}
+.btn.green{background:linear-gradient(#64c99f,#16845c);border-color:#14744f;color:#fff}
+.btn.danger{background:linear-gradient(#f9c6c6,#d85b60);border-color:#a13b42;color:#fff}
+.btn.cream{background:linear-gradient(#fffdf1,#e6d9b8)}
+input,select,textarea,.searchbar input,.field input,.field select,.field textarea{border:1px solid #8fa5bc!important;border-radius:0!important;box-shadow:inset 1px 1px 2px #00000012;background:#fff;color:#17283b}
+input:focus,select:focus,textarea:focus{outline:1px solid #3986c4;outline-offset:0}
+.statusbar{background:linear-gradient(#e6e4dc,#cbc9c1);border-top:1px solid #8c9bab;color:#263c53}
+.modal-backdrop{background:rgba(18,38,61,.43)}
+.modal{border:1px solid #466b91;border-radius:0;box-shadow:3px 4px 0 #173d5d55, inset 1px 1px #fff;background:#e7edf4}
+.modalhead{background:linear-gradient(90deg,#123d70,#3c83c3);color:#fff;border-bottom:1px solid #0c3157;text-shadow:1px 1px #173b60}
+.modalhead button{color:#fff}.modalbody{background:#e9edf2}.modalfoot{background:#d7dfe8;border-top:1px solid #a1b0c0}
+.badge{border-radius:0;border:1px solid #bdcbd9}.toast{border:1px solid #52718e;border-radius:0;box-shadow:2px 3px 0 #0003}
+.posscreen{background:#dce6f0}.posheadline{background:linear-gradient(#fff,#cbd9e8);border-color:#879eb6;color:#143c65;font-weight:700}
+.posscreen .posgrid{background:#e7edf4}.posscreen th{background:linear-gradient(#fff,#cad9e8);border-color:#90a5ba}
+.posscreen td{border-color:#b9c8d6}.posscreen tr.selected,.posscreen tr.selected td{background:#1768b2;color:#fff}
+.posbottom{background:#d4d0c8;border-top:1px solid #8c9bab}.stockbox{border:1px solid #8fa5bc}
+.posactions button,.posside button{border:1px solid #8b9cae;border-radius:0;background:linear-gradient(#fff,#d5dce4);box-shadow:inset 1px 1px #fff,inset -1px -1px #b1b9c2;color:#193b5f}
+.posactions button:hover,.posside button:hover{background:linear-gradient(#fff,#c5e2fb)}
+.posside{background:linear-gradient(#e8eef5,#cdd9e6);border-left:1px solid #879eb6}
+.posside .pay{background:linear-gradient(#80e0bc,#168b63);color:#fff;border-color:#11714f}
+.postotal,.totalbox{background:#071c16;color:#52ff78;border:2px inset #a5b3ad;text-shadow:0 0 4px #14d84d}
+.possummary{background:#e7edf4;border-color:#8fa5bc}.possummary div{border-color:#bdcbd9}
+.purchase-panel{border-radius:0;border-color:#8fa5bc;box-shadow:inset 1px 1px #fff}.purchase-panel legend{color:#174a78}
+.purchase-field input,.purchase-field select,.purchase-field textarea{border-radius:0;border-color:#8fa5bc}
+.purchase-lines-wrap{border-radius:0;border-color:#9bafc4}.purchase-lines th{background:#d1deeb}
+.purchase-total{border-radius:0;border-color:#a9bacb;background:#f6f9fc}.purchase-total.strong{background:#dceafa;border-color:#7fa9d2}
+@media(max-width:700px){.titlebar{font-size:11px}.module{min-width:82px}.main{padding:5px}.pagehead{padding:6px}}
