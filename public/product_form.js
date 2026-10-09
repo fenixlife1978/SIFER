@@ -60,8 +60,8 @@
       if(!values.includes(value))values.push(value);
       cfg.productFormOptions[key]=values;
     }
+    var list=el('fp-list-'+key);if(list){if(remove){Array.from(list.options).forEach(function(o){if(o.value===value)o.remove();});}else if(!Array.from(list.options).some(function(o){return o.value===value;})){var option=document.createElement('option');option.value=value;list.appendChild(option);}}
     global.save('product-form-options');
-    open(editingId?(global.db.productos||[]).find(function(p){return String(p.id)===editingId;}):formSource||null);
   }
   function pane(id,title,html,active){
     return '<button type="button" class="fp-tab '+(active?'active':'')+'" data-fp-tab="'+id+'" style="padding:7px 10px;border:1px solid #b8c7d8;border-bottom:0;background:'+(active?'#fff':'#eaf0f7')+';border-radius:4px 4px 0 0;font-weight:700;font-size:11px">'+title+'</button><div id="'+id+'" class="fp-pane" style="display:'+(active?'block':'none')+';padding:8px;border:1px solid #c8d2df;background:#fff">'+html+'</div>';
