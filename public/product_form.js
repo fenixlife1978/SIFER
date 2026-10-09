@@ -367,7 +367,7 @@
   }
   function skuCategory(){
     var raw=(el('fp-subcat')&&el('fp-subcat').value||el('fp-cat')&&el('fp-cat').value||'GEN').trim();
-    var normalized=raw.normalize?raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''):raw;
+    var normalized=raw.normalize?raw.normalize('NFD').replace(/[\u0300-\u036f]/g,''):raw;
     var token=normalized.toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,3);
     return token||'GEN';
   }
@@ -403,9 +403,9 @@
         }catch(e){}
       }
       if(!allocated){
-        var raw=category.normalize?category.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''):category;
+        var raw=category.normalize?category.normalize('NFD').replace(/[\u0300-\u036f]/g,''):category;
         var slug=raw.toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,3)||'GEN';
-        allocated='SKU-'+slug+'-'+String((function(){var max=0;(global.db.productos||[]).forEach(function(p){[p.sku,p.codigo].forEach(function(v){var m=String(v||'').match(/^SKU-[A-Z0-9]+-(\\d+)$/i);if(m&&String(v).toUpperCase().startsWith('SKU-'+slug+'-'))max=Math.max(max,Number(m[1])||0);});});return max+1;})()).padStart(5,'0');
+        allocated='SKU-'+slug+'-'+String((function(){var max=0;(global.db.productos||[]).forEach(function(p){[p.sku,p.codigo].forEach(function(v){var m=String(v||'').match(/^SKU-[A-Z0-9]+-(\d+)$/i);if(m&&String(v).toUpperCase().startsWith('SKU-'+slug+'-'))max=Math.max(max,Number(m[1])||0);});});return max+1;})()).padStart(5,'0');
       }
       if(el('fp-sku')&&!skuValue)el('fp-sku').value=allocated;
       if(el('fp-codigo')&&!code)el('fp-codigo').value=allocated;
