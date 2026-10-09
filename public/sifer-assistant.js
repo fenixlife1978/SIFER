@@ -131,11 +131,25 @@
   const send=root.querySelector('#sifer-ai-send');
   const status=root.querySelector('#sifer-ai-status');
   function render(){
-    chat.innerHTML=messages.map(m=>`<div class="sifer-msg ${m.role==='user'?'user':'ai'}">${escapeHtml(m.text)}</div>`).join('');
+    chat.innerHTML=messages.map(m=>`<div class="sifer-msg ${m.role==='user'?'user':'ai'}">${m.research?renderResearch(m.research):escapeHtml(m.text).replace(/\\n/g,'<br>')}</div>`).join('');
     chat.scrollTop=chat.scrollHeight;
   }
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function safeResearchUrl(value){try{const u=new URL(String(value||''));return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}}
+  function renderResearch(data){
+    const results=Array.isArray(data.results)?data.results:[];
+    const images=Array.isArray(data.images)?data.images:[];
+    const imageCards=images.map(x=>{const src=safeResearchUrl(x.image||x.url),href=safeResearchUrl(x.url);if(!src||!href)return '';return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;width:46%;margin:1%;vertical-align:top;color:#bdeaff;text-decoration:none"><img src="${escapeHtml(src)}" alt="${escapeHtml(x.title||'Imagen de repuesto')}" loading="lazy" style="width:100%;max-height:130px;object-fit:contain;background:#102b3d;border-radius:6px"><div style="font-size:11px;padding:3px">${escapeHtml(x.title||'Ver imagen')}</div></a>`}).join('');
+    const links=results.map(x=>{const href=safeResearchUrl(x.url);if(!href)return '';return `<div style="margin:8px 0;padding:7px;border:1px solid #244b60;border-radius:7px"><a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="color:#77d5ff;font-weight:700">${escapeHtml(x.title||'Abrir resultado')}</a><div style="font-size:12px;margin-top:4px;color:#d1e6ef">${escapeHtml(x.snippet||'')}</div><div style="font-size:10px;color:#8daab9;margin-top:3px">${escapeHtml(x.source||'Web')}</div></div>`}).join('');
+    return `<div>${escapeHtml(data.message||'Resultados de búsqueda externa.').replace(/\\n/g,'<br>')}${imageCards?'<div style="margin-top:8px"><b>Imágenes encontradas</b><div>'+imageCards+'</div></div>':''}${links?'<div style="margin-top:10px"><b>Fuentes</b>'+links+'</div>':''}</div>`;
+  }
   function add(role,text){messages.push({role,text});render();}
+  async function researchExternal(command){
+    const r=await fetch('/api/sifer-assistant',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'research',query:command})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'La búsqueda web no está disponible.');
+    messages.push({role:'assistant',text:data.message||'Búsqueda terminada.',research:data});render();
+  }
   const voiceUi=root.querySelector('#sifer-ai-voice'), voiceText=root.querySelector('#sifer-ai-voice-text');
   const micBtn=root.querySelector('#sifer-ai-mic'), continuousBtn=root.querySelector('#sifer-ai-continuous');
   let continuousListening=localStorage.getItem('sifer360_sifer_continuous_voice_v1')==='1';
@@ -1462,6 +1476,13 @@
       }
       if(isTodaySalesQuery(command)){
         messages.push({role:'assistant',text:await answerTodaySales()}); render(); return;
+      }
+      // La investigación externa solo se activa cuando el usuario la solicita explícitamente.
+      // Los resultados web se muestran como enlaces/imágenes; nunca se importan como existencias.
+      if(/(?:busca en (?:la )?web|en internet|foto real|fotografia real|imagen real|muestra (?:una )?foto|busca (?:una )?imagen|ver imagenes)/i.test(normalizeLocal(command))){
+        status.textContent='Buscando referencias e imágenes en fuentes externas…';
+        await researchExternal(command);
+        return;
       }
       // Las consultas de referencias cruzadas/equivalencias son consultas de datos:
       // deben resolverse SIEMPRE de forma determinística antes del planificador.
