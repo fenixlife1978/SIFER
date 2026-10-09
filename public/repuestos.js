@@ -3,7 +3,7 @@
 
 const REPUESTOS_SEED = [
   {
-    "id": "VER-AVE-001",
+    "id": "VER-CHEV-001",
     "sku": "00210",
     "nombre": "Barra estabilizadora — bieleta / link",
     "categoria": "Lápiz y Bieletas",
@@ -32,7 +32,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-002",
+    "id": "VER-CHEV-002",
     "sku": "00211",
     "nombre": "Terminal de dirección izquierdo",
     "categoria": "Dirección",
@@ -61,7 +61,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-003",
+    "id": "VER-CHEV-003",
     "sku": "00212",
     "nombre": "Terminal de dirección derecho",
     "categoria": "Dirección",
@@ -90,7 +90,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-004",
+    "id": "VER-CHEV-004",
     "sku": "01860",
     "nombre": "Articulación axial de dirección",
     "categoria": "Dirección",
@@ -119,7 +119,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-005",
+    "id": "VER-CHEV-005",
     "sku": "01798",
     "nombre": "Meseta / brazo de control izquierdo completo",
     "categoria": "Suspensión",
@@ -148,7 +148,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-006",
+    "id": "VER-CHEV-006",
     "sku": "01799",
     "nombre": "Meseta / brazo de control derecho completo",
     "categoria": "Suspensión",
@@ -177,7 +177,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-007",
+    "id": "VER-CHEV-007",
     "sku": "00204",
     "nombre": "Rótula inferior de suspensión",
     "categoria": "Suspensión",
@@ -206,7 +206,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-008",
+    "id": "VER-CHEV-008",
     "sku": "02011",
     "nombre": "Buje de suspensión — pequeño",
     "categoria": "Bujes y Gomas",
@@ -235,7 +235,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-009",
+    "id": "VER-CHEV-009",
     "sku": "02012",
     "nombre": "Buje de suspensión — grande",
     "categoria": "Bujes y Gomas",
@@ -264,7 +264,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-010",
+    "id": "VER-CHEV-010",
     "sku": "05389",
     "nombre": "Barra estabilizadora",
     "categoria": "Suspensión",
@@ -293,7 +293,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-011",
+    "id": "VER-CHEV-011",
     "sku": "06059",
     "nombre": "Terminal de dirección",
     "categoria": "Dirección",
@@ -322,7 +322,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-012",
+    "id": "VER-CHEV-012",
     "sku": "06061",
     "nombre": "Terminal de dirección",
     "categoria": "Dirección",
@@ -351,7 +351,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-013",
+    "id": "VER-CHEV-013",
     "sku": "04688",
     "nombre": "Articulación axial de dirección",
     "categoria": "Dirección",
@@ -380,7 +380,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-014",
+    "id": "VER-CHEV-014",
     "sku": "06060",
     "nombre": "Articulación axial de dirección",
     "categoria": "Dirección",
@@ -409,7 +409,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-015",
+    "id": "VER-CHEV-015",
     "sku": "06065",
     "nombre": "Meseta / brazo de control izquierdo completo",
     "categoria": "Suspensión",
@@ -438,7 +438,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-016",
+    "id": "VER-CHEV-016",
     "sku": "06066",
     "nombre": "Meseta / brazo de control derecho completo",
     "categoria": "Suspensión",
@@ -467,7 +467,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-017",
+    "id": "VER-CHEV-017",
     "sku": "04684",
     "nombre": "Rótula de suspensión",
     "categoria": "Suspensión",
@@ -496,7 +496,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-018",
+    "id": "VER-CHEV-018",
     "sku": "06069",
     "nombre": "Buje de suspensión — pequeño",
     "categoria": "Bujes y Gomas",
@@ -525,7 +525,7 @@ const REPUESTOS_SEED = [
     "imagen": "/icon.svg"
   },
   {
-    "id": "VER-AVE-019",
+    "id": "VER-CHEV-019",
     "sku": "06070",
     "nombre": "Buje de suspensión — grande",
     "categoria": "Bujes y Gomas",
@@ -551,6 +551,64 @@ const REPUESTOS_SEED = [
     "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
     "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
     "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
+  },
+  {
+    "id": "VER-CHEV-020",
+    "sku": "GM-25182606",
+    "nombre": "Bomba de aceite de motor — GM Genuine Parts",
+    "categoria": "Lubricación del Motor",
+    "marca": "GM Genuine Parts / ACDelco",
+    "codigoOEM": "25182606",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo Hatchback / Sedan LS, LT",
+        "anios": "2004–2008 según GM",
+        "motor": "Confirmar por VIN",
+        "posicion": "Lubricación del motor"
+      }
+    ],
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente oficial GM: https://parts.chevrolet.com/product/gm-genuine-parts-oil-pump-25182606. Sin precio local ni stock; confirmar motor, versión y VIN antes de comprar.",
+    "fuenteUrl": "https://parts.chevrolet.com/product/gm-genuine-parts-oil-pump-25182606",
+    "fuenteNombre": "Chevrolet Parts — GM Genuine Parts",
+    "estadoVerificacion": "Referencia y aplicación publicadas por el sitio oficial de Chevrolet; confirmar por VIN",
+    "imagen": "/icon.svg"
+  },
+  {
+    "id": "VER-CHEV-021",
+    "sku": "GM-96858745",
+    "nombre": "Correa de distribución / tiempo — GM Genuine Parts",
+    "categoria": "Distribución",
+    "marca": "GM Genuine Parts / ACDelco",
+    "codigoOEM": "96858745",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo Hatchback / Sedan LS, LT, Base",
+        "anios": "2004–2010 según GM",
+        "motor": "Confirmar por VIN",
+        "posicion": "Distribución del motor"
+      }
+    ],
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente oficial GM: https://parts.chevrolet.com/product/gm-genuine-parts-timing-belt-96858745. Sin precio local ni stock; confirmar motor, versión y VIN antes de comprar.",
+    "fuenteUrl": "https://parts.chevrolet.com/product/gm-genuine-parts-timing-belt-96858745",
+    "fuenteNombre": "Chevrolet Parts — GM Genuine Parts",
+    "estadoVerificacion": "Referencia y aplicación publicadas por el sitio oficial de Chevrolet; confirmar por VIN",
     "imagen": "/icon.svg"
   }
 ];

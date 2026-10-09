@@ -574,6 +574,64 @@ const VERIFIED_MASTER_CATALOG = [
     "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
     "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
     "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "nombre": "Bomba de aceite de motor — GM Genuine Parts",
+    "categoria": "Lubricación del Motor",
+    "subcategoria": "Motor",
+    "marca": "GM Genuine Parts / ACDelco",
+    "codigoProveedor": "GM-25182606",
+    "codigoOEM": "25182606",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Bomba de aceite original GM. La página oficial de Chevrolet indica aplicación Aveo Hatchback/Sedan LS/LT, años 2004–2008.",
+    "especificaciones": "Fuente oficial GM: https://parts.chevrolet.com/product/gm-genuine-parts-oil-pump-25182606. Sin precio local ni stock; confirmar motor, versión y VIN antes de comprar.",
+    "estadoCompatibilidad": "APLICACIÓN PUBLICADA POR GM — confirmar VIN",
+    "palabrasClave": "bomba de aceite bomba aceite oil pump aveo lubricacion motor 25182606",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo Hatchback / Sedan LS, LT",
+        "anios": "2004–2008 según GM",
+        "motor": "Confirmar por VIN",
+        "posicion": "Lubricación del motor"
+      }
+    ],
+    "fuenteUrl": "https://parts.chevrolet.com/product/gm-genuine-parts-oil-pump-25182606",
+    "fuenteNombre": "Chevrolet Parts — GM Genuine Parts",
+    "estadoVerificacion": "Referencia y aplicación publicadas por el sitio oficial de Chevrolet; confirmar por VIN",
+    "masterId": "MST-VER-0020"
+  },
+  {
+    "nombre": "Correa de distribución / tiempo — GM Genuine Parts",
+    "categoria": "Distribución",
+    "subcategoria": "Motor",
+    "marca": "GM Genuine Parts / ACDelco",
+    "codigoProveedor": "GM-96858745",
+    "codigoOEM": "96858745",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Correa de distribución original GM. La página oficial de Chevrolet indica aplicación Aveo Hatchback/Sedan LS/LT/Base, años 2004–2010.",
+    "especificaciones": "Fuente oficial GM: https://parts.chevrolet.com/product/gm-genuine-parts-timing-belt-96858745. Sin precio local ni stock; confirmar motor, versión y VIN antes de comprar.",
+    "estadoCompatibilidad": "APLICACIÓN PUBLICADA POR GM — confirmar VIN",
+    "palabrasClave": "correa de tiempo correa de distribucion timing belt kit distribucion aveo 96858745",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo Hatchback / Sedan LS, LT, Base",
+        "anios": "2004–2010 según GM",
+        "motor": "Confirmar por VIN",
+        "posicion": "Distribución del motor"
+      }
+    ],
+    "fuenteUrl": "https://parts.chevrolet.com/product/gm-genuine-parts-timing-belt-96858745",
+    "fuenteNombre": "Chevrolet Parts — GM Genuine Parts",
+    "estadoVerificacion": "Referencia y aplicación publicadas por el sitio oficial de Chevrolet; confirmar por VIN",
+    "masterId": "MST-VER-0021"
   }
 ];
   const TOTAL_VIRTUAL_CATALOG_COUNT = VERIFIED_MASTER_CATALOG.length;
@@ -642,7 +700,7 @@ const VERIFIED_MASTER_CATALOG = [
   let currentSelectorQuery = '';
   let currentSelectorCategory = 'Todos';
 
-  const MASTER_CATEGORY_TABS = ['Todos','Lápiz y Bieletas','Dirección','Suspensión','Bujes y Gomas'];
+  const MASTER_CATEGORY_TABS = ['Todos','Lápiz y Bieletas','Dirección','Suspensión','Bujes y Gomas','Lubricación del Motor','Distribución'];
 
   function openMasterCatalogSelectorModal(targetType = 'producto') {
     currentSelectorTarget = targetType;
@@ -1192,7 +1250,7 @@ const VERIFIED_MASTER_CATALOG = [
     <div class="pagehead">
       <div>
         <h2>📖 Catálogo de Referencias OEM Publicadas</h2>
-        <div class="sub">Referencias publicadas en catálogo técnico para Chevrolet Aveo T200/T250 y T300. No se inventan precios ni existencias; confirma aplicación exacta por VIN.</div>
+        <div class="sub">Referencias con fuente pública para suspensión/dirección de Aveo T200/T250/T300 y componentes GM de aceite/distribución. No se inventan precios ni existencias; confirma aplicación por VIN.</div>
       </div>
       <div class="actions" style="margin:0">
         <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar referencia a inventario</button>

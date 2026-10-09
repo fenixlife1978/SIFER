@@ -83,8 +83,8 @@ function cleanDemoState(d){
     const oem=String(p.codigoOEM||''),code=String(p.codigo||p.sku||'');
     return !/^REF-PENDIENTE-|^(OIL-PUMP|ADD-|OIL-PICKUP|OIL-RELIEF|OIL-COOLER|OIL-SWITCH|OIL-DIPSTICK|OIL-CAP)/i.test(oem)&&!/REF-PENDIENTE|^DEMO-|^TEST-/i.test(code);
   });
-  d.clientes=(Array.isArray(d.clientes)?d.clientes:[]).filter(c=>String(c.id||'')!=='CL-001'&&!/constructora central/i.test(String(c.nombre||''))&&!/\\.local$/i.test(String(c.email||''))&&String(c.documento||'')!=='J-00000001');
-  d.proveedores=(Array.isArray(d.proveedores)?d.proveedores:[]).filter(p=>String(p.id||'')!=='PV-001'&&!/distribuidora ferretera nacional/i.test(String(p.nombre||''))&&!/\\.local$/i.test(String(p.email||''))&&String(p.documento||'')!=='J-10000001');
+  d.clientes=(Array.isArray(d.clientes)?d.clientes:[]).filter(c=>String(c.id||'')!=='CL-001'&&!/constructora central/i.test(String(c.nombre||''))&&!/\.local$/i.test(String(c.email||''))&&String(c.documento||'')!=='J-00000001');
+  d.proveedores=(Array.isArray(d.proveedores)?d.proveedores:[]).filter(p=>String(p.id||'')!=='PV-001'&&!/distribuidora ferretera nacional/i.test(String(p.nombre||''))&&!/\.local$/i.test(String(p.email||''))&&String(p.documento||'')!=='J-10000001');
   d.compras=(Array.isArray(d.compras)?d.compras:[]).filter(x=>!['CMP-00001','CMP-00002'].includes(String(x.numero||x.documento||'')));
   d.cxp=(Array.isArray(d.cxp)?d.cxp:[]).filter(x=>!['CMP-00001','CMP-00002'].includes(String(x.numero||x.documento||'')));
   if(!localStorage.getItem('sifer360_demo_cleanup_v1')){
