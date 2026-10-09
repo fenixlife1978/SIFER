@@ -1148,6 +1148,44 @@ function openRepuestoDetail(id){
 
 function openRepuestoModal(id){
   const repuestos = getRepuestos();
+  const r = id ? repuestos.find(x => String(x.id) === String(id)) : null;
+  if (window.SIFERProductForm && typeof window.SIFERProductForm.open === 'function') {
+    const linkedProduct = r ? (db.productos || []).find(p =>
+      String(p.sku || '').toLowerCase() === String(r.sku || '').toLowerCase() ||
+      String(p.codigo || '').toLowerCase() === String(r.sku || '').toLowerCase()
+    ) : null;
+    const compat = r && Array.isArray(r.compatibilidad)
+      ? r.compatibilidad.map(x => [x.marca,x.modelo,x.anios,x.motor,x.version,x.posicion].filter(Boolean).join(' — ')).join('\n')
+      : '';
+    const cross = r && Array.isArray(r.referenciasCruzadas)
+      ? r.referenciasCruzadas.map(x => (x.marca || '') + ': ' + (x.codigo || '')).join('\n')
+      : '';
+    window.SIFERProductForm.open({
+      ...(linkedProduct || {}),
+      __siferRepuesto: true,
+      __siferRepuestoId: r ? r.id : '',
+      id: linkedProduct ? linkedProduct.id : '',
+      codigo: linkedProduct ? linkedProduct.codigo : (r ? r.sku : ''),
+      sku: r ? r.sku : '',
+      nombre: r ? r.nombre : '',
+      descCorta: r ? r.nombre : '',
+      categoria: r ? r.categoria : '',
+      marca: r ? r.marca : '',
+      codigoOEM: r ? r.codigoOEM : '',
+      costo: r ? r.costo : '',
+      precio: r ? r.precio : '',
+      stock: r ? r.stock : 0,
+      stockInicial: r ? r.stock : 0,
+      min: r ? r.min : '',
+      ubicacion: r ? r.ubicacion : '',
+      especificaciones: r ? (r.especificaciones || '') : '',
+      nota: r ? (r.especificaciones || '') : '',
+      imagen: r ? (r.imagen || '') : '',
+      compatibilidad: compat,
+      referenciasCruzadas: cross
+    });
+    return;
+  }
   const r = id ? repuestos.find(x => x.id === id) : {
     id: '',
     sku: '',
