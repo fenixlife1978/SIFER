@@ -2,6 +2,10 @@ const NVIDIA_BASE_URL = (process.env.NVIDIA_BASE_URL || 'https://integrate.api.n
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'z-ai/glm-5.3-flash';
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const NVIDIA_TRANSCRIBE_MODEL = process.env.NVIDIA_TRANSCRIBE_MODEL || 'openai/whisper-large-v3';
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_TRANSCRIBE_MODEL = process.env.GROQ_TRANSCRIBE_MODEL || 'whisper-large-v3-turbo';
 const REQUEST_TIMEOUT_MS = 30000;
 
 async function withTimeout(promise:any, ms=REQUEST_TIMEOUT_MS){
@@ -28,6 +32,69 @@ async function directOpenAICompatible(baseUrl:string, apiKey:string|undefined, m
   return data?.choices?.[0]?.message?.content || null;
 }
 
+async function groqChat(messages:any[], options:any={}) {
+  if(!GROQ_API_KEY) return null;
+  const body:any={model:GROQ_MODEL,messages,temperature:options.temperature ?? 0.15,max_tokens:options.max_tokens ?? 1800};
+  if(options.json) body.response_format={type:'json_object'};
+  const response=await withTimeout(fetch(GROQ_BASE_URL+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
+    body:JSON.stringify(body)
+  }));
+  if(!response.ok){ const detail=await response.text().catch(()=> ''); throw new Error('Groq '+response.status+(detail?': '+detail.slice(0,180):'')); }
+  const data=await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
+async function googleSearch(query:string, image=false) {
+  const key=process.env.GOOGLE_CSE_API_KEY, cx=process.env.GOOGLE_CSE_CX;
+  if(!key||!cx) return [];
+  const params=new URLSearchParams({key,cx,q:query,num:'5'});
+  if(image) params.set('searchType','image');
+  const response=await withTimeout(fetch('https://www.googleapis.com/customsearch/v1?'+params.toString()),15000);
+  if(!response.ok) throw new Error('Google Custom Search '+response.status);
+  const data=await response.json();
+  return (data.items||[]).slice(0,5).map((x:any)=>({
+    title:String(x.title||'').slice(0,240),url:String(x.link||'').slice(0,1200),
+    snippet:String(x.snippet||x.htmlTitle||'').replace(/<[^>]*>/g,'').slice(0,600),
+    image:image?String(x.image?.thumbnailLink||x.link||'').slice(0,1200):undefined,
+    source:'Google Custom Search'
+  })).filter((x:any)=>x.url);
+}
+
+async function tavilySearch(query:string) {
+  const key=process.env.TAVILY_API_KEY;
+  if(!key) return [];
+  const response=await withTimeout(fetch('https://api.tavily.com/search',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({api_key:key,query,search_depth:'basic',max_results:5,include_answer:false,include_raw_content:false})
+  }),20000);
+  if(!response.ok) throw new Error('Tavily '+response.status);
+  const data=await response.json();
+  return (data.results||[]).slice(0,5).map((x:any)=>({
+    title:String(x.title||'').slice(0,240),url:String(x.url||'').slice(0,1200),
+    snippet:String(x.content||'').slice(0,700),source:'Tavily'
+  })).filter((x:any)=>x.url);
+}
+
+async function externalResearch(query:string) {
+  const clean=String(query||'').trim().slice(0,300);
+  if(!clean) return {available:false,results:[],images:[],message:'Consulta vacía.'};
+  const jobs=await Promise.allSettled([
+    tavilySearch(clean),
+    googleSearch(clean,false),
+    googleSearch(clean,true)
+  ]);
+  const results=jobs[0].status==='fulfilled'?jobs[0].value:[];
+  const web=jobs[1].status==='fulfilled'?jobs[1].value:[];
+  const images=jobs[2].status==='fulfilled'?jobs[2].value:[];
+  const unique=(items:any[])=>items.filter((x,i)=>x.url&&items.findIndex(y=>y.url===x.url)===i);
+  const all=unique([...results,...web]).slice(0,8);
+  return {available:all.length>0||images.length>0,results:all,images:unique(images).slice(0,6),
+    providers:{tavily:jobs[0].status==='fulfilled',googleWeb:jobs[1].status==='fulfilled',googleImages:jobs[2].status==='fulfilled'},
+    message:all.length||images.length?'Resultados web recuperados; verificar aplicación y compatibilidad antes de vender.':'No hay resultados externos: faltan claves gratuitas configuradas o los proveedores no respondieron.'};
+}
+
 async function nvidiaChat(messages:any[], options:any={}) {
   if(!NVIDIA_API_KEY) return null;
   const body:any={model:NVIDIA_MODEL,messages,temperature:options.temperature ?? 0.15,max_tokens:options.max_tokens ?? 1800};
@@ -43,6 +110,7 @@ async function nvidiaChat(messages:any[], options:any={}) {
 }
 
 async function tryFreeProviders(prompt:string){
+  if(GROQ_API_KEY){ try { const text=await groqChat([{role:'user',content:prompt}],{json:true}); if(text) return {text,provider:'groq',model:GROQ_MODEL}; } catch {} }
   const providers=[
     {name:'ollama',base:OLLAMA_BASE_URL,model:OLLAMA_MODEL,key:undefined},
     {name:'deepseek',base:process.env.DEEPSEEK_API_KEY?'https://api.deepseek.com/v1':'',model:DEEPSEEK_MODEL,key:process.env.DEEPSEEK_API_KEY},
@@ -76,21 +144,30 @@ function decodeAudioBase64(audioBase64:string){
 }
 
 async function transcribeAudio(audioBase64:string, mimeType:string){
-  if(!NVIDIA_API_KEY) throw new Error('La transcripción de audio necesita NVIDIA_API_KEY en el servidor.');
+  if(!NVIDIA_API_KEY&&!GROQ_API_KEY) throw new Error('Configura GROQ_API_KEY (opción gratuita con límites) o NVIDIA_API_KEY para transcribir audio.');
   const bytes=decodeAudioBase64(audioBase64);
   const ext=mimeType.includes('webm')?'webm':mimeType.includes('mp4')?'mp4':mimeType.includes('ogg')?'ogg':'webm';
-  const form=new FormData();
-  form.append('file',new Blob([bytes],{type:mimeType}),'audio.'+ext);
-  form.append('model',NVIDIA_TRANSCRIBE_MODEL);
-  form.append('response_format','json');
-  const response=await withTimeout(fetch(NVIDIA_BASE_URL+'/audio/transcriptions',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+NVIDIA_API_KEY},
-    body:form
-  }),90000);
-  if(!response.ok){ const detail=await response.text().catch(()=> ''); throw new Error('NVIDIA transcripción '+response.status+(detail?': '+detail.slice(0,180):'')); }
-  const data=await response.json();
-  return String(data?.text||'').trim();
+  const providers:any[]=[];
+  if(GROQ_API_KEY) providers.push({name:'Groq',url:GROQ_BASE_URL,model:GROQ_TRANSCRIBE_MODEL,key:GROQ_API_KEY});
+  if(NVIDIA_API_KEY) providers.push({name:'NVIDIA',url:NVIDIA_BASE_URL,model:NVIDIA_TRANSCRIBE_MODEL,key:NVIDIA_API_KEY});
+  let lastError='';
+  for(const provider of providers){
+    const form=new FormData();
+    form.append('file',new Blob([bytes],{type:mimeType}),'audio.'+ext);
+    form.append('model',provider.model);
+    form.append('response_format','json');
+    try{
+      const response=await withTimeout(fetch(provider.url+'/audio/transcriptions',{
+        method:'POST',headers:{'Authorization':'Bearer '+provider.key},body:form
+      }),90000);
+      if(!response.ok){ const detail=await response.text().catch(()=> ''); lastError=provider.name+' '+response.status+(detail?': '+detail.slice(0,160):''); continue; }
+      const data=await response.json();
+      const transcript=String(data?.text||'').trim();
+      if(transcript) return transcript;
+      lastError=provider.name+' devolvió una transcripción vacía.';
+    }catch(err:any){lastError=String(err?.message||err);}
+  }
+  throw new Error(lastError||'No respondió ningún proveedor de transcripción.');
 }
 
 function normalizeCtx(s:any){
@@ -197,7 +274,8 @@ function buildPlannerPrompt(command:string, context:any, messages:any[], correct
     budgetJson('MAPA_BOTONES', (context.systemMap&&context.systemMap.buttons)||null, 10000),
     budgetJson('MAPA_CAMPOS', (context.systemMap&&context.systemMap.fields)||null, 8000),
     budgetJson('DIALOGOS', (context.systemMap&&context.systemMap.dialogs)||null, 3000),
-    budgetJson('MODULOS_APRENDIDOS', (context.learnedMap&&(context.learnedMap.__index||Object.keys(context.learnedMap).slice(0,40)))||null, 2000)
+    budgetJson('MODULOS_APRENDIDOS', (context.learnedMap&&(context.learnedMap.__index||Object.keys(context.learnedMap).slice(0,40)))||null, 2000),
+    budgetJson('INVESTIGACION_WEB', context.externalResearch, 6500)
   ].filter(Boolean).join('\n').slice(0, 66000);
 
   return `Eres el CEREBRO de SIFER, un asistente inteligente integrado a un POS automotriz venezolano. Tu función no es hacer coincidencia de palabras: debes comprender la intención humana, usar el contexto disponible, razonar qué quiere conseguir el usuario y convertirlo en una operación segura y ejecutable.
@@ -280,19 +358,26 @@ ${correction}`:''}`;
 
 export default async function handler(req:any, res:any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-  const hasDirectAI = Boolean(OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
+  const hasDirectAI = Boolean(GROQ_API_KEY || OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
   if (!NVIDIA_API_KEY && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene NVIDIA_API_KEY configurada en producción.' });
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const mode = body.mode === 'plan' || body.mode === 'transcribe' ? body.mode : 'chat';
+    const mode = ['plan','transcribe','research'].includes(body.mode) ? body.mode : 'chat';
     const command = String(body.command || '').slice(0, 4000);
     const messages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
     const context = body.context || {};
     const capabilities = Array.isArray(context.capabilities) ? context.capabilities : [];
 
+    if (mode === 'research') {
+      const query=String(body.query||body.command||'').trim().slice(0,300);
+      if(!query) return res.status(400).json({ok:false,error:'Indica qué repuesto, referencia o imagen quieres buscar.'});
+      const result=await externalResearch(query);
+      return res.status(200).json({ok:true,...result});
+    }
+
     if (mode === 'transcribe') {
-      if (!NVIDIA_API_KEY) return res.status(503).json({ error: 'La transcripción de audio requiere NVIDIA_API_KEY configurada.' });
+      if (!NVIDIA_API_KEY && !GROQ_API_KEY) return res.status(503).json({ error: 'Configura GROQ_API_KEY para transcripción gratuita con límites o NVIDIA_API_KEY.' });
       const audioBase64 = String(body.audioBase64 || '');
       const mimeType = String(body.mimeType || 'audio/webm').split(';')[0];
       if (!audioBase64) return res.status(400).json({ error: 'No se recibió audio.' });
@@ -308,6 +393,8 @@ export default async function handler(req:any, res:any) {
     }
 
     if (mode === 'plan') {
+      const wantsWeb=/\\b(foto|fotografia|imagen|imagen real|foto real|busca en la web|en internet|referencia cruzada|referencias cruzadas|equivalencia|compatibilidad|compatible|oem|numero de parte)\\b/i.test(command);
+      if(wantsWeb) { try { context.externalResearch=await externalResearch(command); } catch {} }
       const allowed = capabilities.map((x:any) => x.name).filter(Boolean);
       let plan:any = null;
       let lastError = '';
@@ -315,6 +402,7 @@ export default async function handler(req:any, res:any) {
         const plannerPrompt = buildPlannerPrompt(command, context, messages, lastError);
         let planText:string|null = null;
         try { const d = await tryFreeProviders(plannerPrompt); planText = d?.text || null; } catch {}
+        if(!planText&&GROQ_API_KEY){try{planText=await groqChat([{role:'user',content:plannerPrompt}],{json:true,max_tokens:1800,temperature:0.1});}catch{}}
         if (!planText) {
           try { planText = await nvidiaChat([{role:'user',content:plannerPrompt}], {json:true, max_tokens:1800, temperature:0.1}); } catch {}
         }
