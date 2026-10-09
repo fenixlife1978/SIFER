@@ -633,7 +633,7 @@
       const brand = SPARE_PART_BRANDS[bIdx];
 
       const masterId = `MST-AUT-${String(index + 1).padStart(7, '0')}`;
-      const codeOEM = `${tpl.oemPref}-${(adjIdx % 89999) + 10000}`;
+      const codeOEM = `REF-PENDIENTE-${tpl.oemPref}-${(adjIdx % 89999) + 10000}`;
       const codeProv = `${brand.nombre.substring(0,3).toUpperCase()}-${tpl.cat.substring(0,3).toUpperCase()}-${codeOEM}`;
       const cost = Number((tpl.cost * (brand.tipo.includes('premium') || brand.tipo === 'oem' ? 1.30 : (brand.tipo === 'economica' ? 0.78 : 1.05))).toFixed(2));
 
@@ -657,11 +657,8 @@
         fotoReal: tpl.img,
         fotoFallback: tpl.img,
         distribuidor: `Distribuidor Mayorista ${veh.marca} & Repuestos Venezuela B2B`,
-        referenciasCruzadas: [
-          { marca: 'Bosch OEM', codigo: `BOS-${codeOEM}` },
-          { marca: 'Denso Direct', codigo: `DEN-${codeOEM}` },
-          { marca: 'Takama Alternate', codigo: `TAK-${codeOEM}` }
-        ],
+        // No fabricar equivalencias: referencias cruzadas vacías hasta validación documental.
+        referenciasCruzadas: [],
         compatibilidad: [
           { marca: veh.marca, modelo: veh.modelo, anios: veh.anios, motor: veh.motor, posicion: 'Tren Delantero / Motor / Eléctrico' }
         ]
