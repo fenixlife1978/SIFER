@@ -73,7 +73,7 @@ clientes:[],
 proveedores:[],
 ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],pedidos:[],usuarios:[{id:'USR-001',nombre:'Administrador',rol:'Administrador',activo:true,cajaId:'CAJA-01'}],cajas:[{id:'CAJA-01',nombre:'Caja 1',abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1}],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},terminalId:'CAJA-01',usuarioActualId:'USR-001',seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7,pedido:1,usuario:2,caja:2}
 };
-let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false; let activeOrderId=null;
+let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer=''; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false; let activeOrderId=null;
 function cleanDemoState(d){
   d=d&&typeof d==='object'?d:structuredClone(seed);
   d.config=d.config||structuredClone(seed.config);

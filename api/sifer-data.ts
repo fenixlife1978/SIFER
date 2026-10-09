@@ -1,5 +1,43 @@
 import { createClient } from '@libsql/client';
 
+async function cleanupKnownDemoData(db:any){
+  await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_demo_migrations(id TEXT PRIMARY KEY,applied_at TEXT NOT NULL)`,args:[]});
+  const applied=await db.execute({sql:`SELECT id FROM sifer_demo_migrations WHERE id='demo-cleanup-2026-10-08-v1' LIMIT 1`,args:[]});
+  if(applied.rows?.length)return;
+  await db.batch([
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_sales(numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,total REAL NOT NULL,subtotal REAL NOT NULL DEFAULT 0,impuesto REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,documento_origen TEXT,caja_id TEXT,operador_id TEXT,created_at TEXT NOT NULL)`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_sale_lines(sale_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,price REAL NOT NULL,discount REAL NOT NULL DEFAULT 0,PRIMARY KEY(sale_number,product_id))`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_purchases(numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,proveedor_id TEXT,proveedor TEXT,total REAL NOT NULL DEFAULT 0,pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,created_at TEXT NOT NULL)`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_purchase_lines(purchase_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,cost REAL NOT NULL,PRIMARY KEY(purchase_number,product_id))`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable(id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL)`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory(product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL)`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory_ledger(operation_id TEXT NOT NULL,documento TEXT NOT NULL,product_id TEXT NOT NULL,qty_delta REAL NOT NULL,reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id))`,args:[]},
+    {sql:`CREATE TABLE IF NOT EXISTS sifer_sync_operations(operation_id TEXT PRIMARY KEY,type TEXT NOT NULL,payload_json TEXT NOT NULL,created_at TEXT NOT NULL,received_at TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'processing')`,args:[]}
+  ],'write');
+  // The known test run contained exactly two sales totaling $75.97. Only remove that exact fingerprint.
+  const sales=await db.execute({sql:`SELECT numero,total FROM sifer_sales ORDER BY created_at`,args:[]});
+  const salesTotal=(sales.rows||[]).reduce((sum:any,x:any)=>sum+Number(x.total||0),0);
+  if(sales.rows?.length===2&&Math.abs(salesTotal-75.97)<0.02){
+    const nums=sales.rows.map((x:any)=>String(x.numero));
+    const marks=nums.map(()=>'?').join(',');
+    const ledger=await db.execute({sql:`SELECT product_id,SUM(qty_delta) AS qty FROM sifer_inventory_ledger WHERE documento IN (${marks}) AND reason IN ('sale','return') GROUP BY product_id`,args:nums});
+    for(const row of ledger.rows||[]){await db.execute({sql:`UPDATE sifer_inventory SET stock=MAX(0,stock-?),updated_at=? WHERE product_id=?`,args:[Number(row.qty||0),new Date().toISOString(),String(row.product_id)]});}
+    await db.execute({sql:`DELETE FROM sifer_inventory_ledger WHERE documento IN (${marks})`,args:nums});
+    await db.execute({sql:`DELETE FROM sifer_sale_lines WHERE sale_number IN (${marks})`,args:nums});
+    await db.execute({sql:`DELETE FROM sifer_sales WHERE numero IN (${marks})`,args:nums});
+  }
+  // Remove the two explicitly recorded test purchases and reverse only their purchase-ledger deltas.
+  const docs=['CMP-00001','CMP-00002'];
+  const ledger=await db.execute({sql:`SELECT product_id,SUM(qty_delta) AS qty FROM sifer_inventory_ledger WHERE documento IN (?,?) AND reason='purchase' GROUP BY product_id`,args:docs});
+  for(const row of ledger.rows||[]){await db.execute({sql:`UPDATE sifer_inventory SET stock=MAX(0,stock-?),updated_at=? WHERE product_id=?`,args:[Number(row.qty||0),new Date().toISOString(),String(row.product_id)]});}
+  await db.execute({sql:`DELETE FROM sifer_inventory_ledger WHERE documento IN (?,?) AND reason='purchase'`,args:docs});
+  await db.execute({sql:`DELETE FROM sifer_purchase_lines WHERE purchase_number IN (?,?)`,args:docs});
+  await db.execute({sql:`DELETE FROM sifer_purchases WHERE numero IN (?,?)`,args:docs});
+  await db.execute({sql:`DELETE FROM sifer_accounts_payable WHERE documento IN (?,?)`,args:docs});
+  await db.execute({sql:`DELETE FROM sifer_sync_operations WHERE payload_json LIKE '%CMP-00001%' OR payload_json LIKE '%CMP-00002%'`,args:[]});
+  await db.execute({sql:`INSERT OR IGNORE INTO sifer_demo_migrations(id,applied_at) VALUES('demo-cleanup-2026-10-08-v1',?)`,args:[new Date().toISOString()]});
+}
+
 export default async function handler(req:any,res:any){
   if(req.method!=='GET') return res.status(405).json({ok:false,error:'Method not allowed'});
   const url=process.env.TURSO_DATABASE_URL, authToken=process.env.TURSO_AUTH_TOKEN;
@@ -7,6 +45,7 @@ export default async function handler(req:any,res:any){
   const db=createClient({url,authToken});
   const query=String(req.query?.query||'').toLowerCase();
   try{
+    await cleanupKnownDemoData(db);
     if(query==='today-sales'){
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_sales (
         numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,cliente_id TEXT,cliente TEXT,total REAL NOT NULL,

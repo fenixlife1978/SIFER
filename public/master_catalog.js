@@ -650,14 +650,14 @@ const VERIFIED_MASTER_CATALOG = [
     currentSelectorQuery = '';
     currentSelectorCategory = 'Todos';
 
-    openModal('📖 Buscar en Catálogo Máster Universal (+9 referencias OEM publicadas Productos)', `
+    openModal('📖 Buscar en Catálogo de Referencias OEM (referencias OEM publicadas Productos)', `
       <div style="background:#f0f5fb;border:1px solid #bfd3eb;padding:10px;border-radius:4px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <b style="color:#0b4f85;font-size:13px">Catálogo técnico de referencias OEM publicadas</b>
             <div style="font-size:11px;color:#555">Búsqueda inteligente por palabras claves: Motor, Pistones, Tiempo, Radiadores, Inyección, Sensores, Bujes, Gomas, Lápiz, Rodamientos, Baterías, Faros/Stop, Cilindros, Relex, Mangueras, Cloche, Aceites y Marcas Nacionales/Importadas</div>
           </div>
-          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con +9 referencias OEM publicadas SKUs B2B</span>
+          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con referencias OEM publicadas SKUs B2B</span>
         </div>
       </div>
 
@@ -833,7 +833,7 @@ const VERIFIED_MASTER_CATALOG = [
           <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo técnico con fuente</span>
           <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Producto manual'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar en Catálogo Máster (+9 referencias OEM publicadas)</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar referencias OEM (referencias OEM publicadas)</button>
       </div>
       ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> Referencia OEM publicada en fuente pública. Confirma aplicación exacta por VIN antes de comprar o instalar.</div>' : ''}
       ${item && item.fuenteUrl ? '<div style="font-size:11px;margin:6px 0;padding:8px;background:#eef7ff;border:1px solid #bfd3eb"><b>Fuente documental:</b> <a href="'+esc(item.fuenteUrl)+'" target="_blank" rel="noopener">Abrir catálogo de origen</a><br><span>'+esc(item.estadoVerificacion||'Confirmar aplicación por VIN')+'</span></div><input type="hidden" id="prodFuenteUrl" value="'+esc(item.fuenteUrl)+'"><input type="hidden" id="prodEstadoVerificacion" value="'+esc(item.estadoVerificacion||'')+'">' : ''}
@@ -1017,7 +1017,7 @@ const VERIFIED_MASTER_CATALOG = [
           <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo técnico con fuente</span>
           <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Ficha en blanco'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (+9 referencias OEM publicadas)</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (referencias OEM publicadas)</button>
       </div>
       ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> Referencia OEM publicada en fuente pública; confirma aplicación exacta por VIN antes de comprar o instalar.</div>' : ''}
 
@@ -1191,11 +1191,11 @@ const VERIFIED_MASTER_CATALOG = [
     return `
     <div class="pagehead">
       <div>
-        <h2>📖 Catálogo Máster de Referencias Automotrices</h2>
+        <h2>📖 Catálogo de Referencias OEM Publicadas</h2>
         <div class="sub">Referencias publicadas en catálogo técnico para Chevrolet Aveo T200/T250 y T300. No se inventan precios ni existencias; confirma aplicación exacta por VIN.</div>
       </div>
       <div class="actions" style="margin:0">
-        <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar Nuevo Producto a Mi Tienda</button>
+        <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar referencia a inventario</button>
       </div>
     </div>
 
