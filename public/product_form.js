@@ -389,7 +389,30 @@
   async function save(mode){
     var name=(el('fp-desc')&&el('fp-desc').value||'').trim();
     var code=(el('fp-codigo')&&el('fp-codigo').value||'').trim();
-    if(!code||!name){alert('Indica al menos el código interno y la descripción del producto.');return;}
+    var skuValue=(el('fp-sku')&&el('fp-sku').value||'').trim();
+    if(!name){alert('Indica la descripción del producto.');return;}
+    // El SKU interno se asigna al importar/crear el producto, nunca al consultar el Catálogo Máster.
+    if(!editingId && (!code || !skuValue)){
+      var category=(el('fp-subcat')&&el('fp-subcat').value||el('fp-cat')&&el('fp-cat').value||'GEN').trim();
+      var allocated='';
+      if(navigator.onLine){
+        try{
+          var seqResponse=await fetch('/api/turso-sku',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({category:category})});
+          var seqData=await seqResponse.json().catch(function(){return {};});
+          if(seqResponse.ok&&seqData.ok)allocated=String(seqData.sku||'');
+        }catch(e){}
+      }
+      if(!allocated){
+        var raw=category.normalize?category.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''):category;
+        var slug=raw.toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,3)||'GEN';
+        allocated='SKU-'+slug+'-'+String((function(){var max=0;(global.db.productos||[]).forEach(function(p){[p.sku,p.codigo].forEach(function(v){var m=String(v||'').match(/^SKU-[A-Z0-9]+-(\\d+)$/i);if(m&&String(v).toUpperCase().startsWith('SKU-'+slug+'-'))max=Math.max(max,Number(m[1])||0);});});return max+1;})()).padStart(5,'0');
+      }
+      if(el('fp-sku')&&!skuValue)el('fp-sku').value=allocated;
+      if(el('fp-codigo')&&!code)el('fp-codigo').value=allocated;
+      skuValue=(el('fp-sku')&&el('fp-sku').value||allocated).trim();
+      code=(el('fp-codigo')&&el('fp-codigo').value||allocated).trim();
+    }
+    if(!code||!name){alert('No se pudo generar el código interno. Revisa la conexión y vuelve a intentarlo.');return;}
     var duplicate=(global.db.productos||[]).find(function(p){return String(p.codigo||'').toLowerCase()===code.toLowerCase()&&String(p.id)!==editingId;});
     if(duplicate){alert('Ya existe un producto con ese código. Usa otro código o abre el registro existente.');return;}
     var details=gather(),old=editingId?(global.db.productos||[]).find(function(p){return String(p.id)===editingId;}):null;
