@@ -287,7 +287,7 @@
     return '<div class="purchase-detail"><b>'+esc(p.numero)+'</b> · '+esc(p.fecha)+' · '+esc(p.proveedor)+'<br>'+
       'Factura proveedor: '+esc(p.nroFactura||'—')+' · Tipo: '+esc(p.tipo||'Contado')+' · Estatus: '+esc(p.estatus||'Recibida')+'<br>'+
       'Moneda: '+esc(p.cost_supplier_currency||'—')+' · Tasa compra: '+fmt(p.purchase_rate_value)+' · Tasa BCV: '+fmt(p.bcv_rate_at_purchase)+'<br>'+
-      'Total: <b>'+money(p.total)+'</b> · Pagado: '+money(p.pagado)+' · Saldo: '+money(p.saldo)+'<br>'+
+      'Total: <b>'+fmt(p.total)+' Bs.</b> · Pagado: '+fmt(p.pagado)+' Bs. · Saldo: '+fmt(p.saldo)+' Bs.+'<br>'+
       'USD proveedor: '+fmt(p.totalUSDProv)+' $ · USD BCV: '+fmt(p.totalUSDBcv)+' $ · Costeo: '+esc(p.costeo||'promedio')+
       (p.diasCredito?' · Crédito: '+esc(p.diasCredito)+' días':'')+(p.observaciones?'<br>Observaciones: '+esc(p.observaciones):'')+
       '<div class="purchase-detail-grid"><table><thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Costo USD BCV</th><th>Subtotal Bs.</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
@@ -318,7 +318,7 @@
   function comprasView(){
     hydratePurchases();
     var all=global.db.compras||[],total=all.reduce(function(s,p){return s+n(p.total)},0),saldo=all.reduce(function(s,p){return s+n(p.saldo)},0);
-    var rows=filterHistory();
+    var rows=filterHistory();if(!selectedPurchaseNo&&rows.length)selectedPurchaseNo=rows[0].numero;
     return '<div class="pagehead"><div><h2>Compras · Entradas por Compra</h2><div class="sub">Recepción de mercancía, costo real, IVA, tasas de conversión y cuentas por pagar.</div></div><button class="btn primary" onclick="openPurchase()">➕ Entrada por Compra</button></div>'+
       '<div class="cards"><div class="card">Total de compras<b>'+money(total)+'</b><span>'+all.length+' documentos recibidos</span></div><div class="card">Cuentas por pagar<b>'+money(saldo)+'</b><span>saldo de entradas pendientes</span></div></div>'+
       '<div class="panel"><div class="panelhead">Historial de Entradas por Compra</div><div class="panelbody">'+
