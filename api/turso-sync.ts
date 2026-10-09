@@ -173,8 +173,12 @@ export default async function handler(req:any,res:any){
           await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_ledger(
             operation_id TEXT PRIMARY KEY,caja_id TEXT NOT NULL,documento TEXT NOT NULL,delta REAL NOT NULL,created_at TEXT NOT NULL
           )`,args:[]});
-          const debit=await db.execute({sql:'INSERT OR IGNORE INTO sifer_cash_ledger(operation_id,caja_id,documento,delta,created_at) VALUES(?,?,?,?,?)',args:['purchase-cash:'+operationId,cajaId,String(purchase.numero),-paidCash,now]});
-          if(debit.rowsAffected)await db.execute({sql:'UPDATE sifer_cash_registers SET saldo=saldo-?,updated_at=? WHERE id=? AND abierta=1',args:[paidCash,now,cajaId]});
+          const cashTx=await db.transaction('write');
+          try{
+            const debit=await cashTx.execute({sql:'INSERT OR IGNORE INTO sifer_cash_ledger(operation_id,caja_id,documento,delta,created_at) VALUES(?,?,?,?,?)',args:['purchase-cash:'+operationId,cajaId,String(purchase.numero),-paidCash,now]});
+            if(debit.rowsAffected)await cashTx.execute({sql:'UPDATE sifer_cash_registers SET saldo=saldo-?,updated_at=? WHERE id=? AND abierta=1',args:[paidCash,now,cajaId]});
+            await cashTx.commit();
+          }catch(e){await cashTx.rollback();throw e}finally{cashTx.close()}
         }
         if(Number(purchase.saldo)>0){
           await db.execute({sql:`INSERT OR IGNORE INTO sifer_accounts_payable(id,documento,proveedor_id,proveedor,total,saldo,fecha,vencimiento,estado,created_at)
