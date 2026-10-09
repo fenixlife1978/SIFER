@@ -110,7 +110,7 @@ async function nvidiaChat(messages:any[], options:any={}) {
 }
 
 async function tryFreeProviders(prompt:string){
-  if(GROQ_API_KEY){ try { const text=await groqChat([{role:'user',content:prompt}],{json:true}); if(text) return {text,provider:'groq',model:GROQ_MODEL}; } catch {} }
+  if(GROQ_API_KEY){ try { const text=await groqChat([{role:'user',content:prompt}],{json:/DEVUELVE SOLO JSON|JSON VÁLIDO|JSON válido/i.test(prompt)}); if(text) return {text,provider:'groq',model:GROQ_MODEL}; } catch {} }
   const providers=[
     {name:'ollama',base:OLLAMA_BASE_URL,model:OLLAMA_MODEL,key:undefined},
     {name:'deepseek',base:process.env.DEEPSEEK_API_KEY?'https://api.deepseek.com/v1':'',model:DEEPSEEK_MODEL,key:process.env.DEEPSEEK_API_KEY},
@@ -358,7 +358,7 @@ ${correction}`:''}`;
 
 export default async function handler(req:any, res:any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
-  const hasDirectAI = Boolean(GROQ_API_KEY || OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL);
+  const hasDirectAI = Boolean(GROQ_API_KEY || OLLAMA_BASE_URL || process.env.DEEPSEEK_API_KEY || process.env.AI_COMPATIBLE_BASE_URL || process.env.TAVILY_API_KEY || (process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_CX));
   if (!NVIDIA_API_KEY && !hasDirectAI) return res.status(503).json({ error: 'SIFER no tiene NVIDIA_API_KEY configurada en producción.' });
 
   try {
