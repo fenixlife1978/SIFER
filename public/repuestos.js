@@ -846,8 +846,8 @@ function openFitmentCrossReference(id){
         <b>${esc(r.nombre || 'Repuesto')}</b><br>
         <span>SKU: ${esc(r.sku || 'N/D')} · OEM: ${esc(r.codigoOEM || 'N/D')}</span>
       </div>
-      <h3 style="font-size:13px;margin:10px 0 5px">Referencias cruzadas registradas</h3>
-      ${directRefs.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap">${directRefs.map(ref => `<span style="border:1px solid #ccd6e2;background:#f8fafc;padding:5px 7px;border-radius:4px"><b>${esc(ref.marca || '')}</b>: ${esc(ref.codigo || '')}</span>`).join('')}</div>` : '<p style="color:#777">Este repuesto no tiene referencias cruzadas registradas.</p>'}
+      <h3 style="font-size:13px;margin:10px 0 5px">Referencias registradas (pendientes de validar)</h3>
+      ${directRefs.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap">${directRefs.map(ref => `<span style="border:1px solid #e6c875;background:#fff8e8;padding:5px 7px;border-radius:4px"><b>${esc(ref.marca || '')}</b>: ${esc(ref.codigo || '')} <small style="color:#8a5700">· por verificar</small></span>`).join('')}</div>` : '<p style="color:#777">Este repuesto no tiene referencias cruzadas registradas.</p>'}
       <h3 style="font-size:13px;margin:14px 0 5px">Otros repuestos con aplicación vehicular coincidente (${alternatives.length})</h3>
       <p style="color:#666;font-size:11px;margin:0 0 7px">Son candidatos para revisar, no equivalencias técnicas confirmadas. Verifica OEM, medidas y especificaciones antes de sustituir.</p>
       ${alternatives.length ? `<div style="overflow:auto;max-height:260px"><table style="width:100%;font-size:11px"><thead><tr><th>Repuesto</th><th>Marca / OEM</th><th>Stock</th><th>Precio</th><th></th></tr></thead><tbody>${alternatives.map(candidate => `<tr><td><b>${esc(candidate.nombre || '')}</b><br><small>${esc(candidate.sku || '')}</small></td><td>${esc(candidate.marca || '')}<br><small>${esc(candidate.codigoOEM || '')}</small></td><td>${Number(candidate.stock) || 0}</td><td>${money(Number(candidate.precio) || 0)}</td><td><button class="btn" style="font-size:10px;padding:5px" onclick="openRepuestoDetail('${String(candidate.id).replace(/'/g, '&#39;')}')">Ficha</button></td></tr>`).join('')}</tbody></table></div>` : '<p style="color:#777">No hay otros repuestos con vehículo y modelo coincidentes en los datos registrados.</p>'}
@@ -869,7 +869,7 @@ function renderCrossReferenceTab(){
         <input id="crossQ" placeholder="Escriba código OEM o código de cualquier fabricante (ej: 04465, P83082, 51394, W68/3, 96407819, 333418, 24R, H4)..." oninput="filterTable(this,'crossTable')">
       </div>
       <p style="font-size:11px;color:#666;margin:4px 0 10px">
-        Esta matriz permite encontrar repuestos equivalentes de diferentes marcas cuando no se cuenta con el código OEM original.
+        Esta matriz permite localizar referencias registradas para investigar. La coincidencia de texto o marca no demuestra equivalencia: verifica el código del fabricante, dimensiones, versión y aplicación antes de sustituir.
       </p>
 
       <table id="crossTable">
@@ -879,7 +879,7 @@ function renderCrossReferenceTab(){
             <th>Repuesto / Categoría</th>
             <th>Código OEM Principal</th>
             <th>Marca Local</th>
-            <th>Marcas Alternativas y Códigos Cruzados</th>
+            <th>Referencias registradas (no equivalencias confirmadas)</th>
             <th>Stock Local</th>
             <th>Precio</th>
             <th></th>
@@ -898,7 +898,7 @@ function renderCrossReferenceTab(){
                     <span style="font-size:10px;background:#f5f5f5;border:1px solid #ccc;padding:1px 5px;border-radius:3px">
                       <b>${esc(ref.marca)}:</b> <span style="font-family:monospace">${esc(ref.codigo)}</span>
                     </span>
-                  `).join('') || '<span style="color:#888;font-size:10px">Sin equivalencias</span>'}
+                  `).join('') || '<span style="color:#888;font-size:10px">Sin referencias registradas</span>'}
                 </div>
               </td>
               <td><span class="badge ${r.stock<=r.min?'bad':'ok'}">${r.stock} un.</span></td>
