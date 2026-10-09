@@ -73,10 +73,11 @@ export default async function handler(req:any,res:any){
     if(query==='cxp'){
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable (
         id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,
-        total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,
+        total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,vencimiento TEXT,
         estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL
       )`,args:[]});
-      const r=await db.execute({sql:`SELECT documento,proveedor_id,proveedor,total,saldo,fecha,estado FROM sifer_accounts_payable
+      try{await db.execute({sql:'ALTER TABLE sifer_accounts_payable ADD COLUMN vencimiento TEXT',args:[]})}catch(e){}
+      const r=await db.execute({sql:`SELECT documento,proveedor_id AS proveedorId,proveedor,total,saldo,fecha,vencimiento,estado FROM sifer_accounts_payable
         WHERE saldo>0 AND lower(coalesce(estado,'')) NOT IN ('pagado','anulada','cancelada') ORDER BY fecha ASC,created_at ASC`,args:[]});
       const items=r.rows.map((x:any)=>({...x,total:Number(x.total||0),saldo:Number(x.saldo||0)}));
       return res.status(200).json({ok:true,query:'cxp',count:items.length,total:items.reduce((s:any,x:any)=>s+x.total,0),saldo:items.reduce((s:any,x:any)=>s+x.saldo,0),items});
