@@ -365,7 +365,26 @@
     details.exclude_from_gap=!!details.excludeGap;
     return details;
   }
-  function generateCode(){var code=global.id?global.id('SKU','producto'):('SKU-'+Date.now());if(el('fp-codigo'))el('fp-codigo').value=code;if(el('fp-sku'))el('fp-sku').value=code;}
+  function skuCategory(){
+    var raw=(el('fp-subcat')&&el('fp-subcat').value||el('fp-cat')&&el('fp-cat').value||'GEN').trim();
+    var normalized=raw.normalize?raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''):raw;
+    var token=normalized.toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,3);
+    return token||'GEN';
+  }
+  function nextSku(){
+    var prefix='SKU-'+skuCategory()+'-',max=0;
+    (Array.isArray(global.db&&global.db.productos)?global.db.productos:[]).forEach(function(p){
+      var sku=String(p&&p.sku||'').trim().toUpperCase();
+      var code=String(p&&p.codigo||'').trim().toUpperCase();
+      [sku,code].forEach(function(v){var m=v.match(/^SKU-[A-Z0-9]+-(\\d+)$/);if(m&&v.indexOf(prefix)===0)max=Math.max(max,parseInt(m[1],10)||0);});
+    });
+    return prefix+String(max+1).padStart(5,'0');
+  }
+  function generateCode(){
+    var sku=nextSku();
+    if(el('fp-sku'))el('fp-sku').value=sku;
+    if(el('fp-codigo')&&!(el('fp-codigo').value||'').trim())el('fp-codigo').value=sku;
+  }
   function duplicateCurrent(){editingId='';if(el('fp-codigo'))el('fp-codigo').value='';if(el('fp-sku'))el('fp-sku').value='';if(el('fp-desc'))el('fp-desc').value=(el('fp-desc').value||'')+' (copia)';var b=el('fp-save');if(b)b.textContent='💾 Guardar producto';}
   async function save(mode){
     var name=(el('fp-desc')&&el('fp-desc').value||'').trim();
