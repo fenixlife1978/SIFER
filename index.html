@@ -414,7 +414,29 @@ function toggleFitmentView(){repuestoSubTab='buscador_vehiculo';renderView()}
 function toggleCrossRefView(){repuestoSubTab='referencias_cruzadas';renderView()}
 function title(v){return ({inicio:'Inicio',pos:'Punto de Venta',master_catalog:'Catálogo Automotriz',repuestos:'Repuestos Automotrices',productos:'Inventario y Productos',compras:'Compras',clientes:'Clientes',proveedores:'Proveedores',cxc:'Cuentas por Cobrar',cxp:'Cuentas por Pagar',presupuestos:'Presupuestos',reportes:'Reportes',caja:'Caja y Finanzas',config:'Configuración'})[v]||v}
 function go(v){view=v;selected=null;renderShell()}
-function renderView(){const m=document.getElementById('main');m.innerHTML=views[view]();bindView();document.getElementById('statusbar').textContent=`Usuario: ${usuarioActual().nombre} · ${cajaActual().nombre} · Módulo: ${title(view)} · Tasa BCV: ${fmtRate(bcvData().rate)} Bs/USD · ${fmt()}`}
+function renderView(){
+ const m=document.getElementById('main');
+ const active=document.activeElement;
+ const focusState=active&&m.contains(active)?{
+  id:active.id||'',name:active.getAttribute('name')||'',tag:active.tagName,
+  start:typeof active.selectionStart==='number'?active.selectionStart:null,
+  end:typeof active.selectionEnd==='number'?active.selectionEnd:null,
+  direction:active.selectionDirection||'none'
+ }:null;
+ m.innerHTML=views[view]();
+ bindView();
+ if(focusState){
+  let target=focusState.id?document.getElementById(focusState.id):null;
+  if(!target&&focusState.name)target=Array.from(m.querySelectorAll('input,textarea,select')).find(el=>el.tagName===focusState.tag&&el.getAttribute('name')===focusState.name);
+  if(target){
+   target.focus({preventScroll:true});
+   if(focusState.start!==null&&typeof target.setSelectionRange==='function'){
+    try{target.setSelectionRange(focusState.start,focusState.end,focusState.direction)}catch(_){}
+   }
+  }
+ }
+ document.getElementById('statusbar').textContent=`Usuario: ${usuarioActual().nombre} · ${cajaActual().nombre} · Módulo: ${title(view)} · Tasa BCV: ${fmtRate(bcvData().rate)} Bs/USD · ${fmt()}`;
+}
 function menu(x){if(x==='Ventas')go('pos');else if(x==='Compras')go('compras');else if(x==='Inventario')go('productos');else if(x==='Cuentas')go('cxc');else if(x==='Contactos')go('clientes');else if(x==='Reportes')go('reportes');else if(x==='Sistema')go('inicio');else toast('Use el menú lateral para acceder a todas las funciones')}
 function focusSearch(){let e=document.querySelector('.searchbar input');if(e)e.focus()}
 function newAction(){if(view==='pos')addItem();else if(view==='master_catalog')openMasterCatalogSelectorModal('producto');else if(view==='repuestos')openMasterCatalogSelectorModal('repuesto');else if(view==='productos')openMasterCatalogSelectorModal('producto');else if(view==='clientes')openClient();else if(view==='proveedores')openSupplier();else if(view==='compras')openPurchase();else if(view==='presupuestos')openQuote();else toast('Nuevo disponible según el módulo')}
