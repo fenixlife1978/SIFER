@@ -287,7 +287,7 @@
     return '<div class="purchase-detail"><b>'+esc(p.numero)+'</b> · '+esc(p.fecha)+' · '+esc(p.proveedor)+'<br>'+
       'Factura proveedor: '+esc(p.nroFactura||'—')+' · Tipo: '+esc(p.tipo||'Contado')+' · Estatus: '+esc(p.estatus||'Recibida')+'<br>'+
       'Moneda: '+esc(p.cost_supplier_currency||'—')+' · Tasa compra: '+fmt(p.purchase_rate_value)+' · Tasa BCV: '+fmt(p.bcv_rate_at_purchase)+'<br>'+
-      'Total: <b>'+fmt(p.total)+' Bs.</b> · Pagado: '+fmt(p.pagado)+' Bs. · Saldo: '+fmt(p.saldo)+' Bs.+'<br>'+
+      'Total: <b>'+fmt(p.total)+' Bs.</b> · Pagado: '+fmt(p.pagado)+' Bs. · Saldo: '+fmt(p.saldo)+' Bs.<br>'+
       'USD proveedor: '+fmt(p.totalUSDProv)+' $ · USD BCV: '+fmt(p.totalUSDBcv)+' $ · Costeo: '+esc(p.costeo||'promedio')+
       (p.diasCredito?' · Crédito: '+esc(p.diasCredito)+' días':'')+(p.observaciones?'<br>Observaciones: '+esc(p.observaciones):'')+
       '<div class="purchase-detail-grid"><table><thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Costo USD BCV</th><th>Subtotal Bs.</th><th>IVA</th><th>Total</th></tr></thead><tbody>'+
@@ -320,12 +320,12 @@
     var all=global.db.compras||[],total=all.reduce(function(s,p){return s+n(p.total)},0),saldo=all.reduce(function(s,p){return s+n(p.saldo)},0);
     var rows=filterHistory();if(!selectedPurchaseNo&&rows.length)selectedPurchaseNo=rows[0].numero;
     return '<div class="pagehead"><div><h2>Compras · Entradas por Compra</h2><div class="sub">Recepción de mercancía, costo real, IVA, tasas de conversión y cuentas por pagar.</div></div><button class="btn primary" onclick="openPurchase()">➕ Entrada por Compra</button></div>'+
-      '<div class="cards"><div class="card">Total de compras<b>'+money(total)+'</b><span>'+all.length+' documentos recibidos</span></div><div class="card">Cuentas por pagar<b>'+money(saldo)+'</b><span>saldo de entradas pendientes</span></div></div>'+
+      '<div class="cards"><div class="card">Total de compras<b>'+fmt(total)+' Bs.'+'</b><span>'+all.length+' documentos recibidos</span></div><div class="card">Cuentas por pagar<b>'+fmt(saldo)+' Bs.'+'</b><span>saldo de entradas pendientes</span></div></div>'+
       '<div class="panel"><div class="panelhead">Historial de Entradas por Compra</div><div class="panelbody">'+
       '<div class="purchase-history-tools"><input id="purchase-search" placeholder="Buscar N° entrada, factura o proveedor" oninput="SIFERPurchaseEntry.refreshHistory()"><select id="purchase-filter" onchange="SIFERPurchaseEntry.refreshHistory()"><option>Todos</option><option>Con saldo</option><option>Pagada</option></select>'+
       '<button class="btn" onclick="SIFERPurchaseEntry.exportHistory()">📄 Exportar CSV</button><button class="btn" onclick="SIFERPurchaseEntry.printSelected()">🖨️ Imprimir</button><button class="btn" onclick="SIFERPurchaseEntry.shareSelected()">↗ Compartir</button></div>'+
       '<div style="overflow:auto"><table id="purchase-table"><thead><tr><th>N° Entrada</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Tipo</th><th>Pagado</th><th>Saldo</th><th>Estatus</th><th></th></tr></thead><tbody>'+
-      rows.map(function(p){return '<tr data-purchase="'+esc(p.numero)+'" class="'+(p.numero===selectedPurchaseNo?'selected':'')+'"><td>'+esc(p.numero)+'</td><td>'+esc(p.nroFactura||'—')+'</td><td>'+esc(p.fecha||'')+'</td><td>'+esc(p.proveedor||'')+'</td><td>'+money(p.total)+'</td><td>'+esc(p.tipo||'Contado')+'</td><td>'+money(p.pagado)+'</td><td>'+money(p.saldo)+'</td><td>'+(n(p.saldo)>0?'Con saldo':'Pagada')+'</td><td><button class="btn" onclick="SIFERPurchaseEntry.selectPurchase(\''+String(p.numero).replace(/'/g,"\\'")+'\')">Ver</button></td></tr>'}).join('')||'<tr><td colspan="10" style="text-align:center;padding:18px;color:#667085">Todavía no hay entradas por compra registradas.</td></tr>'+
+      rows.map(function(p){return '<tr data-purchase="'+esc(p.numero)+'" class="'+(p.numero===selectedPurchaseNo?'selected':'')+'"><td>'+esc(p.numero)+'</td><td>'+esc(p.nroFactura||'—')+'</td><td>'+esc(p.fecha||'')+'</td><td>'+esc(p.proveedor||'')+'</td><td>'+fmt(p.total)+' Bs.'+'</td><td>'+esc(p.tipo||'Contado')+'</td><td>'+fmt(p.pagado)+' Bs.'+'</td><td>'+fmt(p.saldo)+' Bs.'+'</td><td>'+(n(p.saldo)>0?'Con saldo':'Pagada')+'</td><td><button class="btn" onclick="SIFERPurchaseEntry.selectPurchase(\''+String(p.numero).replace(/'/g,"\\'")+'\')">Ver</button></td></tr>'}).join('')||'<tr><td colspan="10" style="text-align:center;padding:18px;color:#667085">Todavía no hay entradas por compra registradas.</td></tr>'+
       '</tbody></table></div><div id="purchase-detail" class="purchase-panel" style="margin-top:10px">'+detailHtml(all.find(function(p){return p.numero===selectedPurchaseNo})||null)+'</div></div></div>';
   }
   function refreshHistory(){
