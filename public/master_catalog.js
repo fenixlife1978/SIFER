@@ -833,7 +833,7 @@
           { terms: ["bateria", "baterias"], accept: ["bateria"], reject: ["bujia", "sensor de oxigeno"] },
           { terms: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], accept: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], reject: ["bomba de agua", "bomba de gasolina", "bomba de direccion", "bomba de freno"] },
           { terms: ["pescador de aceite", "colador de aceite", "chupador de aceite"], accept: ["pescador", "colador", "chupador"], reject: ["bomba de gasolina"] },
-          { terms: ["bomba de gasolina", "pila de gasolina", "fuel pump"], accept: ["bomba de gasolina", "pila", "fuel pump"], reject: ["bomba de aceite", "bomba de agua"] }
+          { terms: ["bomba de gasolina", "pila de gasolina", "fuel pump"], accept: ["bomba de gasolina", "pila", "fuel pump"], reject: ["bomba de aceite", "bomba de agua", "relex", "rele", "relay", "relevador"] }
         ];
         const family = families.find(f => f.terms.some(t => nq.includes(t)));
         if (matchesQ && family && (!family.accept.some(t => ni.includes(t)) || family.reject.some(t => ni.includes(t)))) {
@@ -935,6 +935,12 @@
     'Carrocería y Mandos',
     'Filtros y Mantenimiento',
     'Partes Eléctricas',
+    'Lubricación del Motor',
+    'Motor Interno',
+    'Retenes y Sellos',
+    'Admisión y Escape',
+    'Sensores',
+    'Empacaduras de Motor',
     'Aceites y Lubricantes',
     'Repuestos Chinos',
     'Nacionales Venezolanas',
