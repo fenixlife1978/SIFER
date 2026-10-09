@@ -57,6 +57,7 @@ export default async function handler(req:any,res:any){
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
     try{await db.execute({sql:"ALTER TABLE sifer_products ADD COLUMN detalles_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
+    await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory_ledger(operation_id TEXT NOT NULL,documento TEXT NOT NULL,product_id TEXT NOT NULL,qty_delta REAL NOT NULL,reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id))`,args:[]});
 
     if(req.method==='GET'){
       // Remove only recognizable starter/demo rows; preserve real operator-entered products.
@@ -89,7 +90,9 @@ export default async function handler(req:any,res:any){
       if(current.rows.length){
         await db.execute({sql:'UPDATE sifer_inventory SET min_stock=?,updated_at=? WHERE product_id=?',args:[Math.max(0,Number(p.min)||0),now,String(p.id)]});
       }else{
-        await db.execute({sql:'INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at) VALUES(?,?,?,?)',args:[String(p.id),Math.max(0,Number(req.body?.initialStock)||0),Math.max(0,Number(p.min)||0),now]});
+        const initialStock=Math.max(0,Number(req.body?.initialStock)||0);
+        await db.execute({sql:'INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at) VALUES(?,?,?,?)',args:[String(p.id),initialStock,Math.max(0,Number(p.min)||0),now]});
+        if(initialStock>0)await db.execute({sql:'INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at) VALUES(?,?,?,?,?,?)',args:['initial-stock:'+String(p.id),'INICIAL-'+String(p.codigo),String(p.id),initialStock,'initial',now]});
       }
       const saved=await db.execute({sql:`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,p.detalles_json AS detallesJson,i.stock,i.min_stock AS min FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id WHERE p.id=? LIMIT 1`,args:[String(p.id)]});
       const row:any=saved.rows[0]||{};
