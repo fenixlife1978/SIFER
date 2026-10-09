@@ -81,6 +81,35 @@ export default async function handler(req:any,res:any){
       const items=r.rows.map((x:any)=>({...x,total:Number(x.total||0),saldo:Number(x.saldo||0)}));
       return res.status(200).json({ok:true,query:'cxp',count:items.length,total:items.reduce((s:any,x:any)=>s+x.total,0),saldo:items.reduce((s:any,x:any)=>s+x.saldo,0),items});
     }
+    if(query==='purchases'){
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchases(
+        numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,proveedor_id TEXT,proveedor TEXT,total REAL NOT NULL DEFAULT 0,
+        pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,created_at TEXT NOT NULL,payload_json TEXT NOT NULL DEFAULT '{}'
+      )`,args:[]});
+      await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchase_lines(
+        purchase_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,cost REAL NOT NULL,details_json TEXT NOT NULL DEFAULT '{}',
+        PRIMARY KEY(purchase_number,product_id)
+      )`,args:[]});
+      try{await db.execute({sql:"ALTER TABLE sifer_purchases ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
+      try{await db.execute({sql:"ALTER TABLE sifer_purchase_lines ADD COLUMN details_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
+      const rows=await db.execute({sql:`SELECT numero,fecha,proveedor_id AS proveedorId,proveedor,total,pagado,saldo,tipo,created_at,payload_json
+        FROM sifer_purchases ORDER BY fecha DESC,created_at DESC`,args:[]});
+      const items:any[]=[];
+      for(const row of rows.rows||[]){
+        let p:any={};try{p=JSON.parse(String(row.payload_json||'{}'))||{}}catch(e){}
+        if(!p.numero){
+          const lines=await db.execute({sql:`SELECT l.product_id AS id,l.qty AS qty,l.cost AS costo,p.codigo,p.nombre AS descripcion,l.details_json
+            FROM sifer_purchase_lines l LEFT JOIN sifer_products p ON p.id=l.product_id WHERE l.purchase_number=?`,args:[String(row.numero)]});
+          p={numero:String(row.numero),fecha:String(row.fecha||''),proveedorId:row.proveedorId??null,proveedor:String(row.proveedor||''),
+            total:Number(row.total||0),pagado:Number(row.pagado||0),saldo:Number(row.saldo||0),tipo:String(row.tipo||'Contado'),
+            lineas:(lines.rows||[]).map((line:any)=>{let detail:any={};try{detail=JSON.parse(String(line.details_json||'{}'))||{}}catch(e){};return {...detail,id:String(line.id),qty:Number(line.qty||0),cantidad:Number(line.qty||0),costo:Number(line.costo||0),codigo:detail.codigo||line.codigo||'',descripcion:detail.descripcion||line.descripcion||''}})};
+        }
+        items.push({...p,numero:String(p.numero||row.numero),fecha:String(p.fecha||row.fecha||''),proveedor:String(p.proveedor||row.proveedor||''),
+          proveedorId:p.proveedorId??row.proveedorId??null,total:Number(p.total??row.total)||0,pagado:Number(p.pagado??row.pagado)||0,
+          saldo:Number(p.saldo??row.saldo)||0,tipo:p.tipo||row.tipo||'Contado'});
+      }
+      return res.status(200).json({ok:true,query:'purchases',count:items.length,items});
+    }
     if(query==='cash'){
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
         id TEXT PRIMARY KEY,nombre TEXT NOT NULL,abierta INTEGER NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,
