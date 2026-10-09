@@ -115,9 +115,11 @@ export default async function handler(req:any,res:any){
       )`,args:[]});
       await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_products (
         id TEXT PRIMARY KEY,codigo TEXT,nombre TEXT NOT NULL,categoria TEXT,marca TEXT,unidad TEXT,
-        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL
+        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,fuente_url TEXT,estado_verificacion TEXT,updated_at TEXT NOT NULL
       )`,args:[]});
-      const r=await db.execute({sql:`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,
+      try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
+      try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
+      const r=await db.execute({sql:`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,
         i.stock,i.min_stock AS min FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id
         ORDER BY p.nombre`,args:[]});
       const items=r.rows.map((x:any)=>({...x,stock:Number(x.stock||0),min:Number(x.min||0)}));

@@ -12,6 +12,8 @@ type Product = {
   stock?:number;
   min?:number;
   imagen?:string;
+  fuenteUrl?:string;
+  estadoVerificacion?:string;
 };
 
 export default async function handler(req:any,res:any){
@@ -30,6 +32,8 @@ export default async function handler(req:any,res:any){
         costo REAL NOT NULL DEFAULT 0,
         precio REAL NOT NULL DEFAULT 0,
         imagen TEXT,
+        fuente_url TEXT,
+        estado_verificacion TEXT,
         updated_at TEXT NOT NULL
       )`,args:[]},
       {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
@@ -41,6 +45,9 @@ export default async function handler(req:any,res:any){
       )`,args:[]}
     ],'write');
 
+    try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
+    try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
+
     if(req.method==='GET'){
       // Remove only recognizable starter/demo rows; preserve real operator-entered products.
       await db.batch([
@@ -49,7 +56,7 @@ export default async function handler(req:any,res:any){
         {sql:"DELETE FROM sifer_inventory WHERE product_id IN (SELECT id FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%')",args:[]},
         {sql:"DELETE FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%'",args:[]}
       ],'write');
-      const rows=await db.execute(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,
+      const rows=await db.execute(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,
         i.stock,i.min_stock AS min
         FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id ORDER BY p.id`);
       return res.status(200).json({ok:true,products:rows.rows});
@@ -66,13 +73,13 @@ export default async function handler(req:any,res:any){
       const p=raw as Product;
       if(!p?.id||!p?.nombre) continue;
       stmts.push(
-        {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,updated_at)
-          VALUES(?,?,?,?,?,?,?,?,?,?)
+        {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,updated_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
           ON CONFLICT(id) DO UPDATE SET
             codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,
             marca=excluded.marca,unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,
-            imagen=excluded.imagen,updated_at=excluded.updated_at`,
-         args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',now]},
+            imagen=excluded.imagen,fuente_url=excluded.fuente_url,estado_verificacion=excluded.estado_verificacion,updated_at=excluded.updated_at`,
+         args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',now]},
         {sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
           VALUES(?,?,?,?)
           ON CONFLICT(product_id) DO UPDATE SET stock=excluded.stock,min_stock=excluded.min_stock,updated_at=excluded.updated_at`,

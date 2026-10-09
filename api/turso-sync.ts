@@ -36,6 +36,8 @@ export default async function handler(req:any,res:any){
         FOREIGN KEY(product_id) REFERENCES sifer_products(id)
       )`,args:[]}
     ],'write');
+    try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
+    try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
     if(type==='sale-created'){
       const sale=body.payload?.sale;
       if(sale?.numero){
@@ -186,9 +188,12 @@ export default async function handler(req:any,res:any){
         for(const p of products){
           if(!p?.id||!p?.nombre) continue;
           stmts.push(
-            {sql:`INSERT OR IGNORE INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,updated_at)
-              VALUES(?,?,?,?,?,?,?,?,?,?)`,
-             args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',now]},
+            {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,updated_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+              ON CONFLICT(id) DO UPDATE SET
+                fuente_url=CASE WHEN coalesce(sifer_products.fuente_url,'')='' THEN excluded.fuente_url ELSE sifer_products.fuente_url END,
+                estado_verificacion=CASE WHEN coalesce(sifer_products.estado_verificacion,'')='' THEN excluded.estado_verificacion ELSE sifer_products.estado_verificacion END`,
+             args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',now]},
             {sql:`INSERT OR IGNORE INTO sifer_inventory(product_id,stock,min_stock,updated_at)
               VALUES(?,?,?,?)`,
              args:[String(p.id),Number(p.stock)||0,Number(p.min)||0,now]}
