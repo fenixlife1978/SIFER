@@ -34,6 +34,35 @@
     return '<div class="field full"><label for="'+id+'">'+label+'</label><textarea id="'+id+'" rows="3" '+(extra||'')+'>'+global.esc(text(value))+'</textarea></div>';
   }
   function section(title,html){ return '<fieldset class="panel" style="margin:8px 0"><legend>'+title+'</legend><div class="formgrid">'+html+'</div></fieldset>'; }
+  function optionList(key,defaults){
+    var cfg=global.db.config||(global.db.config={});
+    cfg.productFormOptions=cfg.productFormOptions||{};
+    var values=(cfg.productFormOptions[key]||[]).slice();
+    (defaults||[]).forEach(function(v){if(values.indexOf(v)<0)values.push(v);});
+    (global.db.productos||[]).forEach(function(p){var v=p[key==='marcas'?'marca':key==='categorias'?'categoria':key==='unidades'?'unidad':key==='presentaciones'?'presentacion':'subcategoria'];if(v&&values.indexOf(v)<0)values.push(v);});
+    return values;
+  }
+  function managed(id,label,value,key,defaults,allowRemove){
+    var options=optionList(key,defaults);
+    return '<div class="field"><label for="'+id+'">'+label+'</label><div style="display:flex;gap:4px;align-items:center"><input id="'+id+'" list="fp-list-'+key+'" value="'+global.esc(text(value))+'" style="min-width:0;flex:1"><datalist id="fp-list-'+key+'">'+options.map(function(v){return '<option value="'+global.esc(v)+'"></option>';}).join('')+'</datalist><button class="btn" type="button" data-fp-add-option="'+key+'" data-fp-field="'+id+'" title="Agregar opción">+</button>'+(allowRemove?'<button class="btn" type="button" data-fp-remove-option="'+key+'" data-fp-field="'+id+'" title="Eliminar opción">−</button>':'')+'</div></div>';
+  }
+  function manageOption(key,fieldId,remove){
+    var cfg=global.db.config||(global.db.config={});
+    cfg.productFormOptions=cfg.productFormOptions||{};
+    var value=(el(fieldId)&&el(fieldId).value||'').trim();
+    if(!value){alert('Escribe primero el valor que quieres '+(remove?'eliminar':'agregar')+'.');return;}
+    var values=cfg.productFormOptions[key]||[];
+    if(remove){
+      if(!values.includes(value)){alert('Ese valor no está guardado como opción administrable.');return;}
+      if(!confirm('¿Eliminar "'+value+'" de las opciones?'))return;
+      cfg.productFormOptions[key]=values.filter(function(v){return v!==value;});
+    }else{
+      if(!values.includes(value))values.push(value);
+      cfg.productFormOptions[key]=values;
+    }
+    global.save('product-form-options');
+    open(editingId?(global.db.productos||[]).find(function(p){return String(p.id)===editingId;}):formSource||null);
+  }
   function pane(id,title,html,active){
     return '<button type="button" class="fp-tab '+(active?'active':'')+'" data-fp-tab="'+id+'" style="padding:7px 10px;border:1px solid #b8c7d8;border-bottom:0;background:'+(active?'#fff':'#eaf0f7')+';border-radius:4px 4px 0 0;font-weight:700;font-size:11px">'+title+'</button><div id="'+id+'" class="fp-pane" style="display:'+(active?'block':'none')+';padding:8px;border:1px solid #c8d2df;background:#fff">'+html+'</div>';
   }
@@ -119,10 +148,10 @@
       input('fp-descCorta','Descripción corta para el ticket',val(d,'descCorta',name))+
       input('fp-modelo','Modelo',val(d,'modelo',''))+
       input('fp-ref','Referencia comercial',val(d,'referencia',''))+
-      input('fp-marca','Marca comercial',brand)+
+      managed('fp-marca','Marca comercial',brand,'marcas',['Bosch','NGK','Denso','Gates','SKF','KYB','TRW','GM','Chevrolet','Toyota','Ford','Genérica'],true)+
       input('fp-oem','Código original OEM',val(d,'codigoOEM',''))+
-      input('fp-cat','Categoría',category)+
-      input('fp-subcat','Subcategoría',val(d,'subcategoria',''))+
+      managed('fp-cat','Categoría',category,'categorias',['Motor','Filtros','Lubricantes','Frenos','Suspensión','Dirección','Electricidad','Refrigeración','Transmisión','Accesorios','General'],true)+
+      managed('fp-subcat','Subcategoría',val(d,'subcategoria',''),'subcategorias',['Bujías','Correas','Sensores','Bombas','Bujes','Terminales','Rodamientos','Pastillas','Filtros','Mangueras','General'],true)+
       input('fp-nroParte','MPN / Número de parte',val(d,'nroParte',val(d,'mpn','')))+
       area('fp-compat','Compatibilidad vehicular (marca, modelo, año, motor, versión y posición)',compatText)+
       area('fp-cross','Referencias cruzadas (marca: código; una por línea)',Array.isArray(d.referenciasCruzadas)?d.referenciasCruzadas.map(function(x){return (x.marca||'')+': '+(x.codigo||'');}).join('\n'):val(d,'referenciasCruzadas',''))
@@ -150,7 +179,7 @@
     );
     var inventory=section('Inventario y trazabilidad',
       '<div class="field full" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px"><div><label>Stock actual</label><input value="'+global.esc(text(val(d,'stock',0)))+'" readonly></div><div><label>Reservado</label><input value="'+global.esc(text(val(d,'reservado',0)))+'" readonly></div><div><label>Disponible</label><input value="'+global.esc(text(Math.max(0,n(val(d,'stock',0))-n(val(d,'reservado',0)))))+'" readonly></div></div>'+
-      input('fp-unidad','Unidad base',unit||'Unidad')+
+      managed('fp-unidad','Unidad base',unit||'Unidad','unidades',['Unidad','Juego','Par','Caja','Paquete','Litro','Galón','Metro','Rollo','Kit'],false)+
       input('fp-stockInicial','Existencia inicial (solo al crear)',existing?val(d,'stock',0):val(d,'stockInicial',val(d,'stock',0)),'number',existing?'readonly':'min="0"')+
       input('fp-min','Stock mínimo',val(d,'min',0),'number','min="0"')+
       input('fp-max','Stock máximo',val(d,'stockMaximo',0),'number','min="0"')+
@@ -159,7 +188,7 @@
       '<div class="field full">'+check('fp-lotes','Maneja lotes',!!d.manejaLotes)+check('fp-vencimiento','Maneja vencimiento',!!d.manejaVencimiento)+check('fp-seriales','Maneja seriales únicos',!!d.manejaSeriales)+check('fp-negativo','Permitir inventario negativo',!!d.permiteNegativo)+check('fp-auditoria','Requiere auditoría de conteo',!!d.requiereAuditoria)+'</div>'
     );
     var presentations=section('Presentaciones y fraccionamiento',
-      input('fp-presentacion','Presentación principal',val(d,'presentacion','Unidad'))+
+      managed('fp-presentacion','Presentación principal',val(d,'presentacion','Unidad'),'presentaciones',['Unidad','Par','Juego','Kit','Caja','Paquete','Blíster','Botella','Galón','Litro'],true)+
       input('fp-contenido','Contenido total',val(d,'contenidoTotal',''))+
       input('fp-subpresentacion','Subpresentación / fraccionado',val(d,'subPresentacion',''))+
       input('fp-contenidoFraccion','Contenido por fracción',val(d,'contenidoFraccion',''))
@@ -202,6 +231,7 @@
     global.openModal(title,searchHtml+sourceHtml+'<input type="hidden" id="fp-source-url" value="'+global.esc(val(d,'fuenteUrl',''))+'"><input type="hidden" id="fp-source-status" value="'+global.esc(val(d,'estadoVerificacion',''))+'"><div style="max-height:62vh;overflow:auto;padding:2px">'+tabs+panes+'</div>',
       '<button class="btn" id="fp-generate" type="button">⚡ Generar código</button>'+(editingId?'<button class="btn" id="fp-duplicate" type="button">📋 Duplicar</button>':'')+'<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn" id="fp-save-new" type="button">➕ Guardar y nuevo</button><button class="btn primary" id="fp-save" type="button">💾 '+(editingId?'Guardar cambios':'Guardar producto')+'</button>');
     document.querySelectorAll('[data-fp-tab]').forEach(function(b){b.addEventListener('click',function(){switchTab(b.getAttribute('data-fp-tab'));});});
+    var formRoot=el('modalBody');if(formRoot)formRoot.addEventListener('click',function(ev){var a=ev.target.closest('[data-fp-add-option]');if(a){manageOption(a.getAttribute('data-fp-add-option'),a.getAttribute('data-fp-field'),false);return;}var r=ev.target.closest('[data-fp-remove-option]');if(r)manageOption(r.getAttribute('data-fp-remove-option'),r.getAttribute('data-fp-field'),true);});
     if(el('fp-add-supplier'))el('fp-add-supplier').addEventListener('click',addSupplier);
     renderSuppliers();
     if(el('fp-save'))el('fp-save').addEventListener('click',function(){save('close');});
@@ -303,7 +333,7 @@
       global.toast('No se guardó el producto: '+String(err&&err.message||err));
     }
   }
-  global.SIFERProductForm={open:open,pricing:pricing,priceTier:priceTier,switchTab:switchTab,save:save};
+  global.SIFERProductForm={open:open,pricing:pricing,priceTier:priceTier,switchTab:switchTab,save:save,manageOption:manageOption};
   global.openCommercialProductFormWithMaster=open;
   global.openProduct=function(pid){
     var p=(global.db.productos||[]).find(function(x){return String(x.id)===String(pid);});
