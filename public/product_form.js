@@ -219,6 +219,33 @@
     details.referenciasCruzadas=(el('fp-cross')?el('fp-cross').value:'').split(/\n+/).map(function(line){var s=line.split(':');return {marca:(s.shift()||'').trim(),codigo:s.join(':').trim()};}).filter(function(x){return x.marca&&x.codigo;});
     details.proveedores=supplierRows.map(function(s){return Object.assign({},s);});
     details.historial=[];
+    details.subcategoria=details.subcat||'';
+    details.stockMaximo=n(details.max);
+    details.reorderPoint=n(details.reorden);
+    details.puntoReorden=n(details.reorden);
+    details.descuentoMaximo=n(details.descMax);
+    details.contenidoTotal=details.contenido||'';
+    details.subPresentacion=details.subpresentacion||'';
+    details.margenDetal=n(details.margen);
+    details.precioUSD=n(details.precioUSD);
+    details.precioBs=n(details.precioBs);
+    details.precioMayor=n(details.mayorUSD);
+    details.precioMayorBs=n(details.mayorBs);
+    details.margenMayor=n(details.mayorMargen);
+    details.precioOferta=n(details.ofertaUSD);
+    details.precioOfertaBs=n(details.ofertaBs);
+    details.margenOferta=n(details.ofertaMargen);
+    details.precioPromo=n(details.promoUSD);
+    details.precioPromoBs=n(details.promoBs);
+    details.margenPromo=n(details.promoMargen);
+    details.ivaExento=!details.ivaAplicar;
+    details.aplicaIGTF=!!details.igtf;
+    details.manejaLotes=!!details.lotes;
+    details.manejaVencimiento=!!details.vencimiento;
+    details.manejaSeriales=!!details.seriales;
+    details.permiteNegativo=!!details.negativo;
+    details.requiereAuditoria=!!details.auditoria;
+    details.exclude_from_gap=!!details.excludeGap;
     return details;
   }
   function generateCode(){var code=global.id?global.id('SKU','producto'):('SKU-'+Date.now());if(el('fp-codigo'))el('fp-codigo').value=code;if(el('fp-sku'))el('fp-sku').value=code;}
