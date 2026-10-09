@@ -56,6 +56,7 @@
     box.innerHTML=supplierRows.map(function(s,i){
       return '<tr><td>'+global.esc(s.nombre||'')+'</td><td>'+global.esc(s.codigo||'')+'</td><td>'+global.esc(s.costo==null?'':s.costo)+'</td><td>'+(s.principal?'Sí':'No')+'</td><td><button class="btn" type="button" data-fp-supplier-remove="'+i+'">Quitar</button></td></tr>';
     }).join('')||'<tr><td colspan="5" style="text-align:center;color:#777;padding:10px">No hay proveedores asociados.</td></tr>';
+    if(!box.dataset.bound){box.dataset.bound='1';box.addEventListener('click',function(ev){var b=ev.target.closest('[data-fp-supplier-remove]');if(!b)return;supplierRows.splice(Number(b.getAttribute('data-fp-supplier-remove')),1);renderSuppliers();});}
   }
   function addSupplier(){
     var nombre=prompt('Nombre del proveedor:');
@@ -200,7 +201,6 @@
     document.querySelectorAll('[data-fp-tab]').forEach(function(b){b.addEventListener('click',function(){switchTab(b.getAttribute('data-fp-tab'));});});
     if(el('fp-add-supplier'))el('fp-add-supplier').addEventListener('click',addSupplier);
     renderSuppliers();
-    document.querySelectorAll('[data-fp-supplier-remove]').forEach(function(b){b.addEventListener('click',function(){supplierRows.splice(Number(b.getAttribute('data-fp-supplier-remove')),1);renderSuppliers();});});
     if(el('fp-save'))el('fp-save').addEventListener('click',save);
     pricing('');
   }
@@ -239,7 +239,7 @@
     };
     var hist=old&&Array.isArray(old.historial)?old.historial.slice():[];
     hist.unshift({fecha:new Date().toISOString(),usuario:(global.usuarioActual&&global.usuarioActual().nombre)||'Administrador',operacion:old?'Actualización':'Creación',detalle:name+' — '+code});
-    p.historial=hist.slice(0,100);
+    p.historial=hist.slice(0,100);details.historial=p.historial;p.detalles=details;
     try{
       if(navigator.onLine){
         var response=await fetch('/api/turso-products',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'upsert',product:p,initialStock:stockInicial})});
