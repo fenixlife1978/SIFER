@@ -26,6 +26,16 @@ export default async function handler(req:any,res:any){
       if(status==='processing')return res.status(409).json({ok:false,duplicate:true,inProgress:true,error:'La operación ya está siendo procesada',operationId});
       await db.execute({sql:"UPDATE sifer_sync_operations SET status='processing',received_at=? WHERE operation_id=?",args:[new Date().toISOString(),operationId]});
     }
+    await db.batch([
+      {sql:`CREATE TABLE IF NOT EXISTS sifer_products (
+        id TEXT PRIMARY KEY,codigo TEXT,nombre TEXT NOT NULL,categoria TEXT,marca TEXT,unidad TEXT,
+        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL
+      )`,args:[]},
+      {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
+        product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
+        FOREIGN KEY(product_id) REFERENCES sifer_products(id)
+      )`,args:[]}
+    ],'write');
     if(type==='sale-created'){
       const sale=body.payload?.sale;
       if(sale?.numero){
@@ -191,16 +201,6 @@ export default async function handler(req:any,res:any){
         if(stmts.length) await db.batch(stmts,'write');
       }
     }
-    await db.batch([
-      {sql:`CREATE TABLE IF NOT EXISTS sifer_products (
-        id TEXT PRIMARY KEY,codigo TEXT,nombre TEXT NOT NULL,categoria TEXT,marca TEXT,unidad TEXT,
-        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL
-      )`,args:[]},
-      {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
-        product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
-        FOREIGN KEY(product_id) REFERENCES sifer_products(id)
-      )`,args:[]}
-    ],'write');
     await db.execute({sql:"UPDATE sifer_sync_operations SET status='applied',received_at=? WHERE operation_id=?",args:[new Date().toISOString(),operationId]});
     return res.status(200).json({ok:true,operationId});
   }catch(error:any){
