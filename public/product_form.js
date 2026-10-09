@@ -148,6 +148,7 @@
       input('fp-promoMargen','Margen promoción (%)',val(d,'margenPromo',0),'number','oninput="SIFERProductForm.priceTier(\'promo\',\'margen\')"')
     );
     var inventory=section('Inventario y trazabilidad',
+      '<div class="field full" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px"><div><label>Stock actual</label><input value="'+global.esc(text(val(d,'stock',0)))+'" readonly></div><div><label>Reservado</label><input value="'+global.esc(text(val(d,'reservado',0)))+'" readonly></div><div><label>Disponible</label><input value="'+global.esc(text(Math.max(0,n(val(d,'stock',0))-n(val(d,'reservado',0)))))+'" readonly></div></div>'+
       input('fp-unidad','Unidad base',unit||'Unidad')+
       input('fp-stockInicial','Existencia inicial (solo al crear)',existing?val(d,'stock',0):val(d,'stockInicial',val(d,'stock',0)),'number',existing?'readonly':'min="0"')+
       input('fp-min','Stock mínimo',val(d,'min',0),'number','min="0"')+
@@ -197,11 +198,14 @@
       '<div id="fp-pane-9" class="fp-pane" style="display:none">'+history+'</div>';
     var title=editingId?'Editar producto — '+name:(item?'Nuevo producto desde Catálogo Máster':'Nuevo Producto');
     global.openModal(title,sourceHtml+'<input type="hidden" id="fp-source-url" value="'+global.esc(val(d,'fuenteUrl',''))+'"><input type="hidden" id="fp-source-status" value="'+global.esc(val(d,'estadoVerificacion',''))+'"><div style="max-height:62vh;overflow:auto;padding:2px">'+tabs+panes+'</div>',
-      '<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" id="fp-save" type="button">💾 '+(editingId?'Guardar cambios':'Guardar producto')+'</button>');
+      '<button class="btn" id="fp-generate" type="button">⚡ Generar código</button>'+(editingId?'<button class="btn" id="fp-duplicate" type="button">📋 Duplicar</button>':'')+'<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn" id="fp-save-new" type="button">➕ Guardar y nuevo</button><button class="btn primary" id="fp-save" type="button">💾 '+(editingId?'Guardar cambios':'Guardar producto')+'</button>');
     document.querySelectorAll('[data-fp-tab]').forEach(function(b){b.addEventListener('click',function(){switchTab(b.getAttribute('data-fp-tab'));});});
     if(el('fp-add-supplier'))el('fp-add-supplier').addEventListener('click',addSupplier);
     renderSuppliers();
-    if(el('fp-save'))el('fp-save').addEventListener('click',save);
+    if(el('fp-save'))el('fp-save').addEventListener('click',function(){save('close');});
+    if(el('fp-save-new'))el('fp-save-new').addEventListener('click',function(){save('new');});
+    if(el('fp-generate'))el('fp-generate').addEventListener('click',generateCode);
+    if(el('fp-duplicate'))el('fp-duplicate').addEventListener('click',duplicateCurrent);
     pricing('');
   }
   function gather(){
@@ -209,12 +213,15 @@
     fieldIds.forEach(function(id){var node=el(id);if(node)details[id.replace('fp-','')]=node.value;});
     checkIds.forEach(function(id){var node=el(id);if(node)details[id.replace('fp-','')]=node.checked;});
     details.compatibilidad=el('fp-compat')?el('fp-compat').value.trim():'';
+    details.posNotas=el('fp-posNotas')?el('fp-posNotas').value.trim():'';
     details.referenciasCruzadas=(el('fp-cross')?el('fp-cross').value:'').split(/\n+/).map(function(line){var s=line.split(':');return {marca:(s.shift()||'').trim(),codigo:s.join(':').trim()};}).filter(function(x){return x.marca&&x.codigo;});
     details.proveedores=supplierRows.map(function(s){return Object.assign({},s);});
     details.historial=[];
     return details;
   }
-  async function save(){
+  function generateCode(){var code=global.id?global.id('SKU','producto'):('SKU-'+Date.now());if(el('fp-codigo'))el('fp-codigo').value=code;if(el('fp-sku'))el('fp-sku').value=code;}
+  function duplicateCurrent(){editingId='';if(el('fp-codigo'))el('fp-codigo').value='';if(el('fp-sku'))el('fp-sku').value='';if(el('fp-desc'))el('fp-desc').value=(el('fp-desc').value||'')+' (copia)';var b=el('fp-save');if(b)b.textContent='💾 Guardar producto';}
+  async function save(mode){
     var name=(el('fp-desc')&&el('fp-desc').value||'').trim();
     var code=(el('fp-codigo')&&el('fp-codigo').value||'').trim();
     if(!code||!name){alert('Indica al menos el código interno y la descripción del producto.');return;}
@@ -234,6 +241,12 @@
       precioTaller:n(el('fp-ofertaUSD').value)||n(el('fp-mayorUSD').value),precioMayor:n(el('fp-mayorUSD').value),
       margenDetal:n(el('fp-margen').value),reorderPoint:n(el('fp-reorden').value),
       stockMaximo:n(el('fp-max').value),ubicacion:(el('fp-ubicacion').value||'').trim(),
+      ivaExento:!el('fp-ivaAplicar').checked,ivaRate:n(el('fp-ivaRate').value)||16,ivaIncluido:el('fp-ivaIncluido').checked,aplicaIGTF:el('fp-igtf').checked,
+      descuentoMaximo:n(el('fp-descMax').value),inactivo:el('fp-inactivo').checked,exclude_from_gap:el('fp-excludeGap').checked,
+      manejaLotes:el('fp-lotes').checked,manejaVencimiento:el('fp-vencimiento').checked,manejaSeriales:el('fp-seriales').checked,
+      permiteNegativo:el('fp-negativo').checked,requiereAuditoria:el('fp-auditoria').checked,
+      presentacion:el('fp-presentacion').value,contenidoTotal:el('fp-contenido').value,subPresentacion:el('fp-subpresentacion').value,contenidoFraccion:el('fp-contenidoFraccion').value,
+      codigoFabricante:el('fp-codfab').value,barra:el('fp-barra').value,sku:el('fp-sku').value,descCorta:el('fp-descCorta').value,modelo:el('fp-modelo').value,referencia:el('fp-ref').value,nroParte:el('fp-nroParte').value,subcategoria:el('fp-subcat').value,fabricante:el('fp-fabricante').value,mpn:el('fp-mpn').value,especificaciones:el('fp-nota').value,compatibilidad:details.compatibilidad,referenciasCruzadas:details.referenciasCruzadas,proveedores:supplierRows.map(function(s){return Object.assign({},s);}),
       detalles:details,proveedores:supplierRows.map(function(s){return Object.assign({},s);}),
       updatedAt:new Date().toISOString()
     };
@@ -256,6 +269,7 @@
       global.save('product-upsert');
       global.closeModal();global.renderView();
       global.toast(navigator.onLine?'Producto guardado en Turso.':'Producto guardado localmente; pendiente de sincronizar con Turso.');
+      if(mode==='new')open(null);
     }catch(err){
       global.toast('No se guardó el producto: '+String(err&&err.message||err));
     }
