@@ -111,7 +111,7 @@ function cleanDemoState(d){
   d.terminalId=d.terminalId||'CAJA-01';d.usuarioActualId=d.usuarioActualId||'USR-001';
   d.usuarios=Array.isArray(d.usuarios)&&d.usuarios.length?d.usuarios:structuredClone(seed.usuarios);
   d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];
-  if(d.config.bcv?.status==='demo'||Number(d.config.bcv?.rate)===814.6908||String(d.config.bcv?.source||'').includes('bcv.today')){d.config.bcv={rate:0,effectiveDate:null,updatedAt:null,source:'',status:'pending'};d.config.bcvHistory=[];}else{d.config.bcv=d.config.bcv||structuredClone(seed.config.bcv);d.config.bcvHistory=Array.isArray(d.config.bcvHistory)?d.config.bcvHistory:[];}
+  if(d.config.bcv?.status==='demo'||Number(d.config.bcv?.rate)===814.6908){d.config.bcv={rate:0,effectiveDate:null,updatedAt:null,source:'',status:'pending'};d.config.bcvHistory=[];}else{d.config.bcv=d.config.bcv||structuredClone(seed.config.bcv);d.config.bcvHistory=Array.isArray(d.config.bcvHistory)?d.config.bcvHistory:[];}
   if(!d.config.impuesto||d.config.impuesto===7)d.config.impuesto=16;
   d.seq=d.seq||structuredClone(seed.seq);
   return d;
