@@ -6,6 +6,7 @@
   var editingId = '';
   var supplierRows = [];
   var formSource = null;
+  var formRepuestoSource = null;
   var fieldIds = [
     'fp-codigo','fp-sku','fp-barra','fp-codfab','fp-desc','fp-descCorta','fp-modelo','fp-ref',
     'fp-marca','fp-oem','fp-cat','fp-subcat','fp-nroParte','fp-compat','fp-costo','fp-gastos',
@@ -170,6 +171,7 @@
     var d=Object.assign({},p.detalles||{},p);
     editingId=existing?String(existing.id):'';
     formSource=item&&item.fuenteUrl?item:null;
+    formRepuestoSource=item&&item.__siferRepuesto?{id:item.__siferRepuestoId||'',original:item}:null;
     supplierRows=Array.isArray(d.proveedores)?d.proveedores.map(function(s){return Object.assign({},s);}):[];
     var code=val(d,'codigo',val(d,'codigoProveedor',''));
     var name=val(d,'nombre','');
@@ -180,7 +182,7 @@
     var sourceHtml=formSource?'<div style="padding:8px;background:#eef7ff;border:1px solid #b8d4ee;margin-bottom:8px;font-size:11px"><b>Referencia procedente del catálogo</b><br><a href="'+global.esc(formSource.fuenteUrl)+'" target="_blank" rel="noopener">Abrir fuente documental</a><br>'+global.esc(formSource.estadoVerificacion||'Consultar la aplicación exacta antes de instalar')+'</div>':'';
     var general=section('Identificación principal',
       input('fp-codigo','Código interno / SKU comercial',code||'', 'text')+
-      input('fp-sku','SKU',val(d,'sku',code||''))+
+      '<div class="field"><label for="fp-sku">SKU</label><div style="display:flex;gap:5px;align-items:center"><input id="fp-sku" type="text" value="'+global.esc(text(val(d,'sku',code||'')))+'" style="min-width:0;flex:1"><button class="btn" id="fp-generate-inline" type="button" style="white-space:nowrap">⚡ SKU automático</button></div></div>'+
       input('fp-barra','Código de barras',val(d,'barra',''))+
       input('fp-codfab','Código del fabricante',val(d,'codigoFabricante',''))+
       input('fp-desc','Descripción completa',name,'text','required')+
@@ -276,6 +278,7 @@
     if(el('fp-save'))el('fp-save').addEventListener('click',function(){save('close');});
     if(el('fp-save-new'))el('fp-save-new').addEventListener('click',function(){save('new');});
     if(el('fp-generate'))el('fp-generate').addEventListener('click',generateCode);
+    if(el('fp-generate-inline'))el('fp-generate-inline').addEventListener('click',generateCode);
     if(el('fp-duplicate'))el('fp-duplicate').addEventListener('click',duplicateCurrent);
     pricing('');
   }
@@ -364,6 +367,25 @@
       }
       if(old){var idx=global.db.productos.findIndex(function(x){return String(x.id)===editingId;});global.db.productos[idx]=Object.assign({},old,p,{stock:old.stock,min:p.min});}
       else global.db.productos.push(p);
+      if(formRepuestoSource){
+        global.db.repuestos=Array.isArray(global.db.repuestos)?global.db.repuestos:[];
+        var repuestoId=formRepuestoSource.id;
+        var repuesto=global.db.repuestos.find(function(x){return repuestoId && String(x.id)===String(repuestoId);});
+        if(!repuesto){
+          repuesto={id:repuestoId||('AUT-'+String(Date.now()))};
+          global.db.repuestos.push(repuesto);
+        }
+        var fitments=String(details.compatibilidad||'').split(/\n+/).map(function(line){
+          var parts=line.split(/\s*[—-]\s*/).map(function(x){return x.trim();});
+          return parts.length>=2?{marca:parts[0],modelo:parts[1],anios:parts[2]||'Todos',motor:parts[3]||'',version:parts[4]||'',posicion:parts[5]||''}:null;
+        }).filter(Boolean);
+        Object.assign(repuesto,{
+          sku:p.sku||p.codigo,codigoOEM:p.codigoOEM,nombre:p.nombre,categoria:p.categoria,marca:p.marca,
+          costo:p.costo,precio:p.precio,stock:p.stock,min:p.min,ubicacion:p.ubicacion,
+          garantia:repuesto.garantia||'',especificaciones:p.especificaciones,imagen:p.imagen,
+          referenciasCruzadas:details.referenciasCruzadas||[],compatibilidad:fitments,updatedAt:p.updatedAt
+        });
+      }
       global.save('product-upsert');
       global.closeModal();global.renderView();
       global.toast(navigator.onLine?'Producto guardado en Turso.':'Producto guardado localmente; pendiente de sincronizar con Turso.');
