@@ -186,15 +186,11 @@ export default async function handler(req:any,res:any){
         for(const p of products){
           if(!p?.id||!p?.nombre) continue;
           stmts.push(
-            {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,updated_at)
-              VALUES(?,?,?,?,?,?,?,?,?,?)
-              ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,
-              marca=excluded.marca,unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,
-              imagen=excluded.imagen,updated_at=excluded.updated_at`,
+            {sql:`INSERT OR IGNORE INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,updated_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?)`,
              args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',now]},
-            {sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
-              VALUES(?,?,?,?)
-              ON CONFLICT(product_id) DO UPDATE SET stock=excluded.stock,min_stock=excluded.min_stock,updated_at=excluded.updated_at`,
+            {sql:`INSERT OR IGNORE INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+              VALUES(?,?,?,?)`,
              args:[String(p.id),Number(p.stock)||0,Number(p.min)||0,now]}
           );
         }
