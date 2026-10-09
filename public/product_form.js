@@ -107,6 +107,7 @@
     var name=val(d,'nombre','');
     var category=val(d,'categoria','');
     var brand=val(d,'marca','');
+    var compatText=Array.isArray(d.compatibilidad)?d.compatibilidad.map(function(x){return [x.marca,x.modelo,x.anios,x.motor,x.posicion].filter(Boolean).join(' - ');}).join('\n'):val(d,'compatibilidad','');
     var unit=val(d,'unidad',val(d,'unidadMedida','Unidad'));
     var sourceHtml=formSource?'<div style="padding:8px;background:#eef7ff;border:1px solid #b8d4ee;margin-bottom:8px;font-size:11px"><b>Referencia procedente del catálogo</b><br><a href="'+global.esc(formSource.fuenteUrl)+'" target="_blank" rel="noopener">Abrir fuente documental</a><br>'+global.esc(formSource.estadoVerificacion||'Consultar la aplicación exacta antes de instalar')+'</div>':'';
     var general=section('Identificación principal',
@@ -123,7 +124,7 @@
       input('fp-cat','Categoría',category)+
       input('fp-subcat','Subcategoría',val(d,'subcategoria',''))+
       input('fp-nroParte','MPN / Número de parte',val(d,'nroParte',val(d,'mpn','')))+
-      area('fp-compat','Compatibilidad vehicular (marca, modelo, año, motor, versión y posición)',val(d,'compatibilidad',''))+
+      area('fp-compat','Compatibilidad vehicular (marca, modelo, año, motor, versión y posición)',compatText)+
       area('fp-cross','Referencias cruzadas (marca: código; una por línea)',Array.isArray(d.referenciasCruzadas)?d.referenciasCruzadas.map(function(x){return (x.marca||'')+': '+(x.codigo||'');}).join('\n'):val(d,'referenciasCruzadas',''))
     );
     var costs=section('Costos y precios',
