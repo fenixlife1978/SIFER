@@ -104,24 +104,26 @@ export default async function handler(req:any,res:any){
       if(purchase?.numero){
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchases (
           numero TEXT PRIMARY KEY,fecha TEXT NOT NULL,proveedor_id TEXT,proveedor TEXT,total REAL NOT NULL DEFAULT 0,
-          pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,created_at TEXT NOT NULL
+          pagado REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,tipo TEXT,created_at TEXT NOT NULL,payload_json TEXT NOT NULL DEFAULT '{}'
         )`,args:[]});
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_purchase_lines (
-          purchase_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,cost REAL NOT NULL,
+          purchase_number TEXT NOT NULL,product_id TEXT NOT NULL,qty REAL NOT NULL,cost REAL NOT NULL,details_json TEXT NOT NULL DEFAULT '{}',
           PRIMARY KEY(purchase_number,product_id),FOREIGN KEY(purchase_number) REFERENCES sifer_purchases(numero)
         )`,args:[]});
+        try{await db.execute({sql:"ALTER TABLE sifer_purchases ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
+        try{await db.execute({sql:"ALTER TABLE sifer_purchase_lines ADD COLUMN details_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable (
           id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,
           total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,
           estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL
         )`,args:[]});
-        await db.execute({sql:`INSERT OR IGNORE INTO sifer_purchases(numero,fecha,proveedor_id,proveedor,total,pagado,saldo,tipo,created_at)
-          VALUES(?,?,?,?,?,?,?,?,?)`,args:[
+        await db.execute({sql:`INSERT OR IGNORE INTO sifer_purchases(numero,fecha,proveedor_id,proveedor,total,pagado,saldo,tipo,created_at,payload_json)
+          VALUES(?,?,?,?,?,?,?,?,?,?)`,args:[
           String(purchase.numero),String(purchase.fecha||''),purchase.proveedorId??null,purchase.proveedor??'',
-          Number(purchase.total)||0,Number(purchase.pagado)||0,Number(purchase.saldo)||0,purchase.tipo??'',new Date().toISOString()
+          Number(purchase.total)||0,Number(purchase.pagado)||0,Number(purchase.saldo)||0,purchase.tipo??'',new Date().toISOString(),JSON.stringify(purchase)
         ]});
-        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({sql:`INSERT OR IGNORE INTO sifer_purchase_lines(purchase_number,product_id,qty,cost)
-          VALUES(?,?,?,?)`,args:[String(purchase.numero),String(l.id),Number(l.qty)||0,Number(l.costo)||0]}));
+        const stmts=lines.filter((l:any)=>l?.id).map((l:any)=>({sql:`INSERT OR IGNORE INTO sifer_purchase_lines(purchase_number,product_id,qty,cost,details_json)
+          VALUES(?,?,?,?,?)`,args:[String(purchase.numero),String(l.id),Number(l.qty??l.cantidad)||0,Number(l.costoBCV??l.costo)||0,JSON.stringify(l)]}));
         if(stmts.length)await db.batch(stmts,'write');
 
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_inventory_ledger (
