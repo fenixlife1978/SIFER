@@ -808,7 +808,7 @@ function renderFitmentSearchTab(){
               <td><span class="badge ${r.stock<=r.min?'bad':'ok'}">${r.stock} disp.</span></td>
               <td><b>${money(r.precio)}</b></td>
               <td style="text-align:right;white-space:nowrap">
-                <button class="btn" title="Ver referencias cruzadas de este repuesto" aria-label="Ver referencias cruzadas de ${esc(r.nombre)}" style="font-size:14px;min-width:38px;padding:7px" onclick="openRepuestoDetail('${r.id}')">🔁</button>
+                <button class="btn" title="Ver referencias cruzadas de este repuesto" aria-label="Ver referencias cruzadas de ${esc(r.nombre)}" style="font-size:14px;min-width:38px;padding:7px" onclick="openFitmentCrossReference('${r.id}')">🔁</button>
                 <button class="btn primary" style="font-size:10px" onclick="venderRepuestoEnPOS('${r.id}')">🛒 Cargar al POS</button>
               </td>
             </tr>`;
@@ -818,6 +818,44 @@ function renderFitmentSearchTab(){
     </div>
   </div>`;
 }
+
+// Abre referencias directas y posibles alternativas que comparten aplicación vehicular.
+function openFitmentCrossReference(id){
+  const repuestos = getRepuestos();
+  const r = repuestos.find(x => String(x.id) === String(id));
+  if (!r) return;
+
+  const fits = Array.isArray(r.compatibilidad) ? r.compatibilidad : [];
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const sameApplication = (a, b) => {
+    const brandA = normalize(a.marca), brandB = normalize(b.marca);
+    const modelA = normalize(a.modelo), modelB = normalize(b.modelo);
+    if (!brandA || !brandB || brandA !== brandB || !modelA || !modelB) return false;
+    return modelA === modelB || modelA.includes(modelB) || modelB.includes(modelA);
+  };
+  const alternatives = repuestos.filter(candidate => {
+    if (String(candidate.id) === String(r.id)) return false;
+    const candidateFits = Array.isArray(candidate.compatibilidad) ? candidate.compatibilidad : [];
+    return fits.some(fit => candidateFits.some(other => sameApplication(fit, other)));
+  }).slice(0, 30);
+  const directRefs = Array.isArray(r.referenciasCruzadas) ? r.referenciasCruzadas : [];
+
+  openModal('Referencias y alternativas · ' + (r.nombre || r.sku), `
+    <div style="font-size:12px">
+      <div style="padding:8px;background:#f4f8ff;border:1px solid #d4e2f5;border-radius:5px;margin-bottom:10px">
+        <b>${esc(r.nombre || 'Repuesto')}</b><br>
+        <span>SKU: ${esc(r.sku || 'N/D')} · OEM: ${esc(r.codigoOEM || 'N/D')}</span>
+      </div>
+      <h3 style="font-size:13px;margin:10px 0 5px">Referencias cruzadas registradas</h3>
+      ${directRefs.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap">${directRefs.map(ref => `<span style="border:1px solid #ccd6e2;background:#f8fafc;padding:5px 7px;border-radius:4px"><b>${esc(ref.marca || '')}</b>: ${esc(ref.codigo || '')}</span>`).join('')}</div>` : '<p style="color:#777">Este repuesto no tiene referencias cruzadas registradas.</p>'}
+      <h3 style="font-size:13px;margin:14px 0 5px">Otros repuestos con aplicación vehicular coincidente (${alternatives.length})</h3>
+      <p style="color:#666;font-size:11px;margin:0 0 7px">Son candidatos para revisar, no equivalencias técnicas confirmadas. Verifica OEM, medidas y especificaciones antes de sustituir.</p>
+      ${alternatives.length ? `<div style="overflow:auto;max-height:260px"><table style="width:100%;font-size:11px"><thead><tr><th>Repuesto</th><th>Marca / OEM</th><th>Stock</th><th>Precio</th><th></th></tr></thead><tbody>${alternatives.map(candidate => `<tr><td><b>${esc(candidate.nombre || '')}</b><br><small>${esc(candidate.sku || '')}</small></td><td>${esc(candidate.marca || '')}<br><small>${esc(candidate.codigoOEM || '')}</small></td><td>${Number(candidate.stock) || 0}</td><td>${money(Number(candidate.precio) || 0)}</td><td><button class="btn" style="font-size:10px;padding:5px" onclick="openRepuestoDetail('${String(candidate.id).replace(/'/g, '&#39;')}')">Ficha</button></td></tr>`).join('')}</tbody></table></div>` : '<p style="color:#777">No hay otros repuestos con vehículo y modelo coincidentes en los datos registrados.</p>'}
+    </div>
+  `, '<button class="btn" onclick="closeModal()">Cerrar</button>');
+}
+
+window.openFitmentCrossReference = openFitmentCrossReference;
 
 // 3. Tab Referencias Cruzadas
 function renderCrossReferenceTab(){
