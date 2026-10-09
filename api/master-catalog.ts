@@ -2,7 +2,7 @@ import { createClient } from '@libsql/client';
 const norm=(v:any)=>String(v??'').trim();
 const parse=(v:any,f:any)=>{try{return JSON.parse(String(v??''))}catch{return f}};
 export default async function handler(req:any,res:any){
- const url=process.env.MASTER_CATALOG_DATABASE_URL,authToken=process.env.MASTER_CATALOG_AUTH_TOKEN;
+ // Reutiliza la base Turso ya configurada en producción si no existe una base exclusiva para el catálogo.\nconst url=process.env.MASTER_CATALOG_DATABASE_URL||process.env.TURSO_DATABASE_URL||process.env.TURSO_URL,authToken=process.env.MASTER_CATALOG_AUTH_TOKEN||process.env.TURSO_AUTH_TOKEN||process.env.TURSO_TOKEN;
  if(!url||!authToken)return res.status(503).json({ok:false,configured:false,error:'Catálogo extendido no configurado'});
  const db=createClient({url,authToken});
  try{
