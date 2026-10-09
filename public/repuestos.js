@@ -622,6 +622,7 @@ function getRepuestos(){
   db.repuestos=db.repuestos.filter(r=>{
     const id=String(r.id||''),oem=String(r.codigoOEM||''),sku=String(r.sku||'');
     if(/^AUT-000(?:0[1-9]|1[0-9]|20)$/.test(id))return false;
+    if(/^VER-AVE-\\d{3}$/.test(id))return false;
     if(/^REF-PENDIENTE-|^(OIL-PUMP|ADD-|OIL-PICKUP|OIL-RELIEF|OIL-COOLER|OIL-SWITCH|OIL-DIPSTICK|OIL-CAP)/i.test(oem))return false;
     if(/^SKU-(?:BUJ|GOM|LAP|ROD|BAT|LUC|IGN|RLY)-/i.test(sku))return false;
     return true;
