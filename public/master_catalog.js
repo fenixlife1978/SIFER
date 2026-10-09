@@ -645,62 +645,13 @@ const VERIFIED_MASTER_CATALOG = [
       const params = new URLSearchParams({ q: String(query||''), category: String(category||'Todos'), page: String(page||1), limit: String(pageSize||ITEMS_PER_PAGE) });
       const response = await fetch('/api/master-catalog?' + params.toString(), { headers: { accept: 'application/json' } });
       const data = await response.json().catch(() => ({}));
-      if (response.ok && data.ok && Array.isArray(data.items) && data.items.length) {
-        const result = { items: data.items, totalMatched: Number(data.totalMatched)||0, totalCatalog: Number(data.totalCatalog)||0, page: Number(data.page)||1, totalPages: Number(data.totalPages)||1 };
-        remoteMasterResults.set(key, result); remoteMasterCatalogCount = result.totalCatalog;
-        data.items.forEach(item => { if (item && item.masterId) virtualCache.set(String(item.masterId), item); });
-        const container = target === 'modal' ? document.getElementById('masterSearchResultsContainer') : document.getElementById('masterExplorerTableContainer');
-        if (container) container.innerHTML = target === 'modal' ? renderMasterSelectorResultsHTML() : renderMasterExplorerTableContainerHTML();
-        return true;
-      }
-
-      // FAPI is a part-number/OEM cross-reference service, not free-text description search.
-      // Only query it for compact article-like searches; never spend credits on long natural-language queries.
-      const externalQuery = String(query || '').trim();
-      if (externalQuery.length >= 2 && externalQuery.length <= 48 && !/\\s/.test(externalQuery) && /[a-z0-9]/i.test(externalQuery)) {
-        const mode = /[0-9]/.test(externalQuery) ? 'analog' : 'product';
-        const fapiResponse = await fetch('/api/fapi-catalog?' + new URLSearchParams({ mode, q: externalQuery }).toString(), { headers: { accept: 'application/json' } });
-        const fapiEnvelope = await fapiResponse.json().catch(() => ({}));
-        if (fapiResponse.ok && fapiEnvelope.ok && fapiEnvelope.data) {
-          const payload = fapiEnvelope.data;
-          const brands = new Map(((payload.manufacturerList && payload.manufacturerList.mf) || []).map(m => [Number(m.i), String(m.ds || m.da || '')]));
-          const products = (payload.productList && payload.productList.p) || [];
-          const analogs = (payload.analogList && payload.analogList.a) || [];
-          const fapiItems = products.map(p => {
-            const refs = analogs.filter(a => Number(a.pi) === Number(p.i)).map(a => {
-              const cross = products.find(x => Number(x.i) === Number(a.pai));
-              return cross ? { marca: brands.get(Number(a.mfai)) || '', codigo: cross.n || cross.ns, confianza: Number(a.rp || 0) - Number(a.rm || 0) } : { marca: brands.get(Number(a.mfai)) || '', codigo: a.nsa || '' };
-            }).filter(x => x.codigo);
-            const brand = brands.get(Number(p.mfi)) || '';
-            return {
-              masterId: 'FAPI-' + String(p.mfi) + '-' + String(p.ns || p.n || p.i),
-              nombre: String(p.d || 'Repuesto ' + (p.n || p.ns || '')),
-              categoria: 'Referencias externas',
-              subcategoria: 'Consulta FAPI',
-              marca: brand,
-              fabricante: brand,
-              codigoProveedor: String(p.n || p.ns || ''),
-              codigoOEM: String(p.n || p.ns || ''),
-              referenciasCruzadas: refs,
-              unidadMedida: 'Unidad',
-              descripcionTecnica: 'Resultado consultado en línea; verificar aplicación exacta antes de comprar o instalar.',
-              especificaciones: 'Origen: FAPI. Consulta remota; no constituye existencia ni producto de inventario.',
-              palabrasClave: [p.d, p.n, p.ns, brand].filter(Boolean).join(' '),
-              compatibilidad: [],
-              fuenteUrl: 'https://fapi.iisis.ru/',
-              fuenteNombre: 'FAPI — consulta externa',
-              estadoVerificacion: 'CONSULTA EXTERNA; COMPATIBILIDAD POR CONFIRMAR'
-            };
-          });
-          const result = { items: fapiItems, totalMatched: fapiItems.length, totalCatalog: remoteMasterCatalogCount, page: 1, totalPages: 1 };
-          remoteMasterResults.set(key, result);
-          fapiItems.forEach(item => virtualCache.set(String(item.masterId), item));
-          const container = target === 'modal' ? document.getElementById('masterSearchResultsContainer') : document.getElementById('masterExplorerTableContainer');
-          if (container) container.innerHTML = target === 'modal' ? renderMasterSelectorResultsHTML() : renderMasterExplorerTableContainerHTML();
-          return true;
-        }
-      }
-      return false;
+      if (!response.ok || !data.ok || !Array.isArray(data.items)) return false;
+      const result = { items: data.items, totalMatched: Number(data.totalMatched)||0, totalCatalog: Number(data.totalCatalog)||0, page: Number(data.page)||1, totalPages: Number(data.totalPages)||1 };
+      remoteMasterResults.set(key, result); remoteMasterCatalogCount = result.totalCatalog;
+      data.items.forEach(item => { if (item && item.masterId) virtualCache.set(String(item.masterId), item); });
+      const container = target === 'modal' ? document.getElementById('masterSearchResultsContainer') : document.getElementById('masterExplorerTableContainer');
+      if (container) container.innerHTML = target === 'modal' ? renderMasterSelectorResultsHTML() : renderMasterExplorerTableContainerHTML();
+      return true;
     } catch (_) { return false; }
   }
   let activeMasterCategory = 'Todos';

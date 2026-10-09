@@ -1,41 +1,38 @@
-# Fuentes y conexión del Catálogo Máster de SIFER
+# Fuentes gratuitas y abiertas del Catálogo Máster de SIFER
 
-## FAPI: búsqueda de artículos y referencias cruzadas
+## Política obligatoria: sin servicios de pago
 
-Documentación oficial publicada por el proveedor: https://github.com/fapi-dev/catalog-openapi
-Especificación OpenAPI: https://github.com/fapi-dev/catalog-openapi/blob/main/openapi.yml
+SIFER no debe llamar, integrar ni depender de APIs que cobren, consuman créditos de prueba que luego requieran pago, exijan suscripción o condicionen el funcionamiento a un plan comercial. No configurar claves de proveedores comerciales ni hacer llamadas masivas a endpoints de pago.
 
-SIFER incorpora el proxy `GET /api/fapi-catalog`, que solo se conecta al host fijo `https://fapi.iisis.ru/fapi/v2`. La clave nunca se envía al navegador ni se acepta como parámetro.
+## Datos abiertos de vehículos
 
-### Configuración en Vercel (Production)
+- **VehiclesDB:** https://github.com/vehiclesdb/vehiclesdb — datos abiertos de marcas, modelos y tipos de vehículos con licencia CC BY 4.0. La integración debe conservar la versión usada y mostrar la atribución visible «Vehicle data by VehiclesDB (vehiclesdb.com)». Revisar también el archivo de atribución del release porque pueden aplicar avisos de fuentes upstream.
+- **NHTSA vPIC:** https://vpic.nhtsa.dot.gov/api/ — API pública gratuita útil para identificar marcas, modelos y años; su cobertura es principalmente de vehículos asociados al mercado estadounidense, por lo que no cubre por sí sola todo el parque automotor venezolano.
+- **MeterApp vehicle-db:** https://github.com/MeterApp/vehicle-db — evaluar por fuente las licencias y condiciones antes de importar o redistribuir cualquier subconjunto.
+- **Auto Care ACES/PIES:** https://www.autocare.org/data-standards — estándares de normalización; la publicación de un estándar no implica que las bases de datos comerciales compatibles con él sean gratuitas.
 
-Añadir la variable de entorno:
-- `FAPI_API_KEY`: clave emitida en https://id.iisis.ru/
+## Datos de repuestos y referencias cruzadas
 
-No colocar claves en GitHub, en el código cliente ni en parámetros de URL. Después de guardar la variable, desplegar de nuevo producción y probar con una referencia conocida.
+No se ha identificado una base abierta que permita afirmar que existen tres millones de referencias reales de repuestos, con compatibilidad completa, licencia comercial clara y cobertura mundial, disponible gratuitamente para integrar y redistribuir. Por tanto:
 
-### Modos admitidos
+- No usar la muestra de fapi-dev/auto-parts-cross-reference: su propio archivo de licencia restringe el uso comercial y la redistribución de esos datos.
+- No llamar al API de FAPI ni integrar su clave: puede consumir créditos y no satisface la política de coste cero.
+- Priorizar catálogos oficiales de fabricantes publicados sin restricciones incompatibles, documentación técnica con términos claros y bases de datos con licencias verificadas.
+- Guardar fuente, licencia, versión, fecha de consulta y nivel de verificación por registro.
+- No inventar referencias, precios, stock ni compatibilidades para completar cifras.
 
-- `/api/fapi-catalog?mode=product&q=10100`: consulta de artículo/número de pieza.
-- `/api/fapi-catalog?mode=analog&q=10100`: equivalencias del artículo.
-- `/api/fapi-catalog?mode=manufacturers`: marcas disponibles.
-- `/api/fapi-catalog?mode=usage`: plan, créditos y estado de cuenta.
+## Separación del inventario
 
-El proveedor cobra/consume créditos según el plan y endpoint; revisar primero `mode=usage`. No usar llamadas masivas sin revisar precio, límites y autorización.
+El Catálogo Máster sirve para buscar, revisar referencias y seleccionar/importar productos. La consulta nunca debe crear automáticamente productos ni cantidades en inventario. El inventario operativo, los SKU, los costes, las existencias y los movimientos deben seguir persistiendo en Turso.
 
-## Fuentes abiertas de vehículos
+## Estado de cobertura
 
-- VehiclesDB: https://github.com/vehiclesdb/vehiclesdb — dataset de vehículos CC BY 4.0; SIFER debe mostrar atribución visible “Vehicle data by VehiclesDB (vehiclesdb.com)” y guardar la versión del dataset.
-- MeterApp vehicle-db: https://github.com/MeterApp/vehicle-db — datos consolidados con procedencia y licencias por fuente; revisar términos upstream y redistribución antes de copiar datos.
-- NHTSA vPIC: https://vpic.nhtsa.dot.gov/api/ — API pública para enriquecer marca/modelo/año, principalmente con cobertura estadounidense.
-- Auto Care ACES/PIES: https://www.autocare.org/data-standards — estándares para normalizar compatibilidad y atributos; no confundir estándares públicos con bases comerciales licenciadas.
+El código de búsqueda remota no significa que se haya importado un catálogo masivo. No declarar tres millones de referencias cargadas hasta que una importación autorizada haya finalizado y se hayan comprobado los recuentos, duplicados, licencias y cobertura por categoría, marca, modelo y año.
 
-## Restricciones de datos
+## Plan de implementación sin coste
 
-La muestra pública FAPI no es una base libre para redistribución; su repositorio indica que el uso comercial y la redistribución de la muestra están prohibidos. Usar la API con clave válida o adquirir un conjunto con licencia apropiada. No extraer datos saltándose autenticación, límites, controles anti-bot o condiciones de uso.
-
-La consulta FAPI no crea artículos de inventario. El usuario debe seleccionar e importar expresamente el producto; existencias, SKU y movimientos siguen siendo datos operativos separados.
-
-## Estado de carga
-
-Esta integración no significa que se hayan importado 3.000.000 de artículos. Es un proxy de consulta remota. Para un catálogo local masivo se necesita un archivo autorizado o contrato de datos, un proceso de importación por lotes y verificación de duplicados, cobertura y licencia.
+1. Importar por lotes una versión fijada del dataset abierto de vehículos y conservar su atribución.
+2. Mantener los datos de vehículos en tablas/archivos separados de los artículos de repuesto.
+3. Añadir importadores sólo para conjuntos de repuestos con licencia compatible con uso comercial y redistribución.
+4. Validar registros, deduplicar por referencias y fabricante, y hacer pruebas de rendimiento antes de aumentar el volumen.
+5. Si una fuente gratuita no aporta una pieza o compatibilidad, mostrar «sin referencia verificada» en lugar de fabricar un resultado.
