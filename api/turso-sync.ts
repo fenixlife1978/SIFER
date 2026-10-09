@@ -132,14 +132,31 @@ export default async function handler(req:any,res:any){
           reason TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(operation_id,product_id)
         )`,args:[]});
         const now=new Date().toISOString();
-        for(const l of lines.filter((x:any)=>x?.id)){
-          const pid=String(l.id),delta=Math.max(0,Number(l.qty)||0);
-          const inserted=await db.execute({sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at)
-            VALUES(?,?,?,?,?,?)`,args:[operationId,String(purchase.numero),pid,delta,'purchase',now]});
-          if(!inserted.rowsAffected)continue;
-          await db.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
-            VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
-            args:[pid,delta,now]});
+        const grouped=new Map<string,{qty:number,cost:number}>();
+        for(const line of lines.filter((x:any)=>x?.id)){
+          const pid=String(line.id),qty=Math.max(0,Number(line.qty??line.cantidad)||0),cost=Math.max(0,Number(line.costoBCV??line.costo)||0);
+          const prior=grouped.get(pid)||{qty:0,cost:0};
+          const nextQty=prior.qty+qty;
+          grouped.set(pid,{qty:nextQty,cost:nextQty>0?((prior.cost*prior.qty)+(cost*qty))/nextQty:cost});
+        }
+        for(const [pid,entry] of grouped.entries()){
+          const tx=await db.transaction('write');
+          try{
+            const inserted=await tx.execute({sql:`INSERT OR IGNORE INTO sifer_inventory_ledger(operation_id,documento,product_id,qty_delta,reason,created_at)
+              VALUES(?,?,?,?,?,?)`,args:[operationId,String(purchase.numero),pid,entry.qty,'purchase',now]});
+            if(inserted.rowsAffected){
+              const stockRow=await tx.execute({sql:'SELECT stock FROM sifer_inventory WHERE product_id=? LIMIT 1',args:[pid]});
+              const productRow=await tx.execute({sql:'SELECT costo FROM sifer_products WHERE id=? LIMIT 1',args:[pid]});
+              const oldStock=Number(stockRow.rows?.[0]?.stock)||0,oldCost=Number(productRow.rows?.[0]?.costo)||0;
+              const newStock=oldStock+entry.qty;
+              const newCost=entry.cost>0?(String(purchase.costeo||'promedio')==='promedio'&&oldStock>0?((oldCost*oldStock)+(entry.cost*entry.qty))/newStock:entry.cost):oldCost;
+              await tx.execute({sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
+                VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
+                args:[pid,entry.qty,now]});
+              if(entry.cost>0)await tx.execute({sql:'UPDATE sifer_products SET costo=?,updated_at=? WHERE id=?',args:[Math.round((newCost+Number.EPSILON)*100)/100,now,pid]});
+            }
+            await tx.commit();
+          }catch(e){await tx.rollback();throw e}finally{tx.close()}
         }
         if(Number(purchase.pagado)>0){
           await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
