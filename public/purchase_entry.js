@@ -1,6 +1,6 @@
 (function(global){
   'use strict';
-  var tempLines=[],supplierMatches=[],productMatches=[],selectedProductId='',selectedPurchaseNo='';
+  var tempLines=[],supplierMatches=[],productMatches=[],selectedProductId='',selectedPurchaseNo='',lastHydrateAt=0,hydrating=false;
   function el(id){return document.getElementById(id)}
   function n(v){
     if(typeof v==='number')return Number.isFinite(v)?v:0;
@@ -297,7 +297,25 @@
     if(el('purchase-detail'))el('purchase-detail').innerHTML=detailHtml(p);
     if(el('purchase-table'))el('purchase-table').querySelectorAll('tr[data-purchase]').forEach(function(tr){tr.classList.toggle('selected',tr.getAttribute('data-purchase')===numero)});
   }
+  async function hydratePurchases(){
+    if(hydrating||!navigator.onLine||Date.now()-lastHydrateAt<30000)return;
+    hydrating=true;lastHydrateAt=Date.now();
+    try{
+      var response=await fetch('/api/sifer-data?query=purchases',{cache:'no-store'});
+      if(response.ok){var data=await response.json();if(data.ok&&Array.isArray(data.items)){
+        var local=Array.isArray(global.db.compras)?global.db.compras:[],remote=data.items,remoteIds=new Set(remote.map(function(p){return String(p.numero)}));
+        global.db.compras=remote.concat(local.filter(function(p){return !remoteIds.has(String(p.numero))}));
+        var cxpResponse=await fetch('/api/sifer-data?query=cxp',{cache:'no-store'});
+        if(cxpResponse.ok){var cxpData=await cxpResponse.json();if(cxpData.ok&&Array.isArray(cxpData.items)){
+          var localCxp=Array.isArray(global.db.cxp)?global.db.cxp:[],remoteDocs=new Set(cxpData.items.map(function(a){return String(a.documento)}));
+          global.db.cxp=cxpData.items.map(function(a){var old=localCxp.find(function(x){return String(x.documento)===String(a.documento)});return {...old,...a,id:old?.id||('CXP-'+String(a.documento)),proveedorId:a.proveedorId||old?.proveedorId}}).concat(localCxp.filter(function(a){return !remoteDocs.has(String(a.documento))}));
+        }}
+        if(el('main')&&document.querySelector('#main h2')&&document.querySelector('#main h2').textContent.includes('Entradas por Compra'))global.renderView();
+      }}
+    }catch(e){}finally{hydrating=false}
+  }
   function comprasView(){
+    hydratePurchases();
     var all=global.db.compras||[],total=all.reduce(function(s,p){return s+n(p.total)},0),saldo=all.reduce(function(s,p){return s+n(p.saldo)},0);
     var rows=filterHistory();
     return '<div class="pagehead"><div><h2>Compras · Entradas por Compra</h2><div class="sub">Recepción de mercancía, costo real, IVA, tasas de conversión y cuentas por pagar.</div></div><button class="btn primary" onclick="openPurchase()">➕ Entrada por Compra</button></div>'+
@@ -331,6 +349,6 @@
     try{if(navigator.share)await navigator.share({title:'Entrada por Compra '+p.numero,text:txt});else if(navigator.clipboard){await navigator.clipboard.writeText(txt);global.toast('Resumen copiado') }else global.toast(txt)}catch(e){}
   }
   function init(){var body=el('main');if(body&&!body.dataset.purchaseSelectBound){body.dataset.purchaseSelectBound='1';body.addEventListener('click',function(e){var tr=e.target.closest('tr[data-purchase]');if(tr&&!e.target.closest('button'))selectPurchase(tr.getAttribute('data-purchase'))})}}
-  global.SIFERPurchaseEntry={openPurchase:openPurchase,savePurchase:savePurchase,closePurchase:closePurchase,comprasView:comprasView,selectPurchase:selectPurchase,refreshHistory:refreshHistory,exportHistory:exportHistory,printSelected:printSelected,shareSelected:shareSelected};
+  global.SIFERPurchaseEntry={openPurchase:openPurchase,savePurchase:savePurchase,closePurchase:closePurchase,comprasView:comprasView,selectPurchase:selectPurchase,refreshHistory:refreshHistory,exportHistory:exportHistory,printSelected:printSelected,shareSelected:shareSelected,hydratePurchases:hydratePurchases};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })(window);
