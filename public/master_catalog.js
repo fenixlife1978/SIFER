@@ -863,6 +863,9 @@ const VERIFIED_MASTER_CATALOG = [
 
     if (currentSelectorTarget === 'repuesto') {
       openCommercialRepuestoFormWithMaster(foundItem);
+    } else if (typeof global.openCommercialProductFormWithMaster === 'function') {
+      // Usa el formulario Nuevo Producto ampliado que carga product_form.js.
+      global.openCommercialProductFormWithMaster(foundItem);
     } else {
       openCommercialProductFormWithMaster(foundItem);
     }

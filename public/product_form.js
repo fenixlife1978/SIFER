@@ -128,6 +128,45 @@
     item=item||null;
     var existing=item&&item.id&&Array.isArray(global.db.productos)?global.db.productos.find(function(p){return String(p.id)===String(item.id);}):null;
     var p=existing||item||{};
+    // Normaliza referencias del Catálogo Máster a la ficha comercial completa.
+    // Los datos que no constan en la fuente (SKU interno, precios, costo, stock y ubicación)
+    // quedan vacíos para que el administrador los defina, sin inventar valores.
+    if(!existing && item && (item.masterId || item.fuenteUrl || item.estadoVerificacion || item.descripcionTecnica)){
+      var masterCompat=Array.isArray(item.compatibilidad)
+        ? item.compatibilidad.map(function(x){return [x.marca,x.modelo,x.anios,x.motor,x.version,x.posicion].filter(Boolean).join(' — ');}).join('\n')
+        : text(item.compatibilidad||'');
+      var masterCross=Array.isArray(item.referenciasCruzadas)
+        ? item.referenciasCruzadas.map(function(x){return (x.marca||'')+': '+(x.codigo||'');}).join('\n')
+        : text(item.referenciasCruzadas||'');
+      var masterNotes=[item.descripcionTecnica,item.especificaciones,item.estadoCompatibilidad,item.estadoVerificacion]
+        .filter(function(x,i,a){return !!x && a.indexOf(x)===i;}).join('\n\n');
+      p=Object.assign({},item,{
+        codigo:'',sku:'',barra:'',
+        codigoFabricante:item.codigoFabricante||item.codigoProveedor||'',
+        codigoOEM:item.codigoOEM||'',
+        nombre:item.nombre||item.descripcionTecnica||'',
+        descCorta:item.nombre||'',
+        modelo:item.modelo||'',
+        referencia:item.referencia||item.codigoProveedor||'',
+        marca:item.marca||'',
+        fabricante:item.fabricante||item.fuenteNombre||'',
+        categoria:item.categoria||'',
+        subcategoria:item.subcategoria||'',
+        nroParte:item.nroParte||item.mpn||item.codigoProveedor||'',
+        mpn:item.mpn||item.nroParte||item.codigoProveedor||'',
+        unidad:item.unidadMedida||item.unidad||'Unidad',
+        compatibilidad:masterCompat,
+        referenciasCruzadas:masterCross,
+        especificaciones:masterNotes,
+        nota:masterNotes,
+        costo:'',costoRealUSD:'',costoRealBs:'',precio:'',precioBs:'',
+        precioMayor:'',precioMayorBs:'',precioOferta:'',precioOfertaBs:'',
+        precioPromo:'',precioPromoBs:'',margenDetal:'',margenMayor:'',margenOferta:'',margenPromo:'',
+        stock:0,stockInicial:0,min:'',stockMaximo:'',reorderPoint:'',ubicacion:'',
+        presentacion:item.presentacion||item.unidadMedida||'',
+        imagen:item.imagen||item.fotoReal||''
+      });
+    }
     var d=Object.assign({},p.detalles||{},p);
     editingId=existing?String(existing.id):'';
     formSource=item&&item.fuenteUrl?item:null;
