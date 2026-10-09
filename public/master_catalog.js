@@ -1135,6 +1135,7 @@
         </div>
         <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar en Catálogo Máster (+900.000)</button>
       </div>
+      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> este registro es generado y referencial. El código, la compatibilidad y el costo no están confirmados por el fabricante ni por un proveedor. Verifícalos y corrígelos antes de guardar o comprar.</div>' : ''}
 
       <div class="formgrid">
         <div class="field">
@@ -1142,7 +1143,7 @@
           <input id="prodCodigo" value="${esc(code)}">
         </div>
         <div class="field">
-          <label>Código OEM / Fábrica</label>
+          <label>Código referencial / OEM por verificar</label>
           <input id="prodOEM" value="${esc(oem)}">
         </div>
         <div class="field full">
@@ -1316,6 +1317,7 @@
         </div>
         <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (+900.000)</button>
       </div>
+      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> registro generado y referencial; código, aplicación y costo pendientes de confirmar con documentación técnica o proveedor. Verifica los datos antes de guardar.</div>' : ''}
 
       <div class="formgrid">
         <div class="field">
@@ -1323,7 +1325,7 @@
           <input id="repSKU" value="${esc(r.sku)}">
         </div>
         <div class="field">
-          <label>Código OEM Original</label>
+          <label>Código referencial / OEM por verificar</label>
           <input id="repOEM" value="${esc(r.codigoOEM)}">
         </div>
         <div class="field full">
