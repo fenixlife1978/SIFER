@@ -720,7 +720,7 @@ const VERIFIED_MASTER_CATALOG = [
   let currentSelectorQuery = '';
   let currentSelectorCategory = 'Todos';
 
-  const MASTER_CATEGORY_TABS = ['Todos','Lápiz y Bieletas','Dirección','Suspensión','Bujes y Gomas','Lubricación del Motor','Distribución'];
+  const MASTER_CATEGORY_TABS = ['Todos','Motor','Distribución','Encendido','Eléctrico y Electrónico','Inyección y Combustible','Filtros','Aceites y Lubricantes','Refrigeración','Frenos','Suspensión','Dirección','Transmisión y Embrague','Rodamientos','Bujes y Gomas','Lápiz y Bieletas','Carrocería','Iluminación','Neumáticos y Rines','Baterías','Químicos y Aditivos','Herramientas y Accesorios'];
 
   function openMasterCatalogSelectorModal(targetType = 'producto') {
     currentSelectorTarget = targetType;
@@ -728,14 +728,14 @@ const VERIFIED_MASTER_CATALOG = [
     currentSelectorQuery = '';
     currentSelectorCategory = 'Todos';
 
-    openModal('📖 Buscar en Catálogo de Referencias OEM (referencias OEM publicadas Productos)', `
+    openModal('📖 Buscar en Catálogo Máster de Repuestos', `
       <div style="background:#f0f5fb;border:1px solid #bfd3eb;padding:10px;border-radius:4px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
-            <b style="color:#0b4f85;font-size:13px">Catálogo técnico de referencias OEM publicadas</b>
+            <b style="color:#0b4f85;font-size:13px">Catálogo Máster automotriz por familias, marcas y referencias cruzadas</b>
             <div style="font-size:11px;color:#555">Búsqueda inteligente por palabras claves: Motor, Pistones, Tiempo, Radiadores, Inyección, Sensores, Bujes, Gomas, Lápiz, Rodamientos, Baterías, Faros/Stop, Cilindros, Relex, Mangueras, Cloche, Aceites y Marcas Nacionales/Importadas</div>
           </div>
-          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con referencias OEM publicadas SKUs B2B</span>
+          <span class="badge" style="font-size:11px;padding:4px 8px">Biblioteca local + catálogo extendido configurable</span>
         </div>
       </div>
 
@@ -757,6 +757,7 @@ const VERIFIED_MASTER_CATALOG = [
     `, `
       <button class="btn" onclick="closeModal()">Cancelar</button>
     `);
+    requestMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20, 'modal');
   }
 
   let searchTimeout = null;
