@@ -29,7 +29,7 @@ export default async function handler(req:any,res:any){
     await db.batch([
       {sql:`CREATE TABLE IF NOT EXISTS sifer_products (
         id TEXT PRIMARY KEY,codigo TEXT,nombre TEXT NOT NULL,categoria TEXT,marca TEXT,unidad TEXT,
-        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL
+        costo REAL NOT NULL DEFAULT 0,precio REAL NOT NULL DEFAULT 0,imagen TEXT,updated_at TEXT NOT NULL,detalles_json TEXT NOT NULL DEFAULT '{}'
       )`,args:[]},
       {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
         product_id TEXT PRIMARY KEY,stock REAL NOT NULL DEFAULT 0,min_stock REAL NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
@@ -38,6 +38,7 @@ export default async function handler(req:any,res:any){
     ],'write');
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
+    try{await db.execute({sql:"ALTER TABLE sifer_products ADD COLUMN detalles_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
     if(type==='sale-created'){
       const sale=body.payload?.sale;
       if(sale?.numero){
@@ -180,6 +181,20 @@ export default async function handler(req:any,res:any){
         }
       }
     }
+    if(type==='product-upsert'){
+      const p=body.payload?.product;
+      if(!p?.id||!p?.nombre||!String(p.codigo||'').trim())throw new Error('La sincronización del producto requiere ID, código y descripción.');
+      const now=new Date().toISOString();
+      await db.execute({sql:\`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,marca=excluded.marca,
+        unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,imagen=excluded.imagen,fuente_url=excluded.fuente_url,
+        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at\`,
+        args:[String(p.id),String(p.codigo),String(p.nombre),p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',JSON.stringify(p.detalles||{}),now]});
+      const current=await db.execute({sql:'SELECT stock FROM sifer_inventory WHERE product_id=? LIMIT 1',args:[String(p.id)]});
+      if(current.rows.length)await db.execute({sql:'UPDATE sifer_inventory SET min_stock=?,updated_at=? WHERE product_id=?',args:[Math.max(0,Number(p.min)||0),now,String(p.id)]});
+      else await db.execute({sql:'INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at) VALUES(?,?,?,?)',args:[String(p.id),Math.max(0,Number(body.payload?.initialStock)||0),Math.max(0,Number(p.min)||0),now]});
+    }
     if(type==='products-inventory-snapshot'){
       const products=Array.isArray(body.payload?.products)?body.payload.products:[];
       if(products.length){
@@ -188,12 +203,12 @@ export default async function handler(req:any,res:any){
         for(const p of products){
           if(!p?.id||!p?.nombre) continue;
           stmts.push(
-            {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,updated_at)
-              VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+            {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
               ON CONFLICT(id) DO UPDATE SET
                 fuente_url=CASE WHEN coalesce(sifer_products.fuente_url,'')='' THEN excluded.fuente_url ELSE sifer_products.fuente_url END,
                 estado_verificacion=CASE WHEN coalesce(sifer_products.estado_verificacion,'')='' THEN excluded.estado_verificacion ELSE sifer_products.estado_verificacion END`,
-             args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',now]},
+             args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',JSON.stringify(p.detalles||{}),now]},
             {sql:`INSERT OR IGNORE INTO sifer_inventory(product_id,stock,min_stock,updated_at)
               VALUES(?,?,?,?)`,
              args:[String(p.id),Number(p.stock)||0,Number(p.min)||0,now]}
