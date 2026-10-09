@@ -67,23 +67,48 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{height:28px;backgrou
 <script>
 const KEY='sifer360_v1';
 const seed={
-config:{empresa:'SIFER 360',moneda:'USD',impuesto:7,bcv:{rate:814.6908,effectiveDate:'2026-09-08',updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json',status:'demo'},bcvHistory:[{effectiveDate:'2026-09-08',rate:814.6908,updatedAt:'2026-09-08T07:23:30-04:00',source:'https://bcv.today/api/v1/rate.json'},{effectiveDate:'2026-09-07',rate:813.7361,updatedAt:'2026-09-07T19:33:57-04:00',source:'https://bcv.today/api/v1/rate.json'}]},
-productos:[
-{id:'PR-001',codigo:'750001',nombre:'Taladro inalámbrico 20V',categoria:'Herramientas',marca:'ProTool',unidad:'Unidad',costo:75,precio:129.99,stock:18,min:5,imagen:'/images/prod_taladro_inalambrico_1791152564948.jpg'},
-{id:'PR-002',codigo:'750002',nombre:'Guantes de seguridad reforzados',categoria:'Seguridad',marca:'SafePro',unidad:'Par',costo:8,precio:14.99,stock:45,min:10,imagen:'/images/prod_guantes_seguridad_1791152574833.jpg'},
-{id:'PR-003',codigo:'750003',nombre:'Tornillo hexagonal 1/4 x 2"',categoria:'Tornillería',marca:'Sifer',unidad:'Caja',costo:18,precio:32.5,stock:12,min:4,imagen:'/images/prod_tornillo_hexagonal_1791152584594.jpg'},
-{id:'PR-004',codigo:'750004',nombre:'Pintura acrílica blanca 1 galón',categoria:'Pinturas',marca:'ColorMax',unidad:'Galón',costo:22,precio:39.95,stock:7,min:3,imagen:'/images/prod_pintura_galon_1791152594128.jpg'},
-{id:'PR-005',codigo:'750005',nombre:'Cemento gris 42.5 kg',categoria:'Construcción',marca:'Andino',unidad:'Saco',costo:7.5,precio:11.95,stock:50,min:12,imagen:'/images/prod_cemento_saco_1791152604023.jpg'},
-{id:'PR-006',codigo:'750006',nombre:'Cable eléctrico 12 AWG',categoria:'Electricidad',marca:'ElectroMax',unidad:'Rollo',costo:42,precio:69.9,stock:9,min:3,imagen:'/images/prod_cable_electrico_1791152613266.jpg'}
-],
-clientes:[{id:'CL-001',nombre:'Constructora Central',documento:'J-00000001',telefono:'555-0101',email:'compras@constructora.local',direccion:'Av. Principal 100',limite:5000,saldo:0}],
-proveedores:[{id:'PV-001',nombre:'Distribuidora Ferretera Nacional',documento:'J-10000001',telefono:'555-0202',email:'ventas@distribuidora.local',direccion:'Zona Industrial',saldo:0}],
+config:{empresa:'',moneda:'USD',impuesto:16,bcv:{rate:0,effectiveDate:null,updatedAt:null,source:'',status:'pending'},bcvHistory:[]},
+productos:[],
+clientes:[],
+proveedores:[],
 ventas:[],compras:[],cxc:[],cxp:[],presupuestos:[],movimientos:[],pedidos:[],usuarios:[{id:'USR-001',nombre:'Administrador',rol:'Administrador',activo:true,cajaId:'CAJA-01'}],cajas:[{id:'CAJA-01',nombre:'Caja 1',abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[],seqVenta:1,seqDevolucion:1,seqZ:1}],caja:{abierta:false,saldo:0,apertura:null,ultimoCorteAt:null,cortes:[]},terminalId:'CAJA-01',usuarioActualId:'USR-001',seq:{venta:1,compra:1,presupuesto:1,cxc:1,cxp:1,cliente:2,proveedor:2,producto:7,pedido:1,usuario:2,caja:2}
 };
 let db=load(); let view='inicio'; let selected=null; let cart=[]; let saleCustomer='CL-001'; let saleType='contado'; let tax2=false; let bcvRefreshInFlight=false; let activeOrderId=null;
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY))||structuredClone(seed);d.config=d.config||structuredClone(seed.config);d.cajas=Array.isArray(d.cajas)&&d.cajas.length?d.cajas:[structuredClone(seed.cajas[0])];d.terminalId=d.terminalId||'CAJA-01';d.usuarioActualId=d.usuarioActualId||'USR-001';d.usuarios=Array.isArray(d.usuarios)&&d.usuarios.length?d.usuarios:structuredClone(seed.usuarios);d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];if(!d.config.bcv)d.config.bcv=structuredClone(seed.config.bcv);if(!Array.isArray(d.config.bcvHistory))d.config.bcvHistory=[];if(Array.isArray(d.productos)){d.productos.forEach((p,i)=>{if(!p.imagen&&seed.productos[i]?.imagen)p.imagen=seed.productos[i].imagen;});}return d}catch(e){return structuredClone(seed)}}
+function cleanDemoState(d){
+  d=d&&typeof d==='object'?d:structuredClone(seed);
+  d.config=d.config||structuredClone(seed.config);
+  const demoProductIds=new Set(['PR-001','PR-002','PR-003','PR-004','PR-005','PR-006']);
+  d.productos=(Array.isArray(d.productos)?d.productos:[]).filter(p=>{
+    if(demoProductIds.has(String(p.id||'')))return false;
+    const oem=String(p.codigoOEM||''),code=String(p.codigo||p.sku||'');
+    return !/^REF-PENDIENTE-|^(OIL-PUMP|ADD-|OIL-PICKUP|OIL-RELIEF|OIL-COOLER|OIL-SWITCH|OIL-DIPSTICK|OIL-CAP)/i.test(oem)&&!/REF-PENDIENTE|^DEMO-|^TEST-/i.test(code);
+  });
+  d.clientes=(Array.isArray(d.clientes)?d.clientes:[]).filter(c=>String(c.id||'')!=='CL-001'&&!/constructora central/i.test(String(c.nombre||''))&&!/\\.local$/i.test(String(c.email||''))&&String(c.documento||'')!=='J-00000001');
+  d.proveedores=(Array.isArray(d.proveedores)?d.proveedores:[]).filter(p=>String(p.id||'')!=='PV-001'&&!/distribuidora ferretera nacional/i.test(String(p.nombre||''))&&!/\\.local$/i.test(String(p.email||''))&&String(p.documento||'')!=='J-10000001');
+  d.compras=(Array.isArray(d.compras)?d.compras:[]).filter(x=>!['CMP-00001','CMP-00002'].includes(String(x.numero||x.documento||'')));
+  d.cxp=(Array.isArray(d.cxp)?d.cxp:[]).filter(x=>!['CMP-00001','CMP-00002'].includes(String(x.numero||x.documento||'')));
+  if(!localStorage.getItem('sifer360_demo_cleanup_v1')){
+    d.ventas=(Array.isArray(d.ventas)?d.ventas:[]);
+    if(d.ventas.length===2 && Math.abs(d.ventas.reduce((sum,x)=>sum+Number(x.total||0),0)-75.97)<0.02)d.ventas=[];
+    d.compras=(Array.isArray(d.compras)?d.compras:[]);
+    d.cxc=Array.isArray(d.cxc)?d.cxc:[];
+    d.presupuestos=Array.isArray(d.presupuestos)?d.presupuestos:[];
+    d.movimientos=Array.isArray(d.movimientos)?d.movimientos:[];
+    d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];
+    localStorage.setItem('sifer360_demo_cleanup_v1','done');
+  }
+  d.cajas=Array.isArray(d.cajas)&&d.cajas.length?d.cajas:[structuredClone(seed.cajas[0])];
+  d.terminalId=d.terminalId||'CAJA-01';d.usuarioActualId=d.usuarioActualId||'USR-001';
+  d.usuarios=Array.isArray(d.usuarios)&&d.usuarios.length?d.usuarios:structuredClone(seed.usuarios);
+  d.pedidos=Array.isArray(d.pedidos)?d.pedidos:[];
+  d.config.bcv={rate:0,effectiveDate:null,updatedAt:null,source:'',status:'pending'};d.config.bcvHistory=[];
+  if(!d.config.impuesto||d.config.impuesto===7)d.config.impuesto=16;
+  d.seq=d.seq||structuredClone(seed.seq);
+  return d;
+}
+function load(){try{const raw=localStorage.getItem(KEY);const d=cleanDemoState(raw?JSON.parse(raw):structuredClone(seed));localStorage.setItem(KEY,JSON.stringify(d));return d}catch(e){return cleanDemoState(structuredClone(seed))}}
 function save(reason='db-save'){localStorage.setItem(KEY,JSON.stringify(db)); if(window.SiferOffline) window.SiferOffline.persist(db,reason).catch(()=>{});}
-window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=JSON.parse(raw);renderShell();}}catch(e){}});
+window.addEventListener('sifer:turso-hydrated',()=>{try{const raw=localStorage.getItem(KEY);if(raw){db=cleanDemoState(JSON.parse(raw));localStorage.setItem(KEY,JSON.stringify(db));renderShell();}}catch(e){}});
 function cajaActual(){if(!Array.isArray(db.cajas)||!db.cajas.length)db.cajas=structuredClone(seed.cajas);const u=usuarioActual();if(u.rol==='Administrador'){const admin=db.cajas.find(x=>x.id==='CAJA-01')||structuredClone(seed.cajas[0]);db.terminalId='CAJA-01';return admin}if(u.rol==='Cajero'&&u.cajaId){const assigned=db.cajas.find(x=>x.id===u.cajaId);if(assigned){db.terminalId=assigned.id;return assigned}}let c=db.cajas.find(x=>x.id===db.terminalId);if(!c){c=structuredClone(db.cajas[0]);db.terminalId=c.id}return c}
 function usuarioActual(){return (db.usuarios||[]).find(x=>x.id===db.usuarioActualId)||db.usuarios?.[0]||{nombre:'Administrador',rol:'Administrador'}}
 async function reserveDocumentNumber(kind){

@@ -1,4 +1,4 @@
-// SIFER360 - Catálogo Máster Universal de Proveedores y Motor Comercial de Precios (+900.000 Productos)
+// SIFER360 - Catálogo Máster Universal de Proveedores y Motor Comercial de Precios (+9 referencias OEM publicadas Productos)
 // Especializado en Mercado Venezolano: Aceites y Lubricantes (Nacionales e Importados en todas las presentaciones),
 // Repuestos Automotrices de Alta Frecuencia Comercial (Bujes, Gomas, Lápiz/Bieletas, Rodamientos, Baterías,
 // Luces de Faros y Stop, Cilindros de Ignición/Switcheras, Relex/Relés, Mangueras de Radiador, Frenos, Suspensión,
@@ -562,293 +562,292 @@
   ];
 
   // ==========================================
-  // 3. MOTOR PROCEDURAL DE GENERACIÓN Y BÚSQUEDA (+2.000.000 SKUs)
+  // 3. MOTOR PROCEDURAL DE GENERACIÓN Y BÚSQUEDA (+9 referencias OEM publicadas SKUs)
   // ==========================================
 
-  // Cantidad total virtual del catálogo indexado (+2.450.000 artículos referenciales)
-  const TOTAL_VIRTUAL_CATALOG_COUNT = 2450000;
-
+  // Cantidad total virtual del catálogo indexado (+9 referencias OEM publicadas artículos referenciales)
+  const VERIFIED_MASTER_CATALOG = [
+  {
+    "masterId": "MST-VER-0001",
+    "nombre": "Barra estabilizadora — bieleta / link",
+    "categoria": "Lápiz y Bieletas",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "00210",
+    "codigoOEM": "96275798 / 96391875",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Referencias OE 96275798 y 96391875 publicadas en catálogo Orjin para suspensión Chevrolet Aveo T200/T250. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "bieleta lapiz link barra estabilizadora suspension aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Barra estabilizadora"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0002",
+    "nombre": "Terminal de dirección izquierdo",
+    "categoria": "Dirección",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "00211",
+    "codigoOEM": "93740622 / 93740722",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Referencias OE 93740622 y 93740722 publicadas en catálogo Orjin para la familia Aveo T200/T250. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "terminal direccion tie rod end izquierdo aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección izquierda"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0003",
+    "nombre": "Terminal de dirección derecho",
+    "categoria": "Dirección",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "00212",
+    "codigoOEM": "93740623 / 93740723",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Referencias OE 93740623 y 93740723 publicadas en catálogo Orjin para la familia Aveo T200/T250. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "terminal direccion tie rod end derecho aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección derecha"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0004",
+    "nombre": "Articulación axial de dirección",
+    "categoria": "Dirección",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "01860",
+    "codigoOEM": "96535300",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "OE 96535300 publicado en catálogo Orjin; cotejar dimensiones y variante con la pieza. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "axial direccion barra axial aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0005",
+    "nombre": "Meseta / brazo de control izquierdo completo",
+    "categoria": "Suspensión",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "01798",
+    "codigoOEM": "95479764 / 96815893",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Referencias OE 95479764 y 96815893 publicadas en catálogo Orjin para brazo de control izquierdo. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "meseta tijera brazo control suspension izquierda aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Delantera izquierda"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0006",
+    "nombre": "Meseta / brazo de control derecho completo",
+    "categoria": "Suspensión",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "01799",
+    "codigoOEM": "95479765 / 96815894",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "Referencias OE 95479765 y 96815894 publicadas en catálogo Orjin para brazo de control derecho. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "meseta tijera brazo control suspension derecha aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Delantera derecha"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0007",
+    "nombre": "Rótula inferior de suspensión",
+    "categoria": "Suspensión",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "00204",
+    "codigoOEM": "96535089",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "OE 96535089 publicado en catálogo Orjin para rótula de suspensión. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "rotula inferior suspension ball joint aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión delantera"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0008",
+    "nombre": "Buje de suspensión — pequeño",
+    "categoria": "Bujes y Gomas",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "02011",
+    "codigoOEM": "96535087",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "OE 96535087 publicado en catálogo Orjin como buje pequeño. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "buje goma meseta suspension pequeno aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  },
+  {
+    "masterId": "MST-VER-0009",
+    "nombre": "Buje de suspensión — grande",
+    "categoria": "Bujes y Gomas",
+    "subcategoria": "Suspensión y dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoProveedor": "02012",
+    "codigoOEM": "96653381",
+    "unidadMedida": "Unidad",
+    "costoReferencial": 0,
+    "margenSugerido": 0,
+    "descripcionTecnica": "OE 96653381 publicado en catálogo Orjin como buje grande. Aplicación exacta, versión y lado deben confirmarse por VIN.",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "estadoCompatibilidad": "REFERENCIA PUBLICADA — CONFIRMAR POR VIN",
+    "palabrasClave": "buje goma meseta suspension grande aveo",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión"
+      }
+    ],
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente"
+  }
+];
+  const TOTAL_VIRTUAL_CATALOG_COUNT = VERIFIED_MASTER_CATALOG.length;
   let virtualCache = new Map();
   let activeMasterCategory = 'Todos';
   let activeMasterPage = 1;
   const ITEMS_PER_PAGE = 30;
-
-  // Generador determinístico de productos a partir de un índice
   function getMasterItemByIndex(index) {
-    if (virtualCache.has(index)) return virtualCache.get(index);
-
-    let item;
-    const isLubricantZone = index < 120000;
-
-    if (isLubricantZone) {
-      // Generar combinación de Lubricante
-      const bIdx = index % LUBRICANT_BRANDS_VENEZUELA.length;
-      const brand = LUBRICANT_BRANDS_VENEZUELA[bIdx];
-      const tIdx = Math.floor(index / LUBRICANT_BRANDS_VENEZUELA.length) % LUBRICANT_TYPES.length;
-      const type = LUBRICANT_TYPES[tIdx];
-      const pIdx = Math.floor(index / (LUBRICANT_BRANDS_VENEZUELA.length * LUBRICANT_TYPES.length)) % PRESENTATIONS.length;
-      const pres = PRESENTATIONS[pIdx];
-
-      const masterId = `MST-LUB-${String(index + 1).padStart(7, '0')}`;
-      const codeProv = `${brand.nombre.substring(0,3).toUpperCase()}-${type.sub.substring(0,3).toUpperCase()}-${pres.suffix}-${(index % 999) + 100}`;
-      const codeOEM = `${type.spec.split('.')[0] || 'API SP'}`;
-      const cost = Number((type.costoBase * pres.mult * (brand.tipo.includes('premium') ? 1.25 : (brand.tipo === 'nacional' ? 0.95 : 1.10))).toFixed(2));
-
-      item = {
-        masterId: masterId,
-        nombre: `${type.nombre} — ${brand.nombre} (${pres.label})`,
-        descripcionTecnica: `${type.spec} Presentación original en ${pres.label}. Envasado y garantizado bajo normas internacionales. Origen: ${brand.origen}.`,
-        categoria: type.cat,
-        subcategoria: type.sub,
-        marca: brand.nombre,
-        origenMarca: brand.origen,
-        tipoMarca: brand.tipo,
-        codigoProveedor: codeProv,
-        codigoOEM: codeOEM,
-        unidadMedida: pres.u,
-        costoReferencial: cost,
-        margenSugerido: type.margen,
-        especificaciones: type.spec,
-        fotoReal: type.foto,
-        fotoFallback: type.foto,
-        distribuidor: brand.distribuidor,
-        // No inferir equivalencias comerciales por similitud de presentación.
-        referenciasCruzadas: [],
-        compatibilidad: [
-          { marca: 'Universal', modelo: 'Motores y Maquinaria en Venezuela', anios: 'Todos', motor: 'Gasolina / Diesel / GNC', posicion: 'Motor / Transmisión' }
-        ]
-      };
-    } else {
-      // Generar combinación de Repuesto Automotriz
-      const adjIdx = index - 120000;
-      const vIdx = adjIdx % VEHICLES_IN_VENEZUELA.length;
-      const veh = VEHICLES_IN_VENEZUELA[vIdx];
-      const tplIdx = Math.floor(adjIdx / VEHICLES_IN_VENEZUELA.length) % AUTO_PART_TEMPLATES.length;
-      const tpl = AUTO_PART_TEMPLATES[tplIdx];
-      const bIdx = Math.floor(adjIdx / (VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length)) % SPARE_PART_BRANDS.length;
-      const brand = SPARE_PART_BRANDS[bIdx];
-
-      const masterId = `MST-AUT-${String(index + 1).padStart(7, '0')}`;
-      const codeOEM = `REF-PENDIENTE-${tpl.oemPref}-${(adjIdx % 89999) + 10000}`;
-      const codeProv = `${brand.nombre.substring(0,3).toUpperCase()}-${tpl.cat.substring(0,3).toUpperCase()}-${codeOEM}`;
-      const cost = Number((tpl.cost * (brand.tipo.includes('premium') || brand.tipo === 'oem' ? 1.30 : (brand.tipo === 'economica' ? 0.78 : 1.05))).toFixed(2));
-
-      item = {
-        masterId: masterId,
-        nombre: `${tpl.nameTpl} para ${veh.marca} ${veh.modelo} (${veh.anios}) — Marca ${brand.nombre}`,
-        descripcionTecnica: `Referencia de catálogo para investigar aplicación en ${veh.marca} ${veh.modelo} años ${veh.anios} con motor ${veh.motor}. Compatibilidad exacta y referencia OEM pendientes de verificación documental.`,
-        categoria: tpl.cat,
-        subcategoria: veh.marca,
-        marca: brand.nombre,
-        origenMarca: brand.origen,
-        tipoMarca: brand.tipo,
-        codigoProveedor: codeProv,
-        codigoOEM: codeOEM,
-        unidadMedida: tpl.u,
-        costoReferencial: cost,
-        margenSugerido: tpl.margen,
-        especificaciones: `Aplicación referencial para ${veh.marca} ${veh.modelo} ${veh.motor}; confirmar año exacto, versión, motor y código OEM antes de comprar o instalar. Marca comercial: ${brand.tipo.toUpperCase()}.`,
-        estadoCompatibilidad: 'REFERENCIAL — requiere validar motor, versión, año exacto y número OEM',
-        palabrasClave: tpl.keywords || '',
-        fotoReal: tpl.img,
-        fotoFallback: tpl.img,
-        distribuidor: `Distribuidor Mayorista ${veh.marca} & Repuestos Venezuela B2B`,
-        // No fabricar equivalencias: referencias cruzadas vacías hasta validación documental.
-        referenciasCruzadas: [],
-        compatibilidad: [
-          { marca: veh.marca, modelo: veh.modelo, anios: veh.anios, motor: veh.motor, posicion: 'Tren Delantero / Motor / Eléctrico' }
-        ]
-      };
-    }
-
-    // Cache management
-    if (virtualCache.size > 2500) {
-      const firstKeys = virtualCache.keys();
-      for (let k = 0; k < 500; k++) {
-        virtualCache.delete(firstKeys.next().value);
-      }
-    }
-
-    virtualCache.set(index, item);
-    return item;
+    const i=Number(index);
+    if(!Number.isInteger(i)||i<0||i>=VERIFIED_MASTER_CATALOG.length)return null;
+    return VERIFIED_MASTER_CATALOG[i];
   }
-
-  // Búsqueda inteligente multicriterio por palabras claves dentro del espacio de +900.000 productos
   function queryMasterCatalog(query = '', category = 'Todos', page = 1, pageSize = ITEMS_PER_PAGE) {
-    const rawQ = (query || '').trim();
-    const results = [];
-    const maxScanLimit = 4500;
-
-    // Nunca recorrer millones de registros virtuales en el hilo principal.
-    // Esto evita congelar el POS mientras el usuario escribe o cambia de página.
-    // Cuando la consulta menciona un vehículo, buscar de forma determinística
-    // dentro de sus combinaciones de repuesto evita que el muestreo se salte
-    // artículos válidos como "correa de tiempo Aveo" o "sensor oxígeno Aveo".
-    const qNorm = normalizeSearchText(rawQ);
-    const qTokens = qNorm.split(/\s+/).filter(Boolean);
-    const matchedVehicles = rawQ ? VEHICLES_IN_VENEZUELA.filter(v => {
-      const hay = normalizeSearchText(v.marca + ' ' + v.modelo + ' ' + v.anios + ' ' + v.motor);
-      const hits = qTokens.filter(t => t.length >= 3 && hay.includes(t));
-      // Basta una coincidencia inequívoca con marca/modelo/año/motor para
-      // activar la búsqueda determinística del vehículo. Consultas reales
-      // como "correa de tiempo Aveo" y "sensor oxígeno Aveo" tienen un solo
-      // token del vehículo; exigir dos hacía que volvieran al muestreo.
-      return hits.length >= 1;
-    }) : [];
-
-    const candidateIndices = [];
-    if (matchedVehicles.length && AUTO_PART_TEMPLATES.length && SPARE_PART_BRANDS.length) {
-      const seen = new Set();
-      for (const vehicle of matchedVehicles.slice(0, 6)) {
-        const vIdx = VEHICLES_IN_VENEZUELA.indexOf(vehicle);
-        for (let tIdx = 0; tIdx < AUTO_PART_TEMPLATES.length; tIdx++) {
-          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
-            const idx = 120000 + vIdx
-              + VEHICLES_IN_VENEZUELA.length * tIdx
-              + VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length * bIdx;
-            if (idx < TOTAL_VIRTUAL_CATALOG_COUNT && !seen.has(idx)) {
-              seen.add(idx);
-              candidateIndices.push(idx);
-            }
-          }
-        }
-      }
-    }
-
-    // Si la consulta no nombra un vehículo, localizar primero las familias/plantillas
-    // solicitadas en vez de depender de una muestra dispersa que puede omitirlas.
-    if (!candidateIndices.length && rawQ) {
-      const stopWords = new Set(['de','del','la','el','los','las','un','una','para','con','por','y','en','the','of']);
-      const terms = qTokens.filter(t => t.length >= 3 && !stopWords.has(t));
-      const matchingTemplateIndexes = AUTO_PART_TEMPLATES.map((tpl, i) => {
-        const hay = normalizeSearchText([tpl.nameTpl, tpl.cat, tpl.oemPref, tpl.keywords || ''].join(' '));
-        return terms.length && terms.every(term => hay.includes(term)) ? i : -1;
-      }).filter(i => i >= 0);
-      const seen = new Set();
-      for (const tIdx of matchingTemplateIndexes) {
-        // Las marcas/modelos se presentan como referencias a validar, no como ajuste OEM confirmado.
-        for (let vIdx = 0; vIdx < VEHICLES_IN_VENEZUELA.length; vIdx++) {
-          for (let bIdx = 0; bIdx < SPARE_PART_BRANDS.length; bIdx++) {
-            const idx = 120000 + vIdx
-              + VEHICLES_IN_VENEZUELA.length * tIdx
-              + VEHICLES_IN_VENEZUELA.length * AUTO_PART_TEMPLATES.length * bIdx;
-            if (idx < TOTAL_VIRTUAL_CATALOG_COUNT && !seen.has(idx)) {
-              seen.add(idx);
-              candidateIndices.push(idx);
-            }
-          }
-        }
-      }
-    }
-
-    const step = Math.max(1, Math.ceil(TOTAL_VIRTUAL_CATALOG_COUNT / maxScanLimit));
-    const indices = candidateIndices.length
-      ? candidateIndices
-      : Array.from({length: maxScanLimit}, (_, n) => n * step).filter(i => i < TOTAL_VIRTUAL_CATALOG_COUNT);
-
-    let matchCount = 0;
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-
-    for (let scanned = 0; scanned < indices.length && matchCount < 1200; scanned++) {
-      const item = getMasterItemByIndex(indices[scanned]);
-
-      let matchesCat = true;
-      if (category !== 'Todos') {
-        const catLow = category.toLowerCase();
-        if (category === 'Aceites y Lubricantes') {
-          matchesCat = item.categoria.includes('Aceite');
-        } else if (category === 'Nacionales Venezolanas') {
-          matchesCat = (item.origenMarca && item.origenMarca.includes('Venezuela')) || item.tipoMarca === 'nacional_lider' || item.tipoMarca === 'nacional';
-        } else if (category === 'Importadas Premium') {
-          matchesCat = item.tipoMarca === 'importada_premium' || item.tipoMarca === 'premium';
-        } else if (category === 'Repuestos Chinos') {
-          matchesCat = item.subcategoria === 'Chery' || item.subcategoria === 'Jac' || item.subcategoria === 'Changan' || item.subcategoria === 'Great Wall' || item.tipoMarca === 'economica';
-        } else if (category === 'Bujes y Gomas') {
-          matchesCat = item.categoria === 'Bujes y Gomas' || item.nombre.toLowerCase().includes('buje') || item.nombre.toLowerCase().includes('goma');
-        } else if (category === 'Lápiz y Bieletas') {
-          matchesCat = item.categoria === 'Lápiz y Bieletas' || item.nombre.toLowerCase().includes('lapiz') || item.nombre.toLowerCase().includes('bieleta');
-        } else if (category === 'Rodamientos') {
-          matchesCat = item.categoria === 'Rodamientos' || item.nombre.toLowerCase().includes('rodamiento') || item.nombre.toLowerCase().includes('maza');
-        } else if (category === 'Baterías') {
-          matchesCat = item.categoria === 'Baterías' || item.nombre.toLowerCase().includes('bateria');
-        } else if (category === 'Luces y Faros') {
-          matchesCat = item.categoria === 'Luces y Faros' || item.nombre.toLowerCase().includes('bombillo') || item.nombre.toLowerCase().includes('faro') || item.nombre.toLowerCase().includes('led');
-        } else if (category === 'Cilindros de Ignición') {
-          matchesCat = item.categoria === 'Cilindros de Ignición' || item.nombre.toLowerCase().includes('cilindro') || item.nombre.toLowerCase().includes('switchera');
-        } else if (category === 'Relex y Relés') {
-          matchesCat = item.categoria === 'Relex y Relés' || item.nombre.toLowerCase().includes('relex') || item.nombre.toLowerCase().includes('rele') || item.nombre.toLowerCase().includes('relay');
-        } else if (category === 'Mangueras') {
-          matchesCat = item.categoria === 'Mangueras' || item.nombre.toLowerCase().includes('manguera');
-        } else if (category === 'Cables de Bujías') {
-          matchesCat = item.categoria === 'Cables de Bujías' || item.nombre.toLowerCase().includes('cables de buj');
-        } else if (category === 'Sensores') {
-          matchesCat = item.categoria === 'Sensores' || item.nombre.toLowerCase().includes('sensor');
-        } else if (category === 'Empacaduras de Motor') {
-          matchesCat = item.categoria === 'Empacaduras de Motor' || item.nombre.toLowerCase().includes('empacadura');
-        } else if (category === 'Bombas de Agua') {
-          matchesCat = item.categoria === 'Bombas de Agua' || item.nombre.toLowerCase().includes('bomba de agua');
-        } else if (category === 'Anillos de Motor') {
-          matchesCat = item.categoria === 'Anillos de Motor' || item.nombre.toLowerCase().includes('anillos');
-        } else if (category === 'Conchas de Biela y Bancada') {
-          matchesCat = item.categoria === 'Conchas de Biela y Bancada' || item.nombre.toLowerCase().includes('conchas de');
-        } else if (category === 'Cerraduras y Mandos') {
-          matchesCat = item.categoria === 'Cerraduras y Mandos' || item.nombre.toLowerCase().includes('cerradura');
-        } else if (category === 'Solenoides') {
-          matchesCat = item.categoria === 'Solenoides' || item.nombre.toLowerCase().includes('solenoide');
-        } else if (category === 'Conectores y Terminales') {
-          matchesCat = item.categoria === 'Conectores y Terminales' || item.nombre.toLowerCase().includes('conector');
-        } else if (category === 'Distribución') {
-          matchesCat = item.categoria === 'Distribución' || item.nombre.toLowerCase().includes('cadena de tiempo') || item.nombre.toLowerCase().includes('kit de tiempo') || item.nombre.toLowerCase().includes('tensor');
-        } else if (category === 'Tripoides y Homocinéticas') {
-          matchesCat = item.categoria === 'Tripoides y Homocinéticas' || item.nombre.toLowerCase().includes('tripoide') || item.nombre.toLowerCase().includes('homocin');
-        } else if (category === 'Aditivos y Químicos') {
-          matchesCat = item.categoria === 'Aditivos y Químicos' || item.nombre.toLowerCase().includes('aditivo');
-        } else {
-          matchesCat = item.categoria.toLowerCase().includes(catLow) || item.subcategoria.toLowerCase().includes(catLow);
-        }
-      }
-
-      if (!matchesCat) continue;
-
-      let matchesQ = true;
-      if (rawQ) {
-        const fullSearchableText = `${item.nombre} ${item.palabrasClave || ''} ${item.marca} ${item.codigoOEM} ${item.codigoProveedor} ${item.categoria} ${item.subcategoria} ${item.descripcionTecnica} ${item.especificaciones} ${item.origenMarca} ${item.unidadMedida}`;
-        matchesQ = matchKeywords(fullSearchableText, rawQ);
-        // Evita falsos positivos entre familias de repuestos: el término principal
-        // solicitado debe estar presente en el artículo, no solo el vehículo.
-        const nq = normalizeSearchText(rawQ);
-        const ni = normalizeSearchText(fullSearchableText);
-        const families = [
-          { terms: ["bujia", "bujias", "spark plug"], accept: ["bujia", "bujias", "spark plug"], reject: ["sensor de oxigeno", "sensor oxigeno", "correa de tiempo", "correa de distribucion"] },
-          { terms: ["sensor de oxigeno", "sensor oxigeno"], accept: ["sensor", "oxigeno"], reject: ["bujia", "correa de tiempo", "correa de distribucion"] },
-          { terms: ["correa de tiempo", "correa de distribucion", "kit de distribucion"], accept: ["correa", "distribucion", "tiempo"], reject: ["bujia", "sensor de oxigeno"] },
-          { terms: ["bateria", "baterias"], accept: ["bateria"], reject: ["bujia", "sensor de oxigeno"] },
-          { terms: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], accept: ["bomba de aceite", "bomba aceite", "oil pump", "bomba lubricacion"], reject: ["bomba de agua", "bomba de gasolina", "bomba de direccion", "bomba de freno"] },
-          { terms: ["pescador de aceite", "colador de aceite", "chupador de aceite"], accept: ["pescador", "colador", "chupador"], reject: ["bomba de gasolina"] },
-          { terms: ["bomba de gasolina", "pila de gasolina", "fuel pump"], accept: ["bomba de gasolina", "pila", "fuel pump"], reject: ["bomba de aceite", "bomba de agua", "relex", "rele", "relay", "relevador"] }
-        ];
-        const family = families.find(f => f.terms.some(t => nq.includes(t)));
-        if (matchesQ && family && (!family.accept.some(t => ni.includes(t)) || family.reject.some(t => ni.includes(t)))) {
-          matchesQ = false;
-        }
-      }
-
-      if (matchesQ) {
-        if (matchCount >= startIndex && matchCount < endIndex) {
-          results.push(item);
-        }
-        matchCount++;
-      }
-    }
-
-    return {
-      items: results,
-      totalMatched: matchCount,
-      totalCatalog: TOTAL_VIRTUAL_CATALOG_COUNT,
-      page: page,
-      totalPages: Math.max(1, Math.ceil(matchCount / pageSize))
-    };
+    const q=normalizeSearchText(query||''),cat=String(category||'Todos'),terms=q.split(/\\s+/).filter(Boolean);
+    const all=VERIFIED_MASTER_CATALOG.filter(item=>{
+      const searchable=normalizeSearchText([item.nombre,item.descripcionTecnica,item.especificaciones,item.palabrasClave,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,item.subcategoria,...(item.compatibilidad||[]).flatMap(c=>[c.marca,c.modelo,c.anios,c.motor,c.posicion])].join(' '));
+      const categoryMatch=cat==='Todos'||cat==='Referencias verificadas'||normalizeSearchText(item.categoria).includes(normalizeSearchText(cat));
+      return categoryMatch&&terms.every(t=>searchable.includes(t));
+    });
+    const safePage=Math.max(1,Number(page)||1),safeSize=Math.max(1,Number(pageSize)||ITEMS_PER_PAGE),start=(safePage-1)*safeSize;
+    return {items:all.slice(start,start+safeSize),totalMatched:all.length,totalCatalog:VERIFIED_MASTER_CATALOG.length,page:safePage,totalPages:Math.max(1,Math.ceil(all.length/safeSize))};
   }
 
   // ==========================================
@@ -859,7 +858,7 @@
     const b = typeof bcvData === 'function' ? bcvData() : { rate: 1 };
     const rate = b.rate || 1;
 
-    const costo = Math.max(0.01, Number(costoCompra) || 0);
+    const costo = Math.max(0, Number(costoCompra) || 0);
     const mDetal = Number(margenDetalPct) || 35;
     const mTaller = Number(margenTallerPct) || 20;
     const mMayor = Number(margenMayorPct) || 12;
@@ -946,14 +945,14 @@
     currentSelectorQuery = '';
     currentSelectorCategory = 'Todos';
 
-    openModal('📖 Buscar en Catálogo Máster Universal (+2.000.000 Productos)', `
+    openModal('📖 Buscar en Catálogo Máster Universal (+9 referencias OEM publicadas Productos)', `
       <div style="background:#f0f5fb;border:1px solid #bfd3eb;padding:10px;border-radius:4px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
-            <b style="color:#0b4f85;font-size:13px">Catálogo Máster Universal de Distribuidores (+2.000.000 Productos)</b>
+            <b style="color:#0b4f85;font-size:13px">Catálogo Máster Universal de Distribuidores (+9 referencias OEM publicadas Productos)</b>
             <div style="font-size:11px;color:#555">Búsqueda inteligente por palabras claves: Motor, Pistones, Tiempo, Radiadores, Inyección, Sensores, Bujes, Gomas, Lápiz, Rodamientos, Baterías, Faros/Stop, Cilindros, Relex, Mangueras, Cloche, Aceites y Marcas Nacionales/Importadas</div>
           </div>
-          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con +2.450.000 SKUs B2B</span>
+          <span class="badge ok" style="font-size:11px;padding:4px 8px">🟢 Conectado con +9 referencias OEM publicadas SKUs B2B</span>
         </div>
       </div>
 
@@ -1081,9 +1080,9 @@
     }
 
     // El masterId contiene el índice original. Recuperarlo directamente evita
-    // volver a recorrer hasta 2.450.000 registros y congelar el hilo principal.
+    // volver a recorrer hasta 9 registros y congelar el hilo principal.
     if (!foundItem) {
-      const match = /^MST-(?:LUB|AUT)-(\d+)$/.exec(String(masterId || ''));
+      const match = /^MST-VER-(\d+)$/.exec(String(masterId || ''));
       if (match) {
         const index = Number(match[1]) - 1;
         if (Number.isInteger(index) && index >= 0 && index < TOTAL_VIRTUAL_CATALOG_COUNT) {
@@ -1112,8 +1111,8 @@
 
   function openCommercialProductFormWithMaster(item = null) {
     const isNew = !item;
-    const baseCost = item ? item.costoReferencial : 5.00;
-    const defMargin = item ? (item.margenSugerido || 35) : 35;
+    const baseCost = item ? (Number(item.costoReferencial)||0) : 0;
+    const defMargin = item ? (Number(item.margenSugerido)||0) : 0;
     const initialPricing = calculatePricingEngine(baseCost, defMargin, 20, 12);
     const code = item ? item.codigoProveedor : (id('PR','producto'));
     const oem = item ? item.codigoOEM : '';
@@ -1126,12 +1125,12 @@
     openModal(item ? `Incorporar a Inventario: ${esc(item.nombre)}` : 'Nuevo Producto Comercial', `
       <div style="background:#f4f7fb;border:1px solid #c9d8eb;padding:8px 10px;margin-bottom:10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo Máster Vinculado</span>
+          <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo técnico con fuente</span>
           <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Producto manual'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar en Catálogo Máster (+900.000)</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('producto')">🔍 Buscar en Catálogo Máster (+9 referencias OEM publicadas)</button>
       </div>
-      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> este registro es generado y referencial. El código, la compatibilidad y el costo no están confirmados por el fabricante ni por un proveedor. Verifícalos y corrígelos antes de guardar o comprar.</div>' : ''}
+      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> Referencia OEM publicada en fuente pública. Confirma aplicación exacta por VIN antes de comprar o instalar.</div>' : ''}
 
       <div class="formgrid">
         <div class="field">
@@ -1201,15 +1200,15 @@
 
         <div class="field">
           <label>Existencia Físico Inicial</label>
-          <input id="prodStock" type="number" value="12" min="0">
+          <input id="prodStock" type="number" value="0" min="0">
         </div>
         <div class="field">
           <label>Stock Mínimo</label>
-          <input id="prodMin" type="number" value="3" min="1" oninput="document.getElementById('prodReorder').value=Math.round(this.value*1.6)">
+          <input id="prodMin" type="number" value="0" min="0" oninput="document.getElementById('prodReorder').value=Math.round(this.value*1.6)">
         </div>
         <div class="field">
           <label>Punto de Reorden Sugerido</label>
-          <input id="prodReorder" type="number" value="6" min="1" title="Nivel de inventario en el cual se debe solicitar compra al distribuidor">
+          <input id="prodReorder" type="number" value="0" min="0" title="Nivel de inventario en el cual se debe solicitar compra al distribuidor">
         </div>
         <div class="field">
           <label>URL de Foto Real</label>
@@ -1308,12 +1307,12 @@
     openModal(item ? `Nuevo Repuesto desde Máster: ${item.marca}` : 'Nuevo Repuesto Automotriz', `
       <div style="background:#f4f7fb;border:1px solid #c9d8eb;padding:8px 10px;margin-bottom:10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo Máster Vinculado</span>
+          <span style="font-size:10px;font-weight:bold;color:#0b4f85;text-transform:uppercase">Catálogo técnico con fuente</span>
           <div style="font-size:12px;font-weight:bold">${item ? esc(item.nombre) : 'Ficha en blanco'}</div>
         </div>
-        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (+900.000)</button>
+        <button class="btn" style="font-size:10px;padding:4px 8px" onclick="openMasterCatalogSelectorModal('repuesto')">🔍 Explorar Catálogo Máster (+9 referencias OEM publicadas)</button>
       </div>
-      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> registro generado y referencial; código, aplicación y costo pendientes de confirmar con documentación técnica o proveedor. Verifica los datos antes de guardar.</div>' : ''}
+      ${item ? '<div style="background:#fff7e6;border:1px solid #e6c875;color:#754c00;padding:8px;margin-bottom:10px;border-radius:4px;font-size:11px"><b>Atención:</b> Referencia OEM publicada en fuente pública; confirma aplicación exacta por VIN antes de comprar o instalar.</div>' : ''}
 
       <div class="formgrid">
         <div class="field">
@@ -1494,7 +1493,7 @@
     </div>
 
     <div class="cards">
-      <div class="card">Combinaciones de búsqueda<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>registros virtuales referenciales, no artículos verificados</span></div>
+      <div class="card">Referencias OEM publicadas<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>con fuente pública; confirmar ajuste por VIN</span></div>
       <div class="card">Motor, tiempo e inyección<b>Referencial</b><span>familias de búsqueda, no stock confirmado</span></div>
       <div class="card">Tren delantero y suspensión<b>Referencial</b><span>verificar aplicación por versión</span></div>
       <div class="card">Frenos, cloche y caja<b>Referencial</b><span>verificar OEM y medidas</span></div>
@@ -1509,7 +1508,7 @@
     </div>
 
     <div class="searchbar">
-      <input id="masterExpQ" value="${esc(masterViewSearchQuery)}" placeholder="🔍 Búsqueda inteligente en +2.450.000 repuestos por palabras claves (ej: piston corolla, bujes aveo, relex bomba corsa, radiador optra, bateria 34r, bombillo h7, lapiz fiesta)..." oninput="onMasterSearchInput(this.value)">
+      <input id="masterExpQ" value="${esc(masterViewSearchQuery)}" placeholder="🔍 Búsqueda inteligente en +9 referencias OEM publicadas repuestos por palabras claves (ej: piston corolla, bujes aveo, relex bomba corsa, radiador optra, bateria 34r, bombillo h7, lapiz fiesta)..." oninput="onMasterSearchInput(this.value)">
     </div>
 
     <div class="panel" id="masterExplorerTableContainer">

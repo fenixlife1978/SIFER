@@ -42,6 +42,13 @@ export default async function handler(req:any,res:any){
     ],'write');
 
     if(req.method==='GET'){
+      // Remove only recognizable starter/demo rows; preserve real operator-entered products.
+      await db.batch([
+        {sql:"DELETE FROM sifer_inventory WHERE product_id IN ('PR-001','PR-002','PR-003','PR-004','PR-005','PR-006')",args:[]},
+        {sql:"DELETE FROM sifer_products WHERE id IN ('PR-001','PR-002','PR-003','PR-004','PR-005','PR-006')",args:[]},
+        {sql:"DELETE FROM sifer_inventory WHERE product_id IN (SELECT id FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%')",args:[]},
+        {sql:"DELETE FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%'",args:[]}
+      ],'write');
       const rows=await db.execute(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,
         i.stock,i.min_stock AS min
         FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id ORDER BY p.id`);

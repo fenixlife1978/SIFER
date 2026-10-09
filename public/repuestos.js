@@ -2,513 +2,266 @@
 // Catálogo técnico, referencias cruzadas, compatibilidad vehicular, búsqueda inteligente y SKUs únicos
 
 const REPUESTOS_SEED = [
-  // 1. Bujes y Gomas
   {
-    id: 'AUT-00001',
-    sku: 'SKU-BUJ-555-48655',
-    nombre: 'Buje de Meseta Delantera Inferior Grande (Tijera)',
-    categoria: 'Bujes y Gomas',
-    marca: '555 (Three Five)',
-    codigoOEM: '48655-12170 / 48655-02050',
-    referenciasCruzadas: [
-      { marca: 'CTR', codigo: 'CVT-44' },
-      { marca: 'Moog', codigo: 'K200780' },
-      { marca: 'Febest', codigo: 'TAB-003' },
-      { marca: 'Takama', codigo: 'TK-48655' }
+    "id": "VER-AVE-001",
+    "sku": "00210",
+    "nombre": "Barra estabilizadora — bieleta / link",
+    "categoria": "Lápiz y Bieletas",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "96275798 / 96391875",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Barra estabilizadora"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación)', anios: '1998-2014', motor: '1.6L 4AFE / 1.8L 1ZZ-FE', posicion: 'Meseta Delantera Inferior' },
-      { marca: 'Toyota', modelo: 'Yaris (Belta / Sol)', anios: '2000-2018', motor: '1.3L 2NZ / 1.5L 1NZ-FE', posicion: 'Meseta Delantera' },
-      { marca: 'Toyota', modelo: 'Matrix', anios: '2003-2013', motor: '1.8L 1ZZ', posicion: 'Meseta Delantera' }
-    ],
-    costo: 5.20,
-    precio: 9.50,
-    stock: 24,
-    min: 6,
-    ubicacion: 'Pasillo B1 - Estante 2',
-    garantia: '12 meses / 20.000 km',
-    especificaciones: 'Caucho natural vulcanizado de alta resiliencia. Casquillo de acero zincado antioxidante.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
   {
-    id: 'AUT-00002',
-    sku: 'SKU-GOM-CTR-54813',
-    nombre: 'Goma / Buje de Barra Estabilizadora Delantera',
-    categoria: 'Bujes y Gomas',
-    marca: 'CTR',
-    codigoOEM: '96535154 / 54813-25000',
-    referenciasCruzadas: [
-      { marca: 'ACDelco', codigo: '93740710' },
-      { marca: 'Takama', codigo: 'TK-GM965' },
-      { marca: 'Moog', codigo: 'K200812' }
+    "id": "VER-AVE-002",
+    "sku": "00211",
+    "nombre": "Terminal de dirección izquierdo",
+    "categoria": "Dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "93740622 / 93740722",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección izquierda"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Chevrolet', modelo: 'Aveo (3P / 4P / 5P / Speed)', anios: '2005-2018', motor: '1.6L F16D3', posicion: 'Barra Estabilizadora Delantera' },
-      { marca: 'Chevrolet', modelo: 'Optra (Design / Advance / Limited)', anios: '2004-2014', motor: '1.8L T18SED', posicion: 'Barra Estabilizadora' },
-      { marca: 'Daewoo', modelo: 'Kalos / Lanos', anios: '2000-2008', motor: '1.5L / 1.6L', posicion: 'Barra Estabilizadora' }
-    ],
-    costo: 2.80,
-    precio: 5.50,
-    stock: 36,
-    min: 8,
-    ubicacion: 'Pasillo B1 - Estante 3',
-    garantia: '6 meses',
-    especificaciones: 'Par de gomas abrazadera de 19mm en elastómero de alta fricción antiruido.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg'
-  },
-
-  // 2. Lápiz y Bieletas
-  {
-    id: 'AUT-00003',
-    sku: 'SKU-LAP-555-48820',
-    nombre: 'Lápiz Estabilizador Delantero / Bieleta de Suspensión',
-    categoria: 'Lápiz y Bieletas',
-    marca: '555 (Three Five)',
-    codigoOEM: '48820-47010 / 48820-02030',
-    referenciasCruzadas: [
-      { marca: 'CTR', codigo: 'CLT-29' },
-      { marca: 'Moog', codigo: 'K80230' },
-      { marca: 'Sankei', codigo: 'SL-3640' },
-      { marca: 'Febest', codigo: '0123-001' }
-    ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla', anios: '2003-2022', motor: '1.8L 1ZZ-FE / 2ZR-FE', posicion: 'Delantero Derecho e Izquierdo' },
-      { marca: 'Toyota', modelo: 'Prius', anios: '2004-2018', motor: '1.5L / 1.8L Hybrid', posicion: 'Delantero' },
-      { marca: 'Toyota', modelo: 'Yaris', anios: '2006-2020', motor: '1.5L 1NZ-FE', posicion: 'Delantero' }
-    ],
-    costo: 8.50,
-    precio: 15.00,
-    stock: 18,
-    min: 4,
-    ubicacion: 'Pasillo S2 - Estante 1',
-    garantia: '12 meses / 30.000 km',
-    especificaciones: 'Rótula sellada con grasa sintética de larga duración y tuercas de seguridad autofrenantes.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
   {
-    id: 'AUT-00004',
-    sku: 'SKU-LAP-MOO-2S61',
-    nombre: 'Lápiz Estabilizador Delantero Reforzado (Par)',
-    categoria: 'Lápiz y Bieletas',
-    marca: 'Moog',
-    codigoOEM: '2S61-3B438-AD / 1146150',
-    referenciasCruzadas: [
-      { marca: 'CTR', codigo: 'CLF-10' },
-      { marca: 'Motorcraft', codigo: 'MEF-11' },
-      { marca: 'Takama', codigo: 'TK-FIE02' }
+    "id": "VER-AVE-003",
+    "sku": "00212",
+    "nombre": "Terminal de dirección derecho",
+    "categoria": "Dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "93740623 / 93740723",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección derecha"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Ford', modelo: 'Fiesta (Power / Max / Move / Titanium)', anios: '2002-2018', motor: '1.6L Zetec Rocam', posicion: 'Barra Delantera' },
-      { marca: 'Ford', modelo: 'EcoSport', anios: '2004-2017', motor: '1.6L / 2.0L', posicion: 'Barra Delantera' },
-      { marca: 'Ford', modelo: 'Ka', anios: '2005-2014', motor: '1.6L Rocam', posicion: 'Barra Delantera' }
-    ],
-    costo: 7.90,
-    precio: 14.00,
-    stock: 16,
-    min: 4,
-    ubicacion: 'Pasillo S2 - Estante 2',
-    garantia: '12 meses',
-    especificaciones: 'Vástago de acero forjado de 10mm con rótulas de polímero autolubricado.',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg'
-  },
-
-  // 3. Rodamientos y Baleros
-  {
-    id: 'AUT-00005',
-    sku: 'SKU-ROD-KOY-90369',
-    nombre: 'Rodamiento de Rueda Delantero Sellado DAC3872',
-    categoria: 'Rodamientos',
-    marca: 'Koyo',
-    codigoOEM: '90369-38022 / 90369-38021',
-    referenciasCruzadas: [
-      { marca: 'SKF', codigo: 'VKBA 3984' },
-      { marca: 'NSK', codigo: '38BWD26' },
-      { marca: 'NTN', codigo: 'DE08A45' },
-      { marca: 'GMB', codigo: 'GH038022' }
-    ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla (Baby Camry / Pantallita / New Sensación)', anios: '1993-2014', motor: '1.6L / 1.8L', posicion: 'Maza Rueda Delantera' },
-      { marca: 'Toyota', modelo: 'Yaris', anios: '2000-2018', motor: '1.3L / 1.5L', posicion: 'Delantero' },
-      { marca: 'Geely', modelo: 'CK / MK', anios: '2008-2016', motor: '1.5L', posicion: 'Delantero' }
-    ],
-    costo: 13.50,
-    precio: 24.00,
-    stock: 14,
-    min: 4,
-    ubicacion: 'Pasillo R2 - Estante 1',
-    garantia: '12 meses / 40.000 km',
-    especificaciones: 'Medidas: 38mm x 72mm x 37mm. Doble hilera angular con sellos de goma 2RS.',
-    imagen: '/images/rep_kit_embrague_1791152677700.jpg'
-  },
-
-  // 4. Baterías Automotrices
-  {
-    id: 'AUT-00006',
-    sku: 'SKU-BAT-DUN-24R800',
-    nombre: 'Batería Automotriz Duncan 24R (800 AMP) Libre de Mantenimiento',
-    categoria: 'Baterías',
-    marca: 'Duncan Baterías',
-    codigoOEM: 'DUN-24R-800 / BCI-24R',
-    referenciasCruzadas: [
-      { marca: 'Fulgor', codigo: 'FUL-24R' },
-      { marca: 'Titan', codigo: 'TT-24R-800' },
-      { marca: 'Willard', codigo: 'W-24R' },
-      { marca: 'ACDelco', codigo: 'AC-24R' }
-    ],
-    compatibilidad: [
-      { marca: 'Chevrolet', modelo: 'Aveo / Optra / Cruze / Silverado', anios: '2000-2024', motor: '1.6L / 1.8L / 5.3L', posicion: 'Compartimiento Batería' },
-      { marca: 'Toyota', modelo: 'Corolla / Yaris / Hilux / Fortuner', anios: '2000-2024', motor: '1.8L / 2.7L / 4.0L', posicion: 'Compartimiento Batería' },
-      { marca: 'Ford', modelo: 'Fiesta / EcoSport / Explorer / F-150', anios: '2000-2024', motor: '1.6L / 2.0L / 4.6L', posicion: 'Compartimiento Batería' },
-      { marca: 'Chery', modelo: 'Orinoco / Tiggo / Arauca', anios: '2010-2024', motor: '1.3L / 1.8L / 2.0L', posicion: 'Compartimiento Batería' }
-    ],
-    costo: 72.00,
-    precio: 98.00,
-    stock: 8,
-    min: 2,
-    ubicacion: 'Área Baterías - Almacén Central',
-    garantia: '12 meses con certificado de garantía nacional',
-    especificaciones: 'Capacidad 800 AMP arranque en frío (CCA 600A). Terminales cónicos estándar SAE, polaridad derecha (+) R.',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
-  },
-
-  // 5. Luces de Faros y Stop
-  {
-    id: 'AUT-00007',
-    sku: 'SKU-LUC-OSR-H46055',
-    nombre: 'Bombillo Halógeno H4 12V 60/55W Bilux Luz Alta/Baja Original',
-    categoria: 'Luces y Faros',
-    marca: 'Osram Automotive Lighting',
-    codigoOEM: '90981-13058 / 64193',
-    referenciasCruzadas: [
-      { marca: 'Philips', codigo: '12342' },
-      { marca: 'Hella', codigo: '8GJ 002 525-131' },
-      { marca: 'Flosser', codigo: '2040' },
-      { marca: 'Bosch', codigo: '1987301001' }
-    ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla / Hilux / Machito / Yaris', anios: '1995-2022', motor: 'Todos', posicion: 'Faro Delantero Principal' },
-      { marca: 'Chevrolet', modelo: 'Corsa / Spark / Aveo 3P / Luv D-Max', anios: '1998-2018', motor: 'Todos', posicion: 'Faro Principal' },
-      { marca: 'Ford', modelo: 'Fiesta Power / Ka / EcoSport', anios: '2001-2015', motor: 'Todos', posicion: 'Faro Principal' },
-      { marca: 'Chery', modelo: 'Arauca / QQ / Grand Tiger', anios: '2006-2022', motor: 'Todos', posicion: 'Faro Principal' }
-    ],
-    costo: 2.30,
-    precio: 4.80,
-    stock: 45,
-    min: 10,
-    ubicacion: 'Vitrina Iluminación V1',
-    garantia: '6 meses',
-    especificaciones: 'Base P43t. Flujo luminoso 1650/1000 lúmenes. Cristal de cuarzo UV bloqueador.',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
   {
-    id: 'AUT-00008',
-    sku: 'SKU-LUC-PHI-1157',
-    nombre: 'Bombillo 1157 2 Contactos 12V (Freno/Stop y Posición) Patas Desparejas',
-    categoria: 'Luces y Faros',
-    marca: 'Philips Automotive',
-    codigoOEM: '1157 / BAY15D / P21/5W',
-    referenciasCruzadas: [
-      { marca: 'Osram', codigo: '7528' },
-      { marca: 'Hella', codigo: '8GD 002 078-121' },
-      { marca: 'Flosser', codigo: '2112' }
+    "id": "VER-AVE-004",
+    "sku": "01860",
+    "nombre": "Articulación axial de dirección",
+    "categoria": "Dirección",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "96535300",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Dirección"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Universal', modelo: 'Vehículos con faros de stop convencionales', anios: 'Todos', motor: 'Gasolina / Diesel', posicion: 'Stop Trasero / Cocuyo' }
-    ],
-    costo: 0.70,
-    precio: 1.60,
-    stock: 90,
-    min: 20,
-    ubicacion: 'Vitrina Iluminación V2',
-    garantia: '3 meses',
-    especificaciones: 'Casquillo metálico BAY15D con dos filamentos (21W para freno y 5W para luz de noche).',
-    imagen: '/images/prod_alternador_12v_1791155201792.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
-
-  // 6. Cilindros de Ignición y Switcheras
   {
-    id: 'AUT-00009',
-    sku: 'SKU-IGN-GEN-90050',
-    nombre: 'Cilindro de Switchera de Ignición y Encendido con 2 Llaves',
-    categoria: 'Cilindros de Ignición',
-    marca: 'ACDelco',
-    codigoOEM: '90050843 / 90050844',
-    referenciasCruzadas: [
-      { marca: 'Valeo', codigo: '252522' },
-      { marca: 'Takama', codigo: 'TK-SW900' }
+    "id": "VER-AVE-005",
+    "sku": "01798",
+    "nombre": "Meseta / brazo de control izquierdo completo",
+    "categoria": "Suspensión",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "95479764 / 96815893",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Delantera izquierda"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Chevrolet', modelo: 'Corsa / Chevy C2 / Montana', anios: '1998-2012', motor: '1.4L / 1.6L / 1.8L', posicion: 'Columna de Dirección' },
-      { marca: 'Chevrolet', modelo: 'Astra', anios: '2000-2006', motor: '1.8L / 2.0L', posicion: 'Columna de Dirección' }
-    ],
-    costo: 11.50,
-    precio: 21.00,
-    stock: 7,
-    min: 2,
-    ubicacion: 'Pasillo E2 - Estante 1',
-    garantia: '12 meses',
-    especificaciones: 'Cuerpo de zamak de precisión con 6 pines de combinación y par de llaves con logo.',
-    imagen: '/images/prod_bobina_encendido_1791155210560.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
-
-  // 7. Relex y Relés Automotrices
   {
-    id: 'AUT-00010',
-    sku: 'SKU-RLY-BOS-0332',
-    nombre: 'Relex Automotriz Universal 12V 4 Pines 40A Reforzado',
-    categoria: 'Relex y Relés',
-    marca: 'Bosch',
-    codigoOEM: '0 332 019 150 / 90987-02006',
-    referenciasCruzadas: [
-      { marca: 'Hella', codigo: '4RA 933 791-061' },
-      { marca: 'Denso', codigo: '056700-5260' },
-      { marca: 'Omron', codigo: 'G8HN-1C4T-RJ' },
-      { marca: 'Flosser', codigo: '2240' }
+    "id": "VER-AVE-006",
+    "sku": "01799",
+    "nombre": "Meseta / brazo de control derecho completo",
+    "categoria": "Suspensión",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "95479765 / 96815894",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Delantera derecha"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Universal', modelo: 'Electroventilador, Bomba Gasolina, Faros Halógenos, Corneta', anios: 'Todos', motor: 'Todos', posicion: 'Fusilera / Ramal Eléctrico' }
-    ],
-    costo: 2.40,
-    precio: 4.95,
-    stock: 42,
-    min: 10,
-    ubicacion: 'Vitrina Eléctricos E1',
-    garantia: '12 meses',
-    especificaciones: 'Contactos de plata-óxido de estaño (AgSnO2) resistentes a la soldadura y chisporroteo eléctrico. Soporta 40 Amperios continuos.',
-    imagen: '/images/prod_sensor_ckp_1791152221865.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
-
-  // 8. Mangueras Automotrices
   {
-    id: 'AUT-00011',
-    sku: 'SKU-MAN-GAT-16571',
-    nombre: 'Manguera Superior de Radiador en EPDM Reforzada',
-    categoria: 'Mangueras',
-    marca: 'Gates',
-    codigoOEM: '16571-0D050 / 16571-22080',
-    referenciasCruzadas: [
-      { marca: 'Dayco', codigo: '71928' },
-      { marca: 'Continental', codigo: '66184' },
-      { marca: 'Cauplas', codigo: '4821' }
+    "id": "VER-AVE-007",
+    "sku": "00204",
+    "nombre": "Rótula inferior de suspensión",
+    "categoria": "Suspensión",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "96535089",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión delantera"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla (Pantallita / New Sensación / GLi)', anios: '2003-2015', motor: '1.8L 1ZZ-FE / 2.0L 2ZR', posicion: 'Radiador a Motor (Superior)' },
-      { marca: 'Toyota', modelo: 'Matrix', anios: '2003-2012', motor: '1.8L', posicion: 'Radiador Superior' }
-    ],
-    costo: 6.50,
-    precio: 12.80,
-    stock: 11,
-    min: 3,
-    ubicacion: 'Pasillo M1 - Estante 3',
-    garantia: '12 meses',
-    especificaciones: 'Construcción EPDM sintético resistente a la degradación electroquímica (ECR) y temperaturas de -40°C a 135°C.',
-    imagen: '/images/rep_bomba_agua_1791152689068.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
-
-  // 9. Frenos y Fricción
   {
-    id: 'AUT-00012',
-    sku: 'SKU-FRE-BOS-04465',
-    nombre: 'Pastillas de Freno Delanteras Cerámicas Premium',
-    categoria: 'Frenos y Fricción',
-    marca: 'Bosch',
-    codigoOEM: '04465-02220 / 04465-47070',
-    referenciasCruzadas: [
-      { marca: 'Brembo', codigo: 'P83082' },
-      { marca: 'Ferodo', codigo: 'FDB1641' },
-      { marca: 'TRW', codigo: 'GDB3425' },
-      { marca: 'ACDelco', codigo: '17D1210' },
-      { marca: 'Wagner', codigo: 'QC1210' }
+    "id": "VER-AVE-008",
+    "sku": "02011",
+    "nombre": "Buje de suspensión — pequeño",
+    "categoria": "Bujes y Gomas",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "96535087",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla', anios: '2008-2022', motor: '1.8L 2ZR-FE / 2.0L 3ZR', posicion: 'Eje Delantero' },
-      { marca: 'Toyota', modelo: 'Yaris', anios: '2010-2020', motor: '1.5L 1NZ-FE', posicion: 'Eje Delantero' },
-      { marca: 'Toyota', modelo: 'Matrix', anios: '2009-2014', motor: '1.8L 2ZR-FE', posicion: 'Eje Delantero' }
-    ],
-    costo: 26.50,
-    precio: 42.00,
-    stock: 14,
-    min: 4,
-    ubicacion: 'Pasillo F1 - Estante 2',
-    garantia: '12 meses / 20.000 km',
-    especificaciones: 'Compuesto cerámico bajo en polvo. Incluye láminas antiruido y clips de sujeción. Espesor: 17.5mm.',
-    imagen: '/images/rep_pastillas_freno_1791152631245.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   },
-
-  // 10. Filtración
   {
-    id: 'AUT-00013',
-    sku: 'SKU-FIL-DEN-90915',
-    nombre: 'Filtro de Aceite Blindado Sintético Alto Flujo',
-    categoria: 'Filtros y Mantenimiento',
-    marca: 'Denso',
-    codigoOEM: '90915-YZZD2 / 90915-YZZD4',
-    referenciasCruzadas: [
-      { marca: 'Mann-Filter', codigo: 'W 68/3' },
-      { marca: 'Wix', codigo: '51394' },
-      { marca: 'Fram', codigo: 'PH4967' },
-      { marca: 'Bosch', codigo: '0986AF0059' }
+    "id": "VER-AVE-009",
+    "sku": "02012",
+    "nombre": "Buje de suspensión — grande",
+    "categoria": "Bujes y Gomas",
+    "marca": "Referencia publicada — Orjin",
+    "codigoOEM": "96653381",
+    "referenciasCruzadas": [],
+    "compatibilidad": [
+      {
+        "marca": "Chevrolet",
+        "modelo": "Aveo T200 / T250",
+        "anios": "Según versión del catálogo",
+        "motor": "Confirmar por VIN",
+        "posicion": "Suspensión"
+      }
     ],
-    compatibilidad: [
-      { marca: 'Toyota', modelo: 'Corolla', anios: '2002-2024', motor: '1.6L / 1.8L / 2.0L', posicion: 'Motor' },
-      { marca: 'Toyota', modelo: 'Yaris', anios: '2006-2023', motor: '1.3L / 1.5L', posicion: 'Motor' },
-      { marca: 'Toyota', modelo: 'RAV4', anios: '2001-2019', motor: '2.0L / 2.4L / 2.5L', posicion: 'Motor' },
-      { marca: 'Chevrolet', modelo: 'Tracker', anios: '2013-2021', motor: '1.8L Ecotec', posicion: 'Motor' }
-    ],
-    costo: 4.20,
-    precio: 7.95,
-    stock: 48,
-    min: 12,
-    ubicacion: 'Pasillo F2 - Estante 1',
-    garantia: '10.000 km o 6 meses',
-    especificaciones: 'Válvula anti-drenaje de silicona. Eficiencia de filtrado del 99% a 20 micras. Rosca 3/4-16 UNF.',
-    imagen: '/images/rep_filtro_aceite_1791152641120.jpg'
-  },
-
-  // 11. Suspensión y Dirección
-  {
-    id: 'AUT-00014',
-    sku: 'SKU-SUS-MON-72145',
-    nombre: 'Amortiguador Delantero a Gas Nitro-Cell Reforzado',
-    categoria: 'Suspensión y Dirección',
-    marca: 'Monroe',
-    codigoOEM: '96407819 / 96407820',
-    referenciasCruzadas: [
-      { marca: 'KYB', codigo: '333418' },
-      { marca: 'Gabriel', codigo: 'G54160' },
-      { marca: 'Sachs', codigo: '313533' },
-      { marca: 'ACDelco', codigo: '19374021' }
-    ],
-    compatibilidad: [
-      { marca: 'Chevrolet', modelo: 'Aveo', anios: '2005-2019', motor: '1.6L F16D3 DOHC', posicion: 'Delantero Derecho/Izq' },
-      { marca: 'Chevrolet', modelo: 'Optra', anios: '2004-2013', motor: '1.8L / 2.0L', posicion: 'Delantero' }
-    ],
-    costo: 35.00,
-    precio: 58.00,
-    stock: 9,
-    min: 2,
-    ubicacion: 'Pasillo S1 - Estante 4',
-    garantia: '24 meses / 40.000 km',
-    especificaciones: 'Vástago cromado templado por inducción. Fluido hidráulico para todo clima (-40°C a 120°C).',
-    imagen: '/images/rep_amortiguador_1791152649395.jpg'
-  },
-
-  // 12. Encendido y Eléctrico
-  {
-    id: 'AUT-00015',
-    sku: 'SKU-IGN-NGK-7098',
-    nombre: 'Bujía de Iridio Laser Spark Alta Eficiencia',
-    categoria: 'Partes Eléctricas',
-    marca: 'NGK / NTK',
-    codigoOEM: '22401-ED815 / 12290-R40-A01',
-    referenciasCruzadas: [
-      { marca: 'Denso', codigo: 'IK20TT' },
-      { marca: 'Bosch', codigo: 'FR7NPP332' },
-      { marca: 'Champion', codigo: '9006' },
-      { marca: 'ACDelco', codigo: '41-110' }
-    ],
-    compatibilidad: [
-      { marca: 'Nissan', modelo: 'Tiida', anios: '2007-2018', motor: '1.8L MR18DE', posicion: 'Culata' },
-      { marca: 'Nissan', modelo: 'Sentra', anios: '2007-2020', motor: '2.0L MR20DE', posicion: 'Culata' },
-      { marca: 'Nissan', modelo: 'Versa', anios: '2012-2022', motor: '1.6L HR16DE', posicion: 'Culata' },
-      { marca: 'Honda', modelo: 'Civic', anios: '2006-2016', motor: '1.8L R18A1', posicion: 'Culata' }
-    ],
-    costo: 6.80,
-    precio: 13.50,
-    stock: 28,
-    min: 8,
-    ubicacion: 'Pasillo E1 - Estante 3',
-    garantia: '80.000 km vida útil garantizada',
-    especificaciones: 'Punta ultrafina de 0.6mm de iridio soldado por láser. Mayor inflamabilidad y respuesta de aceleración.',
-    imagen: '/images/rep_bujia_iridio_1791152658933.jpg'
-  },
-
-  // 13. Motor y Distribución
-  {
-    id: 'AUT-00016',
-    sku: 'SKU-MOT-GAT-9543',
-    nombre: 'Kit de Correa de Distribución y Rodamiento Tensor',
-    categoria: 'Motor / Distribución',
-    marca: 'Gates',
-    codigoOEM: '2S6Q-8B596-AA / 0831.V3',
-    referenciasCruzadas: [
-      { marca: 'Continental / Contitech', codigo: 'CT1092K1' },
-      { marca: 'Dayco', codigo: 'KTB493' },
-      { marca: 'SKF', codigo: 'VKMA 03254' },
-      { marca: 'INA', codigo: '530 0379 10' }
-    ],
-    compatibilidad: [
-      { marca: 'Ford', modelo: 'Fiesta', anios: '2004-2015', motor: '1.6L Rocam / Zetec', posicion: 'Distribución' },
-      { marca: 'Ford', modelo: 'EcoSport', anios: '2004-2018', motor: '1.6L / 2.0L Duratec', posicion: 'Distribución' },
-      { marca: 'Ford', modelo: 'Ka', anios: '2005-2013', motor: '1.6L', posicion: 'Distribución' }
-    ],
-    costo: 38.00,
-    precio: 68.00,
-    stock: 7,
-    min: 2,
-    ubicacion: 'Pasillo M2 - Estante 2',
-    garantia: '60.000 km / 2 años',
-    especificaciones: 'Compuesto HNBR resistente a altas temperaturas y aceite. Tensor automático de rodamiento reforzado.',
-    imagen: '/images/rep_correa_distribucion_1791152666979.jpg'
-  },
-
-  // 14. Embrague y Transmisión
-  {
-    id: 'AUT-00017',
-    sku: 'SKU-TRA-VAL-82631',
-    nombre: 'Kit de Embrague Completo (Disco, Plato y Collarín)',
-    categoria: 'Embrague / Transmisión',
-    marca: 'Valeo',
-    codigoOEM: '41100-23135 / 41200-23135',
-    referenciasCruzadas: [
-      { marca: 'LuK', codigo: '622 3145 00' },
-      { marca: 'Sachs', codigo: '3000 951 098' },
-      { marca: 'Exedy', codigo: 'HYK2044' },
-      { marca: 'Aisin', codigo: 'KH-024' }
-    ],
-    compatibilidad: [
-      { marca: 'Hyundai', modelo: 'Elantra', anios: '2007-2017', motor: '1.6L / 2.0L Beta', posicion: 'Caja Manual' },
-      { marca: 'Hyundai', modelo: 'Accent', anios: '2006-2016', motor: '1.4L / 1.6L Alpha', posicion: 'Caja Manual' },
-      { marca: 'Kia', modelo: 'Rio', anios: '2006-2017', motor: '1.4L / 1.6L', posicion: 'Caja Manual' },
-      { marca: 'Kia', modelo: 'Cerato', anios: '2008-2015', motor: '1.6L / 2.0L', posicion: 'Caja Manual' }
-    ],
-    costo: 78.00,
-    precio: 135.00,
-    stock: 5,
-    min: 2,
-    ubicacion: 'Pasillo T1 - Estante 1',
-    garantia: '12 meses sin límite de kilometraje',
-    especificaciones: 'Diámetro: 215mm, 20 estrías. Resortes helicoidales progresivos para absorción de vibraciones.',
-    imagen: '/images/rep_kit_embrague_1791152677700.jpg'
-  },
-
-  // 15. Refrigeración
-  {
-    id: 'AUT-00018',
-    sku: 'SKU-REF-GMB-1209',
-    nombre: 'Bomba de Agua con Empacadura Reforzada',
-    categoria: 'Refrigeración',
-    marca: 'GMB',
-    codigoOEM: '96352650 / 96352648',
-    referenciasCruzadas: [
-      { marca: 'Airtex', codigo: 'AW9354' },
-      { marca: 'Dolz', codigo: 'D211' },
-      { marca: 'Gates', codigo: 'WP0098' },
-      { marca: 'ACDelco', codigo: '252-840' }
-    ],
-    compatibilidad: [
-      { marca: 'Chevrolet', modelo: 'Corsa', anios: '1998-2012', motor: '1.3L / 1.4L / 1.6L MPFI', posicion: 'Bloque Motor' },
-      { marca: 'Chevrolet', modelo: 'Chevy C2', anios: '2004-2012', motor: '1.6L', posicion: 'Bloque Motor' },
-      { marca: 'Chevrolet', modelo: 'Meriva', anios: '2004-2009', motor: '1.8L', posicion: 'Bloque Motor' }
-    ],
-    costo: 19.50,
-    precio: 34.00,
-    stock: 12,
-    min: 3,
-    ubicacion: 'Pasillo R1 - Estante 3',
-    garantia: '12 meses / 25.000 km',
-    especificaciones: 'Rotor de aleación fundida de alta eficiencia de caudal. Sello mecánico cerámico de carbón.',
-    imagen: '/images/rep_bomba_agua_1791152689068.jpg'
+    "costo": 0,
+    "precio": 0,
+    "stock": 0,
+    "min": 0,
+    "ubicacion": "",
+    "garantia": "",
+    "especificaciones": "Fuente: https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf. Sin precio ni stock; confirmar ajuste por VIN antes de comprar o instalar.",
+    "fuenteUrl": "https://www.orjinautomotive.com/Admin/UploadedFiles/pdf-katalog/CHEVROLET.pdf",
+    "fuenteNombre": "Catálogo Orjin Chevrolet — suspensión y dirección",
+    "estadoVerificacion": "Referencia OEM publicada en fuente pública; compatibilidad exacta por VIN pendiente",
+    "imagen": "/icon.svg"
   }
 ];
 
@@ -517,19 +270,16 @@ let repuestoSubTab = 'catalogo';
 let fitmentFilter = { marca: '', modelo: '', anio: '', motor: '', repuesto: '' };
 
 function getRepuestos(){
-  if (!Array.isArray(db.repuestos)) {
-    db.repuestos = structuredClone(REPUESTOS_SEED);
-  } else {
-    // Si la base de datos de repuestos tiene menos items que el seed expandido, combinamos los nuevos
-    if (db.repuestos.length < REPUESTOS_SEED.length) {
-      const existingIds = new Set(db.repuestos.map(r => r.id));
-      REPUESTOS_SEED.forEach(s => {
-        if (!existingIds.has(s.id)) {
-          db.repuestos.push(structuredClone(s));
-        }
-      });
-    }
-  }
+  if(!Array.isArray(db.repuestos))db.repuestos=[];
+  db.repuestos=db.repuestos.filter(r=>{
+    const id=String(r.id||''),oem=String(r.codigoOEM||''),sku=String(r.sku||'');
+    if(/^AUT-000(?:0[1-9]|1[0-9]|20)$/.test(id))return false;
+    if(/^REF-PENDIENTE-|^(OIL-PUMP|ADD-|OIL-PICKUP|OIL-RELIEF|OIL-COOLER|OIL-SWITCH|OIL-DIPSTICK|OIL-CAP)/i.test(oem))return false;
+    if(/^SKU-(?:BUJ|GOM|LAP|ROD|BAT|LUC|IGN|RLY)-/i.test(sku))return false;
+    return true;
+  });
+  const known=new Set(db.repuestos.map(r=>String(r.id)));
+  REPUESTOS_SEED.forEach(part=>{if(!known.has(part.id))db.repuestos.push(structuredClone(part));});
   return db.repuestos;
 }
 
