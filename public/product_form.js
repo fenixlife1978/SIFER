@@ -184,6 +184,7 @@
       input('fp-codigo','Código interno / SKU comercial',code||'', 'text')+
       '<div class="field"><label for="fp-sku">SKU</label><div style="display:flex;gap:5px;align-items:center"><input id="fp-sku" type="text" value="'+global.esc(text(val(d,'sku',code||'')))+'" style="min-width:0;flex:1"><button class="btn" id="fp-generate-inline" type="button" style="white-space:nowrap">⚡ SKU automático</button></div></div>'+
       input('fp-barra','Código de barras',val(d,'barra',''))+
+      '<div class="field full" style="border:1px solid #cbd5e1;border-radius:6px;padding:10px;background:#f8fafc"><label>Etiquetas del SKU interno</label><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><label for="fp-label-qty">Cantidad</label><input id="fp-label-qty" type="number" min="1" max="500" value="1" style="width:84px"><button class="btn" id="fp-label-preview" type="button">👁️ Ver etiqueta</button><button class="btn" id="fp-label-download" type="button">⬇️ Descargar SVG</button><button class="btn" id="fp-label-print" type="button">🖨️ Imprimir cantidad</button></div><small>El código de barras se genera con el SKU interno; si está vacío, usa el código interno. Puedes imprimir de 1 a 500 etiquetas.</small><div id="fp-barcode-preview" style="margin-top:8px;overflow:auto"></div></div>'+
       input('fp-codfab','Código del fabricante',val(d,'codigoFabricante',''))+
       input('fp-desc','Descripción completa',name,'text','required')+
       input('fp-descCorta','Descripción corta para el ticket',val(d,'descCorta',name))+
@@ -279,8 +280,52 @@
     if(el('fp-save-new'))el('fp-save-new').addEventListener('click',function(){save('new');});
     if(el('fp-generate'))el('fp-generate').addEventListener('click',generateCode);
     if(el('fp-generate-inline'))el('fp-generate-inline').addEventListener('click',generateCode);
+    if(el('fp-label-preview'))el('fp-label-preview').addEventListener('click',renderBarcodeLabel);
+    if(el('fp-label-download'))el('fp-label-download').addEventListener('click',downloadBarcodeLabel);
+    if(el('fp-label-print'))el('fp-label-print').addEventListener('click',printBarcodeLabels);
     if(el('fp-duplicate'))el('fp-duplicate').addEventListener('click',duplicateCurrent);
     pricing('');
+  }
+  function barcodeValue(){return String((el('fp-sku')&&el('fp-sku').value||'').trim()||(el('fp-codigo')&&el('fp-codigo').value||'').trim());}
+  function ensureBarcodeLibrary(){
+    if(global.JsBarcode)return Promise.resolve();
+    if(global.__siferBarcodeLoading)return global.__siferBarcodeLoading;
+    global.__siferBarcodeLoading=new Promise(function(resolve,reject){
+      var script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
+      script.onload=function(){global.JsBarcode?resolve():reject(new Error('No se pudo cargar el generador de códigos de barras'));};
+      script.onerror=function(){reject(new Error('No hay conexión para cargar el generador de códigos de barras'));};
+      document.head.appendChild(script);
+    });
+    return global.__siferBarcodeLoading;
+  }
+  async function renderBarcodeLabel(){
+    var value=barcodeValue(),preview=el('fp-barcode-preview');
+    if(!value){alert('Genera o escribe primero el SKU interno del producto.');return null;}
+    try{
+      await ensureBarcodeLibrary();
+      var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      global.JsBarcode(svg,value,{format:'CODE128',displayValue:true,font:'Arial',fontSize:16,textMargin:3,margin:8,width:2,height:54,background:'#ffffff',lineColor:'#111111'});
+      if(preview){preview.innerHTML='';var label=document.createElement('div');label.style.cssText='display:inline-block;background:#fff;border:1px solid #d1d5db;padding:8px;text-align:center;max-width:100%';var title=document.createElement('div');title.textContent=(el('fp-desc')&&el('fp-desc').value||'Producto').trim();title.style.cssText='font-weight:700;font-size:12px;max-width:280px;overflow-wrap:anywhere;margin-bottom:4px';label.appendChild(title);label.appendChild(svg);preview.appendChild(label);}
+      return svg;
+    }catch(e){alert(String(e&&e.message||e));return null;}
+  }
+  async function downloadBarcodeLabel(){
+    var svg=await renderBarcodeLabel();if(!svg)return;
+    var blob=new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml;charset=utf-8'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='etiqueta-'+barcodeValue().replace(/[^a-z0-9_-]/gi,'_')+'.svg';a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+  async function printBarcodeLabels(){
+    var svg=await renderBarcodeLabel();if(!svg)return;
+    var qty=Math.max(1,Math.min(500,parseInt(el('fp-label-qty')&&el('fp-label-qty').value,10)||1));
+    var markup=new XMLSerializer().serializeToString(svg);
+    var name=(el('fp-desc')&&el('fp-desc').value||'Producto').trim();
+    var win=window.open('','_blank','width=800,height=600');
+    if(!win){alert('Permite las ventanas emergentes para imprimir las etiquetas.');return;}
+    var labels='';for(var i=0;i<qty;i++)labels+='<div class="label"><b>'+global.esc(name)+'</b>'+markup+'</div>';
+    win.document.open();win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Etiquetas '+global.esc(barcodeValue())+'</title><style>@page{size:auto;margin:6mm}body{font-family:Arial,sans-serif;margin:0;display:flex;flex-wrap:wrap;gap:4mm}.label{width:58mm;min-height:28mm;box-sizing:border-box;border:1px dashed #bbb;padding:2mm;text-align:center;break-inside:avoid}.label b{display:block;font-size:9pt;overflow-wrap:anywhere}.label svg{width:100%;height:auto;max-height:22mm}</style></head><body>'+labels+'</body></html>');win.document.close();win.focus();setTimeout(function(){win.print();},400);
   }
   function gather(){
     var details={};
