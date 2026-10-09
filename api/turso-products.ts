@@ -14,6 +14,15 @@ type Product = {
   imagen?:string;
   fuenteUrl?:string;
   estadoVerificacion?:string;
+  detalles?:Record<string,any>;
+  proveedores?:any[];
+  min?:number;
+  ubicacion?:string;
+  stockMaximo?:number;
+  reorderPoint?:number;
+  margenDetal?:number;
+  precioMayor?:number;
+  precioTaller?:number;
 };
 
 export default async function handler(req:any,res:any){
@@ -34,6 +43,7 @@ export default async function handler(req:any,res:any){
         imagen TEXT,
         fuente_url TEXT,
         estado_verificacion TEXT,
+        detalles_json TEXT NOT NULL DEFAULT '{}',
         updated_at TEXT NOT NULL
       )`,args:[]},
       {sql:`CREATE TABLE IF NOT EXISTS sifer_inventory (
@@ -47,6 +57,7 @@ export default async function handler(req:any,res:any){
 
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN fuente_url TEXT',args:[]})}catch(e){}
     try{await db.execute({sql:'ALTER TABLE sifer_products ADD COLUMN estado_verificacion TEXT',args:[]})}catch(e){}
+    try{await db.execute({sql:"ALTER TABLE sifer_products ADD COLUMN detalles_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
 
     if(req.method==='GET'){
       // Remove only recognizable starter/demo rows; preserve real operator-entered products.
@@ -56,13 +67,38 @@ export default async function handler(req:any,res:any){
         {sql:"DELETE FROM sifer_inventory WHERE product_id IN (SELECT id FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%')",args:[]},
         {sql:"DELETE FROM sifer_products WHERE upper(coalesce(codigo,'')) LIKE '%REF-PENDIENTE%' OR upper(coalesce(codigo,'')) LIKE 'DEMO-%' OR upper(coalesce(codigo,'')) LIKE 'TEST-%' OR upper(coalesce(nombre,'')) LIKE '%TALADRO INALAMBRICO 20V%' OR upper(coalesce(nombre,'')) LIKE '%GUANTES DE SEGURIDAD REFORZADOS%' OR upper(coalesce(nombre,'')) LIKE '%CEMENTO GRIS 42.5 KG%'",args:[]}
       ],'write');
-      const rows=await db.execute(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,
+      const rows=await db.execute(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,p.detalles_json AS detallesJson,
         i.stock,i.min_stock AS min
         FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id ORDER BY p.id`);
-      return res.status(200).json({ok:true,products:rows.rows});
+      const products=rows.rows.map((row:any)=>{let details:any={};try{details=JSON.parse(String(row.detallesJson||'{}'))||{}}catch(e){};const {detallesJson,...base}=row;return {...details,...base,detalles:details};});
+      return res.status(200).json({ok:true,products});
     }
 
     if(req.method!=='POST') return res.status(405).json({ok:false,error:'Method not allowed'});
+    if(req.body?.action==='upsert'){
+      const p=req.body?.product as Product;
+      if(!p?.id||!p?.nombre||!String(p.codigo||'').trim())return res.status(400).json({ok:false,error:'Se requiere ID, código y descripción del producto.'});
+      const now=new Date().toISOString();
+      const detailsJson=JSON.stringify(p.detalles||{});
+      await db.execute({sql:\`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,marca=excluded.marca,
+        unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,imagen=excluded.imagen,fuente_url=excluded.fuente_url,
+        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at\`,
+        args:[String(p.id),String(p.codigo),String(p.nombre),p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',detailsJson,now]});
+      const current=await db.execute({sql:'SELECT stock FROM sifer_inventory WHERE product_id=? LIMIT 1',args:[String(p.id)]});
+      if(current.rows.length){
+        await db.execute({sql:'UPDATE sifer_inventory SET min_stock=?,updated_at=? WHERE product_id=?',args:[Math.max(0,Number(p.min)||0),now,String(p.id)]});
+      }else{
+        await db.execute({sql:'INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at) VALUES(?,?,?,?)',args:[String(p.id),Math.max(0,Number(req.body?.initialStock)||0),Math.max(0,Number(p.min)||0),now]});
+      }
+      const saved=await db.execute({sql:\`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,p.detalles_json AS detallesJson,i.stock,i.min_stock AS min FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id WHERE p.id=? LIMIT 1\`,args:[String(p.id)]});
+      const row:any=saved.rows[0]||{};
+      let details:any={};try{details=JSON.parse(String(row.detallesJson||'{}'))||{}}catch(e){}
+      const {detallesJson,...base}=row;
+      return res.status(200).json({ok:true,product:{...details,...base,detalles:details}});
+    }
+
     const products=Array.isArray(req.body?.products)?req.body.products:[];
     const existing=await db.execute({sql:'SELECT COUNT(*) AS count FROM sifer_products',args:[]});
     const existingCount=Number(existing.rows?.[0]?.count||0);
@@ -73,13 +109,13 @@ export default async function handler(req:any,res:any){
       const p=raw as Product;
       if(!p?.id||!p?.nombre) continue;
       stmts.push(
-        {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,updated_at)
-          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+        {sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
           ON CONFLICT(id) DO UPDATE SET
             codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,
             marca=excluded.marca,unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,
-            imagen=excluded.imagen,fuente_url=excluded.fuente_url,estado_verificacion=excluded.estado_verificacion,updated_at=excluded.updated_at`,
-         args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',now]},
+            imagen=excluded.imagen,fuente_url=excluded.fuente_url,estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at`,
+         args:[String(p.id),p.codigo??'',p.nombre,p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',JSON.stringify(p.detalles||{}),now]},
         {sql:`INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at)
           VALUES(?,?,?,?)
           ON CONFLICT(product_id) DO UPDATE SET stock=excluded.stock,min_stock=excluded.min_stock,updated_at=excluded.updated_at`,
