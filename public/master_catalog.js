@@ -1424,7 +1424,7 @@
 
     return `
       <div class="panelhead" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Catálogo de Referencias de Distribuidores (Mostrando <b>${res.items.length}</b> de <b>${res.totalMatched.toLocaleString()}</b> encontrados)</span>
+        <span>Resultados referenciales (mostrando <b>${res.items.length}</b> de <b>${res.totalMatched.toLocaleString()}</b> encontrados)</span>
         <span style="font-size:11px;color:#555">Página <b>${res.page}</b> de <b>${res.totalPages}</b></span>
       </div>
       <div class="panelbody" style="padding:0;overflow:auto">
@@ -1434,7 +1434,7 @@
               <th style="width:48px;text-align:center">Foto</th>
               <th>Descripción Técnica / Aplicación</th>
               <th>Marca / Origen</th>
-              <th>Código OEM / Proveedor</th>
+              <th>Código referencial / proveedor</th>
               <th>Categoría / U.M.</th>
               <th>Costo Ref.</th>
               <th>Estado Local</th>
@@ -1452,13 +1452,15 @@
                 <td>
                   <b style="color:#0b4f85">${esc(item.nombre)}</b>
                   <div style="font-size:10px;color:#555">${esc(item.descripcionTecnica)}</div>
+                  <div style="margin-top:4px"><span class="badge warn">REFERENCIA GENERADA · NO VALIDADA POR OEM</span></div>
                 </td>
                 <td>
                   <b>${esc(item.marca)}</b>
                   <br><small style="color:#777">${esc(item.origenMarca || item.distribuidor)}</small>
                 </td>
                 <td>
-                  <span style="font-family:monospace;background:#f0f4fa;padding:1px 4px;border:1px solid #d0dbe8;font-size:10px;font-weight:bold">${esc(item.codigoOEM)}</span>
+                  <span style="font-family:monospace;background:#fff7e6;padding:1px 4px;border:1px solid #e6c875;font-size:10px;font-weight:bold">${esc(item.codigoOEM)}</span>
+                  <div style="font-size:9px;color:#8a5700">Código referencial no validado</div>
                   <div style="font-size:9px;color:#666">${esc(item.codigoProveedor)}</div>
                 </td>
                 <td>${esc(item.categoria)}<br><small style="color:#0a6839;font-weight:bold">${esc(item.unidadMedida)}</small></td>
@@ -1475,7 +1477,7 @@
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fafafa;border-top:1px solid #ddd">
-        <span style="font-size:11px;color:#666">Página <b>${res.page}</b> de <b>${res.totalPages}</b> (Total: ${res.totalMatched.toLocaleString()} artículos indexados)</span>
+        <span style="font-size:11px;color:#666">Página <b>${res.page}</b> de <b>${res.totalPages}</b> (Total: ${res.totalMatched.toLocaleString()} coincidencias referenciales)</span>
         <div style="display:flex;gap:6px">
           <button class="btn" ${res.page <= 1 ? 'disabled' : ''} onclick="changeMasterViewPage(${res.page - 1})">◀ Anterior</button>
           <button class="btn" ${res.page >= res.totalPages ? 'disabled' : ''} onclick="changeMasterViewPage(${res.page + 1})">Siguiente ▶</button>
@@ -1488,8 +1490,8 @@
     return `
     <div class="pagehead">
       <div>
-        <h2>📖 Catálogo Máster Universal de Proveedores (+2.000.000 Productos)</h2>
-        <div class="sub">Biblioteca técnica integral con más de +2.450.000 repuestos automotrices indexados · Todas las clases de repuestos: Motor, Distribución, Inyección, Sensores, Suspensión, Frenos, Cloche, Baterías, Faros, Lubricantes Nacionales e Importados y Marcas Chinas</div>
+        <h2>📖 Catálogo Máster de Referencias Automotrices</h2>
+        <div class="sub">Buscador de combinaciones referenciales por pieza, vehículo y marca. Los registros generados no son inventario real ni equivalencias OEM verificadas; confirma código, motor, versión y año exacto con documentación del fabricante o proveedor.</div>
       </div>
       <div class="actions" style="margin:0">
         <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar Nuevo Producto a Mi Tienda</button>
@@ -1497,11 +1499,11 @@
     </div>
 
     <div class="cards">
-      <div class="card">Catálogo Indexado<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>artículos disponibles</span></div>
-      <div class="card">Motor, Tiempo e Inyección<b>640.000+</b><span>Pistones, válvulas, sensores...</span></div>
-      <div class="card">Tren Delantero y Suspensión<b>580.000+</b><span>Bujes, mesetas, lápiz, bases...</span></div>
-      <div class="card">Frenos, Cloche y Caja<b>480.000+</b><span>Pastillas, discos, embragues...</span></div>
-      <div class="card">Baterías, Luces y Relex<b>550.000+</b><span>Duncan, H4/LED, 12V 40A...</span></div>
+      <div class="card">Combinaciones de búsqueda<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>registros virtuales referenciales, no artículos verificados</span></div>
+      <div class="card">Motor, tiempo e inyección<b>Referencial</b><span>familias de búsqueda, no stock confirmado</span></div>
+      <div class="card">Tren delantero y suspensión<b>Referencial</b><span>verificar aplicación por versión</span></div>
+      <div class="card">Frenos, cloche y caja<b>Referencial</b><span>verificar OEM y medidas</span></div>
+      <div class="card">Baterías, luces y relés<b>Referencial</b><span>confirmar especificación y proveedor</span></div>
       <div class="card">Mi Inventario Activo<b>${db.productos.length + getRepuestos().length}</b><span>en mi tienda local</span></div>
     </div>
 
