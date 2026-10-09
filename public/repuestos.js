@@ -1148,7 +1148,7 @@ function openRepuestoDetail(id){
 
 function openRepuestoModal(id){
   const repuestos = getRepuestos();
-  const r = id ? repuestos.find(x => String(x.id) === String(id)) : null;
+  let r = id ? repuestos.find(x => String(x.id) === String(id)) : null;
   if (window.SIFERProductForm && typeof window.SIFERProductForm.open === 'function') {
     const linkedProduct = r ? (db.productos || []).find(p =>
       String(p.sku || '').toLowerCase() === String(r.sku || '').toLowerCase() ||
@@ -1186,7 +1186,7 @@ function openRepuestoModal(id){
     });
     return;
   }
-  const r = id ? repuestos.find(x => x.id === id) : {
+  if (!r) r = {
     id: '',
     sku: '',
     nombre: '',
