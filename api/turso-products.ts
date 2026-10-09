@@ -10,7 +10,6 @@ type Product = {
   costo?:number;
   precio?:number;
   stock?:number;
-  min?:number;
   imagen?:string;
   fuenteUrl?:string;
   estadoVerificacion?:string;
@@ -80,11 +79,11 @@ export default async function handler(req:any,res:any){
       if(!p?.id||!p?.nombre||!String(p.codigo||'').trim())return res.status(400).json({ok:false,error:'Se requiere ID, código y descripción del producto.'});
       const now=new Date().toISOString();
       const detailsJson=JSON.stringify(p.detalles||{});
-      await db.execute({sql:\`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
+      await db.execute({sql:`INSERT INTO sifer_products(id,codigo,nombre,categoria,marca,unidad,costo,precio,imagen,fuente_url,estado_verificacion,detalles_json,updated_at)
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET codigo=excluded.codigo,nombre=excluded.nombre,categoria=excluded.categoria,marca=excluded.marca,
         unidad=excluded.unidad,costo=excluded.costo,precio=excluded.precio,imagen=excluded.imagen,fuente_url=excluded.fuente_url,
-        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at\`,
+        estado_verificacion=excluded.estado_verificacion,detalles_json=excluded.detalles_json,updated_at=excluded.updated_at`,
         args:[String(p.id),String(p.codigo),String(p.nombre),p.categoria??'',p.marca??'',p.unidad??'',Number(p.costo)||0,Number(p.precio)||0,p.imagen??'',p.fuenteUrl??'',p.estadoVerificacion??'',detailsJson,now]});
       const current=await db.execute({sql:'SELECT stock FROM sifer_inventory WHERE product_id=? LIMIT 1',args:[String(p.id)]});
       if(current.rows.length){
@@ -92,7 +91,7 @@ export default async function handler(req:any,res:any){
       }else{
         await db.execute({sql:'INSERT INTO sifer_inventory(product_id,stock,min_stock,updated_at) VALUES(?,?,?,?)',args:[String(p.id),Math.max(0,Number(req.body?.initialStock)||0),Math.max(0,Number(p.min)||0),now]});
       }
-      const saved=await db.execute({sql:\`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,p.detalles_json AS detallesJson,i.stock,i.min_stock AS min FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id WHERE p.id=? LIMIT 1\`,args:[String(p.id)]});
+      const saved=await db.execute({sql:`SELECT p.id,p.codigo,p.nombre,p.categoria,p.marca,p.unidad,p.costo,p.precio,p.imagen,p.fuente_url AS fuenteUrl,p.estado_verificacion AS estadoVerificacion,p.detalles_json AS detallesJson,i.stock,i.min_stock AS min FROM sifer_products p LEFT JOIN sifer_inventory i ON i.product_id=p.id WHERE p.id=? LIMIT 1`,args:[String(p.id)]});
       const row:any=saved.rows[0]||{};
       let details:any={};try{details=JSON.parse(String(row.detallesJson||'{}'))||{}}catch(e){}
       const {detallesJson,...base}=row;
