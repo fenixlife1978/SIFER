@@ -393,7 +393,7 @@ export default async function handler(req:any, res:any) {
     }
 
     if (mode === 'plan') {
-      const wantsWeb=/\\b(foto|fotografia|imagen|imagen real|foto real|busca en la web|en internet|referencia cruzada|referencias cruzadas|equivalencia|compatibilidad|compatible|oem|numero de parte)\\b/i.test(command);
+      const wantsWeb=/\b(foto|fotografia|imagen|imagen real|foto real|busca en la web|en internet|referencia cruzada|referencias cruzadas|equivalencia|compatibilidad|compatible|oem|numero de parte)\b/i.test(command);
       if(wantsWeb) { try { context.externalResearch=await externalResearch(command); } catch {} }
       const allowed = capabilities.map((x:any) => x.name).filter(Boolean);
       let plan:any = null;
