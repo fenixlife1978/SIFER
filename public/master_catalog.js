@@ -476,7 +476,7 @@
     { nameTpl: 'Filtro de Aceite de Motor Blindado con Válvula Antidrenaje de Silicona', cat: 'Filtros y Mantenimiento', cost: 3.20, margen: 45, img: '/images/rep_filtro_aceite_1791152641120.jpg', oemPref: '90915', u: 'Unidad' },
     { nameTpl: 'Filtro de Aire Motor Tipo Panel de Microfibras de Celulosa', cat: 'Filtros y Mantenimiento', cost: 4.80, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '17801', u: 'Unidad' },
     { nameTpl: 'Filtro de Gasolina en Línea Metálico de Alta Presión', cat: 'Filtros y Mantenimiento', cost: 3.90, margen: 45, img: '/images/prod_filtro_gasolina_1791155241268.jpg', oemPref: '23300', u: 'Unidad' },
-    { nameTpl: 'Filtro de Cabina / Polen de Aire Acondicionado con Carbón Activado', cat: 'Filtros y Mantenimiento', cost: 5.20, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '87139', u: 'Unidad' }
+    { nameTpl: 'Filtro de Cabina / Polen de Aire Acondicionado con Carbón Activado', cat: 'Filtros y Mantenimiento', cost: 5.20, margen: 45, img: '/images/prod_filtro_aire_1791155232301.jpg', oemPref: '87139', u: 'Unidad' },
 
     // 21. LUBRICACIÓN Y COMPONENTES INTERNOS DEL MOTOR
     { nameTpl: 'Bomba de Aceite de Motor con Engranajes / Rotor Interno', cat: 'Lubricación del Motor', cost: 38.00, margen: 30, img: '/images/rep_bomba_agua_1791152689068.jpg', oemPref: 'OIL-PUMP', u: 'Unidad', keywords: 'oil pump bomba lubricacion bomba aceite motor engranajes rotor' },
