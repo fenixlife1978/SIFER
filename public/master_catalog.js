@@ -612,12 +612,8 @@
         fotoReal: type.foto,
         fotoFallback: type.foto,
         distribuidor: brand.distribuidor,
-        referenciasCruzadas: [
-          { marca: 'Shell', codigo: `Helix-${pres.suffix}` },
-          { marca: 'PDV', codigo: `Extra-${pres.suffix}` },
-          { marca: 'Mobil', codigo: `Super-${pres.suffix}` },
-          { marca: 'Castrol', codigo: `GTX-${pres.suffix}` }
-        ],
+        // No inferir equivalencias comerciales por similitud de presentación.
+        referenciasCruzadas: [],
         compatibilidad: [
           { marca: 'Universal', modelo: 'Motores y Maquinaria en Venezuela', anios: 'Todos', motor: 'Gasolina / Diesel / GNC', posicion: 'Motor / Transmisión' }
         ]
