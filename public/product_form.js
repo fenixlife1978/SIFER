@@ -54,9 +54,9 @@
     var box=el('fp-suppliers');
     if(!box)return;
     box.innerHTML=supplierRows.map(function(s,i){
-      return '<tr><td>'+global.esc(s.nombre||'')+'</td><td>'+global.esc(s.codigo||'')+'</td><td>'+global.esc(s.costo==null?'':s.costo)+'</td><td>'+(s.principal?'Sí':'No')+'</td><td><button class="btn" type="button" data-fp-supplier-remove="'+i+'">Quitar</button></td></tr>';
+      return '<tr><td>'+global.esc(s.nombre||'')+'</td><td>'+global.esc(s.codigo||'')+'</td><td>'+global.esc(s.costo==null?'':s.costo)+'</td><td>'+(s.principal?'Sí':'No')+'</td><td><button class="btn" type="button" data-fp-supplier-primary="'+i+'">Principal</button> <button class="btn" type="button" data-fp-supplier-remove="'+i+'">Quitar</button></td></tr>';
     }).join('')||'<tr><td colspan="5" style="text-align:center;color:#777;padding:10px">No hay proveedores asociados.</td></tr>';
-    if(!box.dataset.bound){box.dataset.bound='1';box.addEventListener('click',function(ev){var b=ev.target.closest('[data-fp-supplier-remove]');if(!b)return;supplierRows.splice(Number(b.getAttribute('data-fp-supplier-remove')),1);renderSuppliers();});}
+    if(!box.dataset.bound){box.dataset.bound='1';box.addEventListener('click',function(ev){var primary=ev.target.closest('[data-fp-supplier-primary]');if(primary){var pi=Number(primary.getAttribute('data-fp-supplier-primary'));supplierRows=supplierRows.map(function(s,i){return Object.assign({},s,{principal:i===pi});});renderSuppliers();return;}var b=ev.target.closest('[data-fp-supplier-remove]');if(!b)return;supplierRows.splice(Number(b.getAttribute('data-fp-supplier-remove')),1);if(!supplierRows.some(function(s){return s.principal;})&&supplierRows.length)supplierRows[0].principal=true;renderSuppliers();});}
   }
   function addSupplier(){
     var nombre=prompt('Nombre del proveedor:');
@@ -149,7 +149,7 @@
       input('fp-promoMargen','Margen promoción (%)',val(d,'margenPromo',0),'number','oninput="SIFERProductForm.priceTier(\'promo\',\'margen\')"')
     );
     var inventory=section('Inventario y trazabilidad',
-      '<div class="field full" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px"><div><label>Stock actual</label><input value="'+global.esc(text(val(d,'stock',0)))+'" readonly></div><div><label>Reservado</label><input value="'+global.esc(text(val(d,'reservado',0)))+'" readonly></div><div><label>Disponible</label><input value="'+global.esc(text(Math.max(0,n(val(d,'stock',0))-n(val(d,'reservado',0)))))+'" readonly></div></div>'+
+      '<div class="field full" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px"><div><label>Stock actual</label><input value="'+global.esc(text(val(d,'stock',0)))+'" readonly></div><div><label>Reservado</label><input value="'+global.esc(text(val(d,'reservado',0)))+'" readonly></div><div><label>Disponible</label><input value="'+global.esc(text(Math.max(0,n(val(d,'stock',0))-n(val(d,'reservado',0)))))+'" readonly></div></div>'+
       input('fp-unidad','Unidad base',unit||'Unidad')+
       input('fp-stockInicial','Existencia inicial (solo al crear)',existing?val(d,'stock',0):val(d,'stockInicial',val(d,'stock',0)),'number',existing?'readonly':'min="0"')+
       input('fp-min','Stock mínimo',val(d,'min',0),'number','min="0"')+
