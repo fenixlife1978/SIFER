@@ -636,6 +636,24 @@ const VERIFIED_MASTER_CATALOG = [
 ];
   const TOTAL_VIRTUAL_CATALOG_COUNT = VERIFIED_MASTER_CATALOG.length;
   let virtualCache = new Map();
+  const remoteMasterResults = new Map();
+  let remoteMasterCatalogCount = null;
+  function masterCacheKey(query, category, page, pageSize) { return [String(query||'').trim().toLowerCase(), String(category||'Todos'), Number(page)||1, Number(pageSize)||ITEMS_PER_PAGE].join('|'); }
+  async function requestMasterCatalog(query, category, page, pageSize, target) {
+    const key = masterCacheKey(query, category, page, pageSize);
+    try {
+      const params = new URLSearchParams({ q: String(query||''), category: String(category||'Todos'), page: String(page||1), limit: String(pageSize||ITEMS_PER_PAGE) });
+      const response = await fetch('/api/master-catalog?' + params.toString(), { headers: { accept: 'application/json' } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !Array.isArray(data.items)) return false;
+      const result = { items: data.items, totalMatched: Number(data.totalMatched)||0, totalCatalog: Number(data.totalCatalog)||0, page: Number(data.page)||1, totalPages: Number(data.totalPages)||1 };
+      remoteMasterResults.set(key, result); remoteMasterCatalogCount = result.totalCatalog;
+      data.items.forEach(item => { if (item && item.masterId) virtualCache.set(String(item.masterId), item); });
+      const container = target === 'modal' ? document.getElementById('masterSearchResultsContainer') : document.getElementById('masterExplorerTableContainer');
+      if (container) container.innerHTML = target === 'modal' ? renderMasterSelectorResultsHTML() : renderMasterExplorerTableContainerHTML();
+      return true;
+    } catch (_) { return false; }
+  }
   let activeMasterCategory = 'Todos';
   let activeMasterPage = 1;
   const ITEMS_PER_PAGE = 30;
@@ -645,6 +663,8 @@ const VERIFIED_MASTER_CATALOG = [
     return VERIFIED_MASTER_CATALOG[i];
   }
   function queryMasterCatalog(query = '', category = 'Todos', page = 1, pageSize = ITEMS_PER_PAGE) {
+    const remote = remoteMasterResults.get(masterCacheKey(query, category, page, pageSize));
+    if (remote) return remote;
     const q=normalizeSearchText(query||''),cat=String(category||'Todos'),terms=q.split(/\\s+/).filter(Boolean);
     const all=VERIFIED_MASTER_CATALOG.filter(item=>{
       const searchable=normalizeSearchText([item.nombre,item.descripcionTecnica,item.especificaciones,item.palabrasClave,item.marca,item.codigoOEM,item.codigoProveedor,item.categoria,item.subcategoria,...(item.compatibilidad||[]).flatMap(c=>[c.marca,c.modelo,c.anios,c.motor,c.posicion])].join(' '));
@@ -743,11 +763,11 @@ const VERIFIED_MASTER_CATALOG = [
   function debounceMasterModalSearch(val) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      currentSelectorQuery = val;
-      currentSelectorPage = 1;
+      currentSelectorQuery = val; currentSelectorPage = 1;
       const c = document.getElementById('masterSearchResultsContainer');
       if (c) c.innerHTML = renderMasterSelectorResultsHTML();
-    }, 150);
+      requestMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20, 'modal');
+    }, 180);
   }
 
   function setMasterSelectorCategory(cat, btn) {
@@ -759,6 +779,7 @@ const VERIFIED_MASTER_CATALOG = [
     }
     const c = document.getElementById('masterSearchResultsContainer');
     if (c) c.innerHTML = renderMasterSelectorResultsHTML();
+    requestMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20, 'modal');
   }
 
   function renderMasterSelectorResultsHTML() {
@@ -773,7 +794,7 @@ const VERIFIED_MASTER_CATALOG = [
 
     return `
       <div style="background:#fafafa;padding:6px 10px;border-bottom:1px solid #eee;font-size:11px;display:flex;justify-content:space-between;color:#555">
-        <span>Mostrando <b>${res.items.length}</b> de <b>${res.totalMatched.toLocaleString()}</b> resultados encontrados (Total Catálogo: <b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b>)</span>
+        <span>Mostrando <b>${res.items.length}</b> de <b>${res.totalMatched.toLocaleString()}</b> resultados encontrados (Catálogo disponible: <b>${(remoteMasterCatalogCount == null ? TOTAL_VIRTUAL_CATALOG_COUNT : remoteMasterCatalogCount).toLocaleString()}</b>)</span>
         <span>Página ${res.page} de ${res.totalPages}</span>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -829,10 +850,13 @@ const VERIFIED_MASTER_CATALOG = [
     currentSelectorPage = p;
     const c = document.getElementById('masterSearchResultsContainer');
     if (c) c.innerHTML = renderMasterSelectorResultsHTML();
+    requestMasterCatalog(currentSelectorQuery, currentSelectorCategory, currentSelectorPage, 20, 'modal');
   }
 
   function selectMasterItemByIndex(masterId) {
     let foundItem = null;
+    const remoteItem = virtualCache.get(String(masterId || ''));
+    if (remoteItem) foundItem = remoteItem;
 
     // Primero buscamos en caché. Esto cubre los resultados recién renderizados.
     for (const v of virtualCache.values()) {
@@ -1146,15 +1170,13 @@ const VERIFIED_MASTER_CATALOG = [
   let masterViewSearchTimeout = null;
 
   function onMasterSearchInput(val) {
-    masterViewSearchQuery = val;
-    activeMasterPage = 1;
+    masterViewSearchQuery = val; activeMasterPage = 1;
     clearTimeout(masterViewSearchTimeout);
     masterViewSearchTimeout = setTimeout(() => {
       const container = document.getElementById('masterExplorerTableContainer');
-      if (container) {
-        container.innerHTML = renderMasterExplorerTableContainerHTML();
-      }
-    }, 120);
+      if (container) container.innerHTML = renderMasterExplorerTableContainerHTML();
+      requestMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE, 'view');
+    }, 180);
   }
 
   function setMasterViewCategory(cat, btn) {
@@ -1165,9 +1187,8 @@ const VERIFIED_MASTER_CATALOG = [
       btn.classList.add('primary');
     }
     const container = document.getElementById('masterExplorerTableContainer');
-    if (container) {
-      container.innerHTML = renderMasterExplorerTableContainerHTML();
-    }
+    if (container) container.innerHTML = renderMasterExplorerTableContainerHTML();
+    requestMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE, 'view');
   }
 
   function changeMasterViewPage(p) {
@@ -1177,6 +1198,7 @@ const VERIFIED_MASTER_CATALOG = [
       container.innerHTML = renderMasterExplorerTableContainerHTML();
       container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    requestMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE, 'view');
   }
 
   function renderMasterExplorerTableContainerHTML() {
@@ -1249,11 +1271,12 @@ const VERIFIED_MASTER_CATALOG = [
   }
 
   function masterCatalogView() {
+    setTimeout(() => requestMasterCatalog(masterViewSearchQuery, activeMasterCategory, activeMasterPage, ITEMS_PER_PAGE, 'view'), 0);
     return `
     <div class="pagehead">
       <div>
         <h2>📖 Catálogo de Referencias OEM Publicadas</h2>
-        <div class="sub">Referencias con fuente pública para suspensión/dirección de Aveo T200/T250/T300 y componentes GM de aceite/distribución. No se inventan precios ni existencias; confirma aplicación por VIN.</div>
+        <div class="sub">Biblioteca automotriz ampliable por familias, marcas, especificaciones y referencias cruzadas. El tamaño real depende de las fuentes de catálogo importadas y autorizadas; confirma compatibilidad por VIN cuando corresponda.</div>
       </div>
       <div class="actions" style="margin:0">
         <button class="btn primary" onclick="openMasterCatalogSelectorModal('producto')">📥 Importar referencia a inventario</button>
@@ -1261,7 +1284,7 @@ const VERIFIED_MASTER_CATALOG = [
     </div>
 
     <div class="cards">
-      <div class="card">Referencias OEM publicadas<b>${TOTAL_VIRTUAL_CATALOG_COUNT.toLocaleString()}</b><span>con fuente pública; confirmar ajuste por VIN</span></div>
+      <div class="card">Referencias disponibles<b>${(remoteMasterCatalogCount == null ? TOTAL_VIRTUAL_CATALOG_COUNT : remoteMasterCatalogCount).toLocaleString()}</b><span>registros cargados en la biblioteca</span></div>
       <div class="card">Aplicación<b>Aveo T200/T250/T300</b><span>confirmar variante por VIN</span></div>
       <div class="card">Precios<b>No cargados</b><span>sin precios ficticios</span></div>
       <div class="card">Existencias<b>0 en catálogo</b><span>no equivale a stock de tienda</span></div>
