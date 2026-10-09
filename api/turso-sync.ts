@@ -114,9 +114,10 @@ export default async function handler(req:any,res:any){
         try{await db.execute({sql:"ALTER TABLE sifer_purchase_lines ADD COLUMN details_json TEXT NOT NULL DEFAULT '{}'",args:[]})}catch(e){}
         await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_accounts_payable (
           id TEXT PRIMARY KEY,documento TEXT UNIQUE NOT NULL,proveedor_id TEXT,proveedor TEXT,
-          total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,
+          total REAL NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,fecha TEXT NOT NULL,vencimiento TEXT,
           estado TEXT NOT NULL DEFAULT 'Pendiente',created_at TEXT NOT NULL
         )`,args:[]});
+        try{await db.execute({sql:'ALTER TABLE sifer_accounts_payable ADD COLUMN vencimiento TEXT',args:[]})}catch(e){}
         await db.execute({sql:`INSERT OR IGNORE INTO sifer_purchases(numero,fecha,proveedor_id,proveedor,total,pagado,saldo,tipo,created_at,payload_json)
           VALUES(?,?,?,?,?,?,?,?,?,?)`,args:[
           String(purchase.numero),String(purchase.fecha||''),purchase.proveedorId??null,purchase.proveedor??'',
@@ -140,11 +141,26 @@ export default async function handler(req:any,res:any){
             VALUES(?,?,0,?) ON CONFLICT(product_id) DO UPDATE SET stock=stock+excluded.stock,updated_at=excluded.updated_at`,
             args:[pid,delta,now]});
         }
+        if(Number(purchase.pagado)>0){
+          await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_registers(
+            id TEXT PRIMARY KEY,nombre TEXT NOT NULL,abierta INTEGER NOT NULL DEFAULT 0,saldo REAL NOT NULL DEFAULT 0,
+            apertura TEXT,ultimo_corte_at TEXT,seq_venta INTEGER NOT NULL DEFAULT 1,seq_devolucion INTEGER NOT NULL DEFAULT 1,
+            seq_z INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL
+          )`,args:[]});
+          await db.execute({sql:`CREATE TABLE IF NOT EXISTS sifer_cash_ledger(
+            operation_id TEXT PRIMARY KEY,caja_id TEXT NOT NULL,documento TEXT NOT NULL,delta REAL NOT NULL,created_at TEXT NOT NULL
+          )`,args:[]});
+          const cajaId=String(purchase.cajaId||'CAJA-01');
+          const cash=await db.execute({sql:'SELECT abierta FROM sifer_cash_registers WHERE id=? LIMIT 1',args:[cajaId]});
+          if(!cash.rows.length||Number(cash.rows[0].abierta||0)!==1)throw new Error('La caja '+cajaId+' no figura abierta en Turso; la entrada quedó pendiente de sincronización financiera.');
+          const debit=await db.execute({sql:'INSERT OR IGNORE INTO sifer_cash_ledger(operation_id,caja_id,documento,delta,created_at) VALUES(?,?,?,?,?)',args:['purchase-cash:'+operationId,cajaId,String(purchase.numero),-Number(purchase.pagado),now]});
+          if(debit.rowsAffected)await db.execute({sql:'UPDATE sifer_cash_registers SET saldo=saldo-?,updated_at=? WHERE id=? AND abierta=1',args:[Number(purchase.pagado),now,cajaId]});
+        }
         if(Number(purchase.saldo)>0){
-          await db.execute({sql:`INSERT OR IGNORE INTO sifer_accounts_payable(id,documento,proveedor_id,proveedor,total,saldo,fecha,estado,created_at)
-            VALUES(?,?,?,?,?,?,?,?,?)`,args:[
+          await db.execute({sql:`INSERT OR IGNORE INTO sifer_accounts_payable(id,documento,proveedor_id,proveedor,total,saldo,fecha,vencimiento,estado,created_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?)`,args:[
             'CXP-'+String(purchase.numero),String(purchase.numero),purchase.proveedorId??null,purchase.proveedor??'',
-            Number(purchase.total)||0,Number(purchase.saldo)||0,String(purchase.fecha||''),'Pendiente',now
+            Number(purchase.total)||0,Number(purchase.saldo)||0,String(purchase.fecha||''),String(purchase.vencimiento||''),'Pendiente',now
           ]});
         }
       }
